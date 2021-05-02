@@ -50,7 +50,7 @@ public class SpacePrototypeClientRegistry
 //    @SuppressWarnings("ConstantConditions")
     public static void init(IEventBus bus)
     {
-//        BattlefieldsGuiSpriteManager.init(bus);
+        SpaceGuiSpriteManager.init(bus);
     }
 
     public static void setup(FMLClientSetupEvent event)

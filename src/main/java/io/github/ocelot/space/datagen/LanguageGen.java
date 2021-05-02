@@ -14,5 +14,6 @@ public class LanguageGen extends LanguageProvider
     @Override
     protected void addTranslations()
     {
+        this.add("screen." + SpacePrototype.MOD_ID + ".space_travel", "Space Travel");
     }
 }
