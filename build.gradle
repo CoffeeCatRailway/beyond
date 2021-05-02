@@ -1,0 +1,146 @@
+import groovy.json.JsonOutput
+import groovy.json.JsonSlurper
+
+buildscript {
+    repositories {
+        maven { url = 'https://maven.minecraftforge.net' }
+        mavenCentral()
+    }
+    dependencies {
+        classpath group: 'net.minecraftforge.gradle', name: 'ForgeGradle', version: '4.1.+', changing: true
+    }
+}
+
+plugins {
+    id 'com.github.johnrengelman.shadow' version '4.0.4'
+}
+
+apply plugin: 'net.minecraftforge.gradle'
+apply plugin: 'eclipse'
+
+version = project.modVersion
+group = 'io.github.ocelot.' + project.modId
+archivesBaseName = project.modId
+
+java.toolchain.languageVersion = JavaLanguageVersion.of(8)
+
+println('Java: ' + System.getProperty('java.version') + ' JVM: ' + System.getProperty('java.vm.version') + '(' + System.getProperty('java.vendor') + ') Arch: ' + System.getProperty('os.arch'))
+minecraft {
+    mappings channel: project.mappingsChannel, version: project.mappings
+
+    runs {
+        client {
+            workingDirectory project.file('run/client')
+            property 'forge.logging.console.level', 'debug'
+
+            mods {
+                space {
+                    source sourceSets.main
+                }
+            }
+        }
+
+        server {
+            workingDirectory project.file('run/server')
+            property 'forge.logging.console.level', 'debug'
+
+            mods {
+                space {
+                    source sourceSets.main
+                }
+            }
+        }
+
+        data {
+            workingDirectory project.file('run')
+            property 'forge.logging.console.level', 'debug'
+
+            args '--mod', project.modId, '--all', '--output', file('src/generated/resources/')
+
+            mods {
+                space {
+                    source sourceSets.main
+                }
+            }
+        }
+    }
+}
+
+sourceSets.main.resources { srcDir 'src/generated/resources' }
+
+configurations {
+    shade
+}
+
+repositories {
+//    flatDir {
+//        dirs "libs"
+//    }
+//    mavenCentral()
+//    maven {
+//        name = "Curse Maven"
+//        url = "https://www.cursemaven.com"
+//    }
+    maven {
+        name = "JitPack"
+        url = "https://jitpack.io"
+    }
+}
+
+dependencies {
+    minecraft 'net.minecraftforge:forge:1.16.5-36.1.16'
+
+    compileOnly fg.deobf("com.github.Ocelot5836:Sonar:${project.sonar}:api")
+    runtimeOnly fg.deobf("com.github.Ocelot5836:Sonar:${project.sonar}")
+    shade "com.github.Ocelot5836:Sonar:${project.sonar}"
+}
+
+processResources {
+    inputs.property("modVersion", project.modVersion)
+    inputs.property("modId", project.modId)
+    from(sourceSets.main.resources.srcDirs) {
+        include 'META-INF/mods.toml'
+        expand 'modVersion': project.modVersion, 'modId': project.modId
+    }
+
+    from(sourceSets.main.resources.srcDirs) {
+        exclude 'META-INF/mods.toml'
+    }
+
+    // Minify json resources
+    doLast {
+        fileTree(dir: outputs.files.asPath, include: "**/*.json").each {
+            File file -> file.text = JsonOutput.toJson(new JsonSlurper().parse(file))
+        }
+    }
+}
+
+jar {
+    manifest {
+        attributes([
+                "Specification-Title"     : "space",
+                "Specification-Vendor"    : "Ocelot",
+                "Specification-Version"   : "1",
+                "Implementation-Title"    : project.name,
+                "Implementation-Version"  : archiveVersion,
+                "Implementation-Vendor"   : "Ocelot",
+                "Implementation-Timestamp": new Date().format("yyyy-MM-dd'T'HH:mm:ssZ")
+        ])
+    }
+}
+
+shadowJar {
+    configurations = [project.configurations.shade]
+    relocate 'io.github.ocelot', 'io.github.ocelot.space.lib'
+}
+
+reobf {
+    shadowJar {}
+}
+
+artifacts {
+    archives jar
+    archives shadowJar
+}
+
+jar.finalizedBy('reobfJar')
