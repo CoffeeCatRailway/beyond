@@ -17,7 +17,6 @@ import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
 import net.minecraft.client.renderer.vertex.VertexBuffer;
 import net.minecraft.client.shader.Framebuffer;
-import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.math.MathHelper;
 import net.minecraft.util.math.vector.Matrix4f;
 import net.minecraft.util.math.vector.Vector3f;
@@ -66,7 +65,7 @@ public class SolarSystemWidget extends Widget implements IScreen, NativeResource
         Random random = new Random(10842L);
         bufferbuilder.begin(7, DefaultVertexFormats.POSITION);
 
-        for (int i = 0; i < 15000; ++i)
+        for (int i = 0; i < 1500; ++i)
         {
             double d0 = random.nextFloat() * 2.0F - 1.0F;
             double d1 = random.nextFloat() * 2.0F - 1.0F;
@@ -182,8 +181,10 @@ public class SolarSystemWidget extends Widget implements IScreen, NativeResource
         RenderSystem.enableLighting();
         RenderHelper.setupLevel(matrixStack1.last().pose());
 
-        matrixStack1.translate(0.0F, -4.0F, -30.0F);
-        matrixStack1.mulPose(Vector3f.XP.rotationDegrees(25));
+        matrixStack1.translate(-this.camera.getPosX(partialTicks), -this.camera.getPosY(partialTicks) - 4.0F, -this.camera.getPosZ(partialTicks) - 30.0F);
+        matrixStack1.mulPose(Vector3f.XP.rotation(this.camera.getRotationX(partialTicks)));
+        matrixStack1.mulPose(Vector3f.YP.rotation(this.camera.getRotationY(partialTicks)));
+        matrixStack1.mulPose(Vector3f.ZP.rotation(this.camera.getRotationZ(partialTicks)));
 
         matrixStack1.pushPose();
 
@@ -240,7 +241,7 @@ public class SolarSystemWidget extends Widget implements IScreen, NativeResource
     @Override
     public boolean mouseScrolled(double mouseX, double mouseY, double amount)
     {
-        return super.mouseScrolled(mouseX, mouseY, amount);
+        return true;
     }
 
     @Override
