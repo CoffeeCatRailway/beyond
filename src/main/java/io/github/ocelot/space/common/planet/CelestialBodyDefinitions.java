@@ -19,7 +19,7 @@ public class CelestialBodyDefinitions
             builder.setScale(4.0F);
             builder.setShade(false);
         });
-        ResourceLocation earth = create(bodies, "earth", builder -> builder.setParent(sun));
+        ResourceLocation moon = create(bodies, "moon", builder -> builder.setParent(sun));
         SOLAR_SYSTEM = bodies.build();
     }
 

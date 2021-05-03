@@ -1,65 +1,75 @@
 package io.github.ocelot.space.common.planet;
 
 import net.minecraft.util.ResourceLocation;
+import net.minecraft.util.math.vector.Vector3f;
 
-import java.util.*;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.stream.Stream;
 
 public class CelestialBodySimulation
 {
     private final Map<ResourceLocation, SimulatedBody> bodies;
-    private final ResourceLocation[] roots;
-    private int time;
 
     public CelestialBodySimulation(Map<ResourceLocation, CelestialBody> bodies)
     {
         this.bodies = new HashMap<>();
 
-        List<CelestialBody> unprocessed = new ArrayList<>();
         for (Map.Entry<ResourceLocation, CelestialBody> entry : bodies.entrySet())
         {
             CelestialBody body = entry.getValue();
+            float offset = 0;
             if (body.getParent().isPresent())
             {
                 ResourceLocation parent = body.getParent().get();
                 if (!bodies.containsKey(parent))
                     continue;
+                offset = bodies.get(parent).getScale() * 2F;
             }
-            this.bodies.put(entry.getKey(), new SimulatedBody(body, bodies.entrySet().stream().filter(e -> e.getValue().getParent().map(parent -> parent.equals(entry.getKey())).orElse(false)).map(Map.Entry::getKey).toArray(ResourceLocation[]::new)));
+            SimulatedBody simulatedBody = new SimulatedBody(body);
+            simulatedBody.position.setX(offset); // FIXME
+            this.bodies.put(entry.getKey(), simulatedBody);
         }
 
-        this.roots = bodies.entrySet().stream().filter(entry -> !entry.getValue().getParent().isPresent()).map(Map.Entry::getKey).toArray(ResourceLocation[]::new);
-        if (this.roots.length == 0)
-            throw new IllegalStateException("There must be at least a single root body");
+        // TODO set all bodies to initial positions
     }
 
-    public Optional<SimulatedBody> getBody(ResourceLocation id)
+    public Stream<SimulatedBody> getBodies()
     {
-        return Optional.ofNullable(this.bodies.get(id));
-    }
-
-    public ResourceLocation[] getRootBodies()
-    {
-        return this.roots;
+        return this.bodies.values().stream();
     }
 
     public void tick()
     {
-        this.time++;
+        this.bodies.values().forEach(SimulatedBody::move);
+        this.bodies.values().forEach(SimulatedBody::tick);
     }
 
     public static class SimulatedBody
     {
         private final CelestialBody body;
-        private final ResourceLocation[] children;
-        private float distance;
-        private float angle;
+        private final Vector3f lastPosition;
+        private final Vector3f position;
+        private float lastRotation;
+        private float rotation;
 
-        public SimulatedBody(CelestialBody body, ResourceLocation[] children)
+        public SimulatedBody(CelestialBody body)
         {
             this.body = body;
-            this.children = children;
-            this.distance = body.getScale() * 4;
-            this.angle = 0;
+            this.lastPosition = new Vector3f();
+            this.position = new Vector3f();
+            this.rotation = 0;
+        }
+
+        private void tick()
+        {
+            this.lastRotation = this.rotation;
+            this.lastPosition.set(this.position.x(), this.position.y(), this.position.z());
+            this.rotation++;
+        }
+
+        private void move()
+        {
         }
 
         public CelestialBody getBody()
@@ -67,19 +77,24 @@ public class CelestialBodySimulation
             return body;
         }
 
-        public ResourceLocation[] getChildren()
+        public Vector3f getLastPosition()
         {
-            return children;
+            return lastPosition;
         }
 
-        public float getDistance()
+        public Vector3f getPosition()
         {
-            return distance;
+            return position;
         }
 
-        public float getAngle()
+        public float getLastRotation()
         {
-            return angle;
+            return lastRotation;
+        }
+
+        public float getRotation()
+        {
+            return rotation;
         }
     }
 }

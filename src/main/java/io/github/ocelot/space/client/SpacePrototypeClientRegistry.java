@@ -51,6 +51,7 @@ public class SpacePrototypeClientRegistry
     public static void init(IEventBus bus)
     {
         SpaceGuiSpriteManager.init(bus);
+        SpacePlanetSpriteManager.init(bus);
     }
 
     public static void setup(FMLClientSetupEvent event)

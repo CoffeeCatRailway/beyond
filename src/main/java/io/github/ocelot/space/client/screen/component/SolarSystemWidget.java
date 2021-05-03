@@ -4,25 +4,24 @@ import com.mojang.blaze3d.matrix.MatrixStack;
 import com.mojang.blaze3d.platform.GlStateManager;
 import com.mojang.blaze3d.systems.RenderSystem;
 import io.github.ocelot.sonar.client.render.ShapeRenderer;
+import io.github.ocelot.space.client.SpacePlanetSpriteManager;
+import io.github.ocelot.space.client.screen.SpaceTravelCamera;
 import io.github.ocelot.space.common.planet.CelestialBodyDefinitions;
 import io.github.ocelot.space.common.planet.CelestialBodySimulation;
-import net.minecraft.block.Blocks;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screen.IScreen;
 import net.minecraft.client.gui.widget.Widget;
-import net.minecraft.client.renderer.BufferBuilder;
-import net.minecraft.client.renderer.IRenderTypeBuffer;
-import net.minecraft.client.renderer.RenderHelper;
-import net.minecraft.client.renderer.Tessellator;
+import net.minecraft.client.renderer.*;
+import net.minecraft.client.renderer.model.ModelRenderer;
 import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
 import net.minecraft.client.renderer.vertex.VertexBuffer;
 import net.minecraft.client.shader.Framebuffer;
 import net.minecraft.util.ResourceLocation;
+import net.minecraft.util.math.MathHelper;
 import net.minecraft.util.math.vector.Matrix4f;
 import net.minecraft.util.math.vector.Vector3f;
 import net.minecraft.util.text.StringTextComponent;
-import net.minecraftforge.client.model.data.EmptyModelData;
 import org.lwjgl.system.NativeResource;
 
 import java.util.Random;
@@ -36,10 +35,18 @@ import static org.lwjgl.opengl.GL11.*;
  */
 public class SolarSystemWidget extends Widget implements IScreen, NativeResource
 {
+    private static final ModelRenderer CUBE = new ModelRenderer(32, 16, 0, 0);
+
+    static
+    {
+        CUBE.addBox(0, 0, 0, 8, 8, 8, 0);
+    }
+
+    private final CelestialBodySimulation simulation;
+    private SpaceTravelCamera camera;
+    private Framebuffer framebuffer;
     private VertexBuffer skyVBO;
     private int ticks;
-    private CelestialBodySimulation simulation;
-    private Framebuffer framebuffer;
 
     public SolarSystemWidget(int x, int y, int width, int height)
     {
@@ -59,7 +66,7 @@ public class SolarSystemWidget extends Widget implements IScreen, NativeResource
         Random random = new Random(10842L);
         bufferbuilder.begin(7, DefaultVertexFormats.POSITION);
 
-        for (int i = 0; i < 1500; ++i)
+        for (int i = 0; i < 15000; ++i)
         {
             double d0 = random.nextFloat() * 2.0F - 1.0F;
             double d1 = random.nextFloat() * 2.0F - 1.0F;
@@ -103,24 +110,16 @@ public class SolarSystemWidget extends Widget implements IScreen, NativeResource
         this.skyVBO.upload(bufferbuilder);
     }
 
-    private void renderBody(MatrixStack poseStack, IRenderTypeBuffer buffer, CelestialBodySimulation.SimulatedBody body)
+    private void renderBody(MatrixStack poseStack, IRenderTypeBuffer buffer, CelestialBodySimulation.SimulatedBody body, float partialTicks)
     {
-        float scale = body.getBody().getScale();
+        float scale = body.getBody().getScale() * 4;
+        poseStack.pushPose();
+        poseStack.translate(MathHelper.lerp(partialTicks, body.getLastPosition().x(), body.getPosition().x()), MathHelper.lerp(partialTicks, body.getLastPosition().y(), body.getPosition().y()), MathHelper.lerp(partialTicks, body.getLastPosition().z(), body.getPosition().z()));
+        poseStack.mulPose(Vector3f.YP.rotationDegrees(MathHelper.lerp(partialTicks, body.getLastRotation(), body.getRotation())));
         poseStack.scale(scale, scale, scale);
-        poseStack.translate(-0.5F, -0.5F, -0.5F);
-        Minecraft.getInstance().getBlockRenderer().renderBlock(Blocks.GRASS_BLOCK.defaultBlockState(), poseStack, buffer, 15728880, OverlayTexture.NO_OVERLAY, EmptyModelData.INSTANCE);
-        poseStack.scale(1F / scale, 1F / scale, 1F / scale);
-
-        poseStack.translate(scale * 1.2F, 0, 0);
-        for (ResourceLocation child : body.getChildren())
-        {
-            this.simulation.getBody(child).ifPresent(b ->
-            {
-                poseStack.pushPose();
-                this.renderBody(poseStack, buffer, b);
-                poseStack.popPose();
-            });
-        }
+        poseStack.translate(-0.25F, -0.25F, -0.25F);
+        CUBE.render(poseStack, SpacePlanetSpriteManager.getSprite(body.getBody().getTexture()).wrap(buffer.getBuffer(RenderType.entitySolid(SpacePlanetSpriteManager.ATLAS_LOCATION))), 15728880, OverlayTexture.NO_OVERLAY);
+        poseStack.popPose();
     }
 
     @Override
@@ -188,15 +187,7 @@ public class SolarSystemWidget extends Widget implements IScreen, NativeResource
 
         matrixStack1.pushPose();
 
-        for (ResourceLocation id : this.simulation.getRootBodies())
-        {
-            this.simulation.getBody(id).ifPresent(b ->
-            {
-                matrixStack1.pushPose();
-                this.renderBody(matrixStack1, buffer, b);
-                matrixStack1.popPose();
-            });
-        }
+        this.simulation.getBodies().forEach(body -> this.renderBody(matrixStack1, buffer, body, partialTicks));
 
 //        matrixStack1.mulPose(Vector3f.YP.rotationDegrees(time));
 //        matrixStack1.translate(-0.5F, -0.5F, -0.5F);
@@ -232,6 +223,24 @@ public class SolarSystemWidget extends Widget implements IScreen, NativeResource
         ShapeRenderer.drawRectWithTexture(poseStack, this.x, this.y, 0, 1, this.width, this.height, 1, -1, 1, 1);
         this.framebuffer.unbindRead();
         poseStack.popPose();
+    }
+
+    @Override
+    public boolean mouseDragged(double mouseX, double mouseY, int mouseButton, double dx, double dy)
+    {
+        return super.mouseDragged(mouseX, mouseY, mouseButton, dx, dy);
+    }
+
+    @Override
+    public boolean mouseClicked(double mouseX, double mouseY, int mouseButton)
+    {
+        return super.mouseClicked(mouseX, mouseY, mouseButton);
+    }
+
+    @Override
+    public boolean mouseScrolled(double mouseX, double mouseY, double amount)
+    {
+        return super.mouseScrolled(mouseX, mouseY, amount);
     }
 
     @Override
