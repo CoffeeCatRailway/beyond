@@ -15,7 +15,7 @@ public class ClientEvents
     @SubscribeEvent
     public static void onEvent(InputEvent.KeyInputEvent event)
     {
-        if (event.getKey() == GLFW.GLFW_KEY_L)
+        if (event.getKey() == GLFW.GLFW_KEY_L && Minecraft.getInstance().screen == null)
         {
             Minecraft.getInstance().setScreen(new SpaceTravelScreen());
         }
