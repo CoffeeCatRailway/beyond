@@ -66,11 +66,11 @@ public class SolarSystemWidget extends Widget implements IScreen, NativeResource
         if (this.skyVBO != null)
             this.skyVBO.close();
 
-        this.skyVBO = new VertexBuffer(DefaultVertexFormats.POSITION);
-        Random random = new Random(10842L);
-        bufferbuilder.begin(7, DefaultVertexFormats.POSITION);
+        this.skyVBO = new VertexBuffer(DefaultVertexFormats.POSITION_COLOR);
+        Random random = new Random();
+        bufferbuilder.begin(7, DefaultVertexFormats.POSITION_COLOR);
 
-        for (int i = 0; i < 1500; ++i)
+        for (int i = 0; i < 3000; ++i)
         {
             double d0 = random.nextFloat() * 2.0F - 1.0F;
             double d1 = random.nextFloat() * 2.0F - 1.0F;
@@ -106,7 +106,8 @@ public class SolarSystemWidget extends Widget implements IScreen, NativeResource
                     double d24 = 0.0D * d12 - d21 * d13;
                     double d25 = d24 * d9 - d22 * d10;
                     double d26 = d22 * d9 + d24 * d10;
-                    bufferbuilder.vertex(d5 + d25, d6 + d23, d7 + d26).endVertex();
+                    float blue = 0.7F + random.nextFloat() * 0.3F;
+                    bufferbuilder.vertex(d5 + d25, d6 + d23, d7 + d26).color(blue, blue, 1.0F, random.nextFloat()).endVertex();
                 }
             }
         }
@@ -173,15 +174,13 @@ public class SolarSystemWidget extends Widget implements IScreen, NativeResource
         matrixStack1.mulPose(Vector3f.XN.rotation(this.camera.getRotationX(partialTicks)));
         matrixStack1.mulPose(Vector3f.YN.rotation(this.camera.getRotationY(partialTicks)));
 
-        matrixStack1.pushPose();
         if (this.skyVBO == null)
             this.generateSky();
         this.skyVBO.bind();
-        DefaultVertexFormats.POSITION.setupBufferState(0L);
+        DefaultVertexFormats.POSITION_COLOR.setupBufferState(0L);
         this.skyVBO.draw(matrixStack1.last().pose(), 7);
         VertexBuffer.unbind();
-        DefaultVertexFormats.POSITION.clearBufferState();
-        matrixStack1.popPose();
+        DefaultVertexFormats.POSITION_COLOR.clearBufferState();
 
         RenderSystem.color4f(1.0F, 1.0F, 1.0F, 1.0F);
         RenderSystem.depthMask(true);
