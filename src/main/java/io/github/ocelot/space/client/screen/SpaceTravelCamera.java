@@ -52,6 +52,7 @@ public class SpaceTravelCamera implements IGuiEventListener
         {
             this.yaw -= dx / 180F;
             this.pitch -= dy / 180F;
+            this.pitch = MathHelper.clamp(this.pitch, -(float) Math.PI / 2F, (float) Math.PI / 2F);
             return true;
         }
         return false;
@@ -67,6 +68,8 @@ public class SpaceTravelCamera implements IGuiEventListener
     public boolean mouseScrolled(double mouseX, double mouseY, double amount)
     {
         this.zoom += amount * 4.0F;
+        if (this.zoom > 0)
+            this.zoom = 0;
         return true;
     }
 
@@ -77,17 +80,20 @@ public class SpaceTravelCamera implements IGuiEventListener
 
     public void setPitch(float pitch)
     {
-        this.pitch = pitch;
+        this.lastPitch = -pitch;
+        this.pitch = -pitch;
     }
 
     public void setYaw(float yaw)
     {
-        this.yaw = yaw;
+        this.lastYaw = -yaw;
+        this.yaw = -yaw;
     }
 
     public void setZoom(float zoom)
     {
-        this.zoom = zoom;
+        this.lastZoom = -zoom;
+        this.zoom = -zoom;
     }
 
     public float getX(float partialTicks)
@@ -97,7 +103,7 @@ public class SpaceTravelCamera implements IGuiEventListener
 
     public float getY(float partialTicks)
     {
-        return MathHelper.lerp(partialTicks, this.lastAnchorPos.z(), this.anchorPos.z()) + this.getVerticalDistance(partialTicks);
+        return MathHelper.lerp(partialTicks, this.lastAnchorPos.y(), this.anchorPos.y()) + this.getVerticalDistance(partialTicks);
     }
 
     public float getZ(float partialTicks)

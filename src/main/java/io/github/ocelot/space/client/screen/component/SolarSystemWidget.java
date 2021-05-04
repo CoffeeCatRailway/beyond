@@ -21,7 +21,6 @@ import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
 import net.minecraft.client.renderer.vertex.VertexBuffer;
 import net.minecraft.client.shader.Framebuffer;
-import net.minecraft.util.math.MathHelper;
 import net.minecraft.util.math.vector.Matrix4f;
 import net.minecraft.util.math.vector.Vector3f;
 import net.minecraft.util.text.StringTextComponent;
@@ -55,6 +54,8 @@ public class SolarSystemWidget extends Widget implements IScreen, NativeResource
         super(x, y, width, height, new StringTextComponent(""));
         this.simulation = new CelestialBodySimulation(CelestialBodyDefinitions.SOLAR_SYSTEM);
         this.camera = new SpaceTravelCamera();
+        this.camera.setZoom(80);
+        this.camera.setPitch((float) (24F * Math.PI / 180F));
     }
 
     private void generateSky()
@@ -116,8 +117,8 @@ public class SolarSystemWidget extends Widget implements IScreen, NativeResource
     {
         float scale = body.getBody().getScale() * 4;
         poseStack.pushPose();
-        poseStack.translate(MathHelper.lerp(partialTicks, body.getLastPosition().x(), body.getPosition().x()), MathHelper.lerp(partialTicks, body.getLastPosition().y(), body.getPosition().y()), MathHelper.lerp(partialTicks, body.getLastPosition().z(), body.getPosition().z()));
-//        poseStack.mulPose(Vector3f.YP.rotationDegrees(MathHelper.lerp(partialTicks, body.getLastRotation(), body.getRotation())));
+        poseStack.translate(body.getX(partialTicks), body.getY(partialTicks), body.getZ(partialTicks));
+        poseStack.mulPose(Vector3f.YP.rotation(body.getRotation(partialTicks)));
         poseStack.scale(scale, scale, scale);
         poseStack.translate(-0.25F, -0.25F, -0.25F);
         CUBE.render(poseStack, SpacePlanetSpriteManager.getSprite(body.getBody().getTexture()).wrap(buffer.getBuffer(body.getBody().isShade() ? SpaceRenderTypes.planetShade() : SpaceRenderTypes.planet())), 15728880, OverlayTexture.NO_OVERLAY);
@@ -154,7 +155,7 @@ public class SolarSystemWidget extends Widget implements IScreen, NativeResource
         RenderSystem.matrixMode(GL_PROJECTION);
         RenderSystem.pushMatrix();
         RenderSystem.loadIdentity();
-        RenderSystem.multMatrix(Matrix4f.perspective(70, (float) this.width / (float) this.height, 0.3F, 400F));
+        RenderSystem.multMatrix(Matrix4f.perspective(70, (float) this.width / (float) this.height, 0.3F, 10000.0F));
         RenderSystem.matrixMode(GL_MODELVIEW);
         RenderSystem.pushMatrix();
         RenderSystem.loadIdentity();
@@ -188,29 +189,14 @@ public class SolarSystemWidget extends Widget implements IScreen, NativeResource
         IRenderTypeBuffer.Impl buffer = Minecraft.getInstance().renderBuffers().bufferSource();
         RenderSystem.enableLighting();
         RenderHelper.setupLevel(matrixStack1.last().pose());
+        RenderSystem.disableLighting();
 
         matrixStack1.translate(-this.camera.getX(partialTicks), -this.camera.getY(partialTicks), -this.camera.getZ(partialTicks));
 
         matrixStack1.pushPose();
-
         this.simulation.getBodies().forEach(body -> this.renderBody(matrixStack1, buffer, body, partialTicks));
-
-//        matrixStack1.mulPose(Vector3f.YP.rotationDegrees(time));
-//        matrixStack1.translate(-0.5F, -0.5F, -0.5F);
-//        Minecraft.getInstance().getBlockRenderer().renderBlock(Blocks.CAKE.defaultBlockState(), matrixStack1, buffer, 15728880, OverlayTexture.NO_OVERLAY, EmptyModelData.INSTANCE);
-
-//        matrixStack1.pushPose();
-//        matrixStack1.translate(0.5F, 0.5F, 0.5F);
-//        matrixStack1.mulPose(Vector3f.YP.rotationDegrees(time * 3F));
-//        matrixStack1.translate(-0.5F, -0.5F, -0.5F);
-//        matrixStack1.translate(2, 0, 0);
-//        matrixStack1.scale(0.25F, 0.25F, 0.25F);
-//        Minecraft.getInstance().getBlockRenderer().renderBlock(Blocks.SPONGE.defaultBlockState(), matrixStack1, buffer, 15728880, OverlayTexture.NO_OVERLAY, EmptyModelData.INSTANCE);
-//        matrixStack1.popPose();
-
         matrixStack1.popPose();
 
-        RenderSystem.disableLighting();
         buffer.endBatch();
 
         RenderSystem.matrixMode(GL_PROJECTION);
