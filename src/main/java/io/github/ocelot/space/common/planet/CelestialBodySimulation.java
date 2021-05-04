@@ -36,9 +36,17 @@ public class CelestialBodySimulation
         {
             SimulatedBody body = unvisitedBodies.remove(0);
             Optional<SimulatedBody> optionalParent = body.getBody().getParent().map(this.bodies::get);
-            if (!optionalParent.isPresent() || !unvisitedBodies.contains(optionalParent.get()) || initializedBodies.contains(optionalParent.get()))
+            if (!optionalParent.isPresent() || !unvisitedBodies.contains(optionalParent.get()))
             {
+                if (optionalParent.isPresent())
+                    body.randomizeDistance();
                 body.move();
+            }
+            else if (initializedBodies.contains(optionalParent.get()))
+            {
+                body.randomizeDistance();
+                body.move();
+                body.root = true;
             }
             else
             {
@@ -46,8 +54,6 @@ public class CelestialBodySimulation
             }
             initializedBodies.add(body);
         }
-
-        // TODO set all bodies to initial positions
     }
 
     public Stream<SimulatedBody> getBodies()
@@ -72,6 +78,7 @@ public class CelestialBodySimulation
         private float lastRotation;
         private float rotation;
         private float distanceFromParent;
+        private boolean root;
 
         public SimulatedBody(CelestialBodySimulation simulation, CelestialBody body)
         {
@@ -83,7 +90,8 @@ public class CelestialBodySimulation
             this.yaw = this.lastYaw;
             this.lastRotation = (float) (simulation.random.nextFloat() * Math.PI * 2);
             this.rotation = this.lastRotation;
-            this.distanceFromParent = 20;
+            this.distanceFromParent = 0;
+            this.root = false;
         }
 
         private void tick()
@@ -92,7 +100,7 @@ public class CelestialBodySimulation
             this.lastYaw = this.yaw;
             this.lastRotation = this.rotation;
             this.rotation += 1F / 180F * Math.PI;
-            this.yaw += 0.01F / this.body.getScale();
+            this.yaw += 0.01F / MathHelper.sqrt(this.body.getScale());
         }
 
         private void move()
@@ -104,7 +112,15 @@ public class CelestialBodySimulation
             SimulatedBody parent = optional.get();
             this.position.setX(parent.lastPosition.x() + this.distanceFromParent * MathHelper.cos(this.yaw));
             this.position.setZ(parent.lastPosition.z() + this.distanceFromParent * MathHelper.sin(this.yaw));
-            this.distanceFromParent = parent.getBody().getScale() * 5F;
+        }
+
+        private void randomizeDistance()
+        {
+            Optional<SimulatedBody> optional = this.body.getParent().map(this.simulation.bodies::get);
+            if (!optional.isPresent())
+                return;
+            float scale = optional.get().getBody().getScale();
+            this.distanceFromParent = (float) (this.simulation.random.nextGaussian() * scale * 0.25F + scale * 5F);
         }
 
         private float getHorizontalDistance(float partialTicks)
@@ -124,6 +140,8 @@ public class CelestialBodySimulation
 
         public float getX(float partialTicks)
         {
+            if (this.root)
+                return 0F;
             Optional<SimulatedBody> optional = this.body.getParent().map(this.simulation.bodies::get);
             return optional.map(simulatedBody -> simulatedBody.getX(partialTicks) + this.getHorizontalDistance(partialTicks)).orElse(0F);
         }
@@ -135,6 +153,8 @@ public class CelestialBodySimulation
 
         public float getZ(float partialTicks)
         {
+            if (this.root)
+                return 0F;
             Optional<SimulatedBody> optional = this.body.getParent().map(this.simulation.bodies::get);
             return optional.map(simulatedBody -> simulatedBody.getZ(partialTicks) + this.getVerticalDistance(partialTicks)).orElse(0F);
         }
