@@ -10,7 +10,6 @@ import io.github.ocelot.space.client.screen.SpaceTravelCamera;
 import io.github.ocelot.space.common.init.SpaceRenderTypes;
 import io.github.ocelot.space.common.planet.CelestialBodyDefinitions;
 import io.github.ocelot.space.common.planet.CelestialBodySimulation;
-import net.minecraft.block.Blocks;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screen.IScreen;
 import net.minecraft.client.gui.widget.Widget;
@@ -27,10 +26,8 @@ import net.minecraft.util.math.vector.Matrix4f;
 import net.minecraft.util.math.vector.Vector3d;
 import net.minecraft.util.math.vector.Vector3f;
 import net.minecraft.util.text.StringTextComponent;
-import net.minecraftforge.client.model.data.EmptyModelData;
 import org.lwjgl.system.NativeResource;
 
-import java.util.Optional;
 import java.util.Random;
 
 import static org.lwjgl.opengl.GL11.*;
@@ -51,17 +48,19 @@ public class SolarSystemWidget extends Widget implements IScreen, NativeResource
 
     private final CelestialBodySimulation simulation;
     private final SpaceTravelCamera camera;
+    private Matrix4f projectionMatrix;
+    private Matrix4f viewMatrix;
     private Framebuffer framebuffer;
     private VertexBuffer skyVBO;
 
     public SolarSystemWidget(int x, int y, int width, int height)
     {
-        super(x, y, width, height, new StringTextComponent(""));
+        super(x, y, width, height, StringTextComponent.EMPTY);
 
         this.simulation = new CelestialBodySimulation(CelestialBodyDefinitions.SOLAR_SYSTEM);
         this.camera = new SpaceTravelCamera();
-//        this.camera.setZoom(80);
-//        this.camera.setPitch((float) (24F * Math.PI / 180F));
+        this.camera.setZoom(80);
+        this.camera.setPitch((float) (24F * Math.PI / 180F));
     }
 
     private void generateSky()
@@ -162,8 +161,7 @@ public class SolarSystemWidget extends Widget implements IScreen, NativeResource
         RenderSystem.matrixMode(GL_PROJECTION);
         RenderSystem.pushMatrix();
         RenderSystem.loadIdentity();
-        Matrix4f projectionMatrix = Matrix4f.perspective(70, (float) this.width / (float) this.height, 0.3F, 10000.0F);
-        RenderSystem.multMatrix(projectionMatrix);
+        RenderSystem.multMatrix(this.projectionMatrix = Matrix4f.perspective(70, (float) this.width / (float) this.height, 0.3F, 10000.0F));
         RenderSystem.matrixMode(GL_MODELVIEW);
         RenderSystem.pushMatrix();
         RenderSystem.loadIdentity();
@@ -204,11 +202,7 @@ public class SolarSystemWidget extends Widget implements IScreen, NativeResource
         float cameraZ = this.camera.getZ(partialTicks);
         matrixStack1.translate(-cameraX, -cameraY, -cameraZ);
 
-        MatrixStack viewStack = new MatrixStack();
-        viewStack.mulPose(Vector3f.XN.rotation(cameraRotationX));
-        viewStack.mulPose(Vector3f.YN.rotation(cameraRotationY));
-        viewStack.translate(-cameraX, -cameraY, -cameraZ);
-        Matrix4f viewMatrix = viewStack.last().pose().copy();
+        this.viewMatrix = matrixStack1.last().pose().copy();
 
         matrixStack1.pushPose();
         this.simulation.getBodies().forEach(body -> this.renderBody(matrixStack1, buffer, body, partialTicks));
@@ -216,20 +210,21 @@ public class SolarSystemWidget extends Widget implements IScreen, NativeResource
 
         buffer.endBatch();
 
-        Vector3d ray = MousePicker.getRay(projectionMatrix, viewMatrix, (float) (mouseX - this.x) / (float) this.width * 2F - 1F, (float) (mouseY - this.y) / (float) this.height * 2F - 1F);
-        Vector3d start = new Vector3d(cameraX, cameraY, cameraZ);
-        Vector3d end = start.add(ray.multiply(1000, 1000, 1000));
-        Optional<Vector3d> pos = this.simulation.clip(start, end, partialTicks);
-
-        pos.ifPresent(p ->
-        {
-            matrixStack1.pushPose();
-            matrixStack1.translate(p.x() - 1, p.y() - 1, p.z() - 1);
-            matrixStack1.scale(2, 2, 2);
-            Minecraft.getInstance().getBlockRenderer().renderBlock(Blocks.DIAMOND_BLOCK.defaultBlockState(), matrixStack1, buffer, 15728880, OverlayTexture.NO_OVERLAY, EmptyModelData.INSTANCE);
-            matrixStack1.popPose();
-            buffer.endBatch();
-        });
+//        Vector3d ray = MousePicker.getRay(this.projectionMatrix, this.viewMatrix, (float) (mouseX - this.x) / (float) this.width * 2F - 1F, (float) (mouseY - this.y) / (float) this.height * 2F - 1F);
+//        Vector3d start = new Vector3d(cameraX, cameraY, cameraZ);
+//        Vector3d end = start.add(ray.multiply(1000, 1000, 1000));
+//        Optional<CelestialBodySimulation.CelestialBodyRayTraceResult> resultOptional = this.simulation.clip(start, end, partialTicks);
+//
+//        resultOptional.ifPresent(result ->
+//        {
+//            Vector3d pos = result.getPos();
+//            matrixStack1.pushPose();
+//            matrixStack1.translate(pos.x() - 1, pos.y() - 1, pos.z() - 1);
+//            matrixStack1.scale(2, 2, 2);
+//            Minecraft.getInstance().getBlockRenderer().renderBlock(Blocks.DIAMOND_BLOCK.defaultBlockState(), matrixStack1, buffer, 15728880, OverlayTexture.NO_OVERLAY, EmptyModelData.INSTANCE);
+//            matrixStack1.popPose();
+//            buffer.endBatch();
+//        });
 
         RenderSystem.matrixMode(GL_PROJECTION);
         RenderSystem.popMatrix();
@@ -258,13 +253,31 @@ public class SolarSystemWidget extends Widget implements IScreen, NativeResource
     @Override
     public boolean mouseClicked(double mouseX, double mouseY, int mouseButton)
     {
-        return this.isHovered() && this.camera.mouseClicked(mouseX, mouseY, mouseButton);
+        if (!this.isHovered())
+            return false;
+        if (this.camera.mouseClicked(mouseX, mouseY, mouseButton))
+            return true;
+        if (mouseButton == 0)
+        {
+            Vector3d ray = MousePicker.getRay(this.projectionMatrix, this.viewMatrix, (float) (mouseX - this.x) / (float) this.width * 2F - 1F, (float) (mouseY - this.y) / (float) this.height * 2F - 1F);
+            Vector3d start = new Vector3d(this.camera.getX(1.0F), this.camera.getY(1.0F), this.camera.getZ(1.0F));
+            Vector3d end = start.add(ray.multiply(1000, 1000, 1000));
+
+            return this.simulation.clip(start, end, 1.0F).map(result ->
+            {
+                this.camera.setFocused(result.getBody());
+                return true;
+            }).orElse(false);
+        }
+        return false;
     }
 
     @Override
     public boolean mouseScrolled(double mouseX, double mouseY, double amount)
     {
-        return this.isHovered() && this.camera.mouseScrolled(mouseX, mouseY, amount);
+        if (!this.isHovered())
+            return false;
+        return this.camera.mouseScrolled(mouseX, mouseY, amount);
     }
 
     @Override

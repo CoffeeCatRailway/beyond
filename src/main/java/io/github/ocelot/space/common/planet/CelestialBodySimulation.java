@@ -9,6 +9,11 @@ import net.minecraft.util.math.vector.Vector3f;
 import java.util.*;
 import java.util.stream.Stream;
 
+/**
+ * <p>Simulates the solar system based on rotations around bodies.</p>
+ *
+ * @author Ocelot
+ */
 public class CelestialBodySimulation
 {
     private final Map<ResourceLocation, SimulatedBody> bodies;
@@ -28,7 +33,7 @@ public class CelestialBodySimulation
                 if (!bodies.containsKey(parent))
                     continue;
             }
-            this.bodies.put(entry.getKey(), new SimulatedBody(this, body));
+            this.bodies.put(entry.getKey(), new SimulatedBody(this, entry.getKey(), body));
         }
 
         Set<SimulatedBody> initializedBodies = new HashSet<>();
@@ -58,27 +63,34 @@ public class CelestialBodySimulation
         }
     }
 
+    /**
+     * Steps through the simulation.
+     */
     public void tick()
     {
         this.bodies.values().forEach(SimulatedBody::move);
         this.bodies.values().forEach(SimulatedBody::tick);
     }
 
+    /**
+     * @return All bodies in the simulation
+     */
     public Stream<SimulatedBody> getBodies()
     {
         return this.bodies.values().stream();
     }
 
     /**
-     * Casts a ray through the simulation to calculate an intersection with a celesial body.
+     * Casts a ray through the simulation to check for an intersection with a celestial body.
      *
      * @param start        The starting position of the ray
      * @param end          The ending position of the ray
      * @param partialTicks The percentage from last update and this update
      * @return The optional result of the ray trace
      */
-    public Optional<Vector3d> clip(Vector3d start, Vector3d end, float partialTicks)
+    public Optional<CelestialBodyRayTraceResult> clip(Vector3d start, Vector3d end, float partialTicks)
     {
+        SimulatedBody resultBody = null;
         Vector3d result = null;
         double resultDistanceSq = Double.MAX_VALUE;
         for (SimulatedBody body : this.bodies.values())
@@ -90,11 +102,12 @@ public class CelestialBodySimulation
             double bodyResultDistanceSq = start.distanceToSqr(bodyResult.get());
             if (bodyResultDistanceSq < resultDistanceSq)
             {
+                resultBody = body;
                 result = bodyResult.get();
                 resultDistanceSq = bodyResultDistanceSq;
             }
         }
-        return Optional.ofNullable(result);
+        return resultBody != null ? Optional.of(new CelestialBodyRayTraceResult(resultBody, result)) : Optional.empty();
     }
 
     /**
@@ -105,6 +118,7 @@ public class CelestialBodySimulation
     public static class SimulatedBody
     {
         private final CelestialBodySimulation simulation;
+        private final ResourceLocation id;
         private final CelestialBody body;
         private final Vector3f lastPosition;
         private final Vector3f position;
@@ -115,9 +129,10 @@ public class CelestialBodySimulation
         private float distanceFromParent;
         private boolean root;
 
-        public SimulatedBody(CelestialBodySimulation simulation, CelestialBody body)
+        public SimulatedBody(CelestialBodySimulation simulation, ResourceLocation id, CelestialBody body)
         {
             this.simulation = simulation;
+            this.id = id;
             this.body = body;
             this.lastPosition = new Vector3f();
             this.position = new Vector3f();
@@ -168,11 +183,30 @@ public class CelestialBodySimulation
             return this.distanceFromParent * MathHelper.sin(MathHelper.lerp(partialTicks, this.lastYaw, this.yaw));
         }
 
+        /**
+         * @return The id of this body in the simulation
+         */
+        public ResourceLocation getId()
+        {
+            return id;
+        }
+
+        /**
+         * @return The attributes of this body in the simulation
+         */
         public CelestialBody getBody()
         {
             return body;
         }
 
+        /**
+         * Casts a ray through this body to check for an intersection.
+         *
+         * @param start        The starting position of the ray
+         * @param end          The ending position of the ray
+         * @param partialTicks The percentage from last update and this update
+         * @return The optional result of the ray trace
+         */
         public Optional<Vector3d> clip(Vector3d start, Vector3d end, float partialTicks)
         {
             float size = this.body.getScale();
@@ -184,26 +218,83 @@ public class CelestialBodySimulation
             return box.clip(rotate(start, rotation, x, z), rotate(end, rotation, x, z)).map(p -> rotate(p, -rotation, x, z));
         }
 
+        /**
+         * Calculates the x position of this body.
+         *
+         * @param partialTicks The percentage from last tick and this tick
+         * @return The x position of this body
+         */
         public float getX(float partialTicks)
         {
             Optional<SimulatedBody> optional = this.body.getParent().map(this.simulation.bodies::get);
             return optional.map(simulatedBody -> (this.root ? 0 : simulatedBody.getX(partialTicks)) + this.getHorizontalDistance(partialTicks)).orElse(0F);
         }
 
+        /**
+         * Calculates the y position of this body.
+         *
+         * @param partialTicks The percentage from last tick and this tick
+         * @return The y position of this body
+         */
         public float getY(float partialTicks)
         {
             return this.position.y();
         }
 
+        /**
+         * Calculates the z position of this body.
+         *
+         * @param partialTicks The percentage from last tick and this tick
+         * @return The z position of this body
+         */
         public float getZ(float partialTicks)
         {
             Optional<SimulatedBody> optional = this.body.getParent().map(this.simulation.bodies::get);
             return optional.map(simulatedBody -> (this.root ? 0 : simulatedBody.getZ(partialTicks)) + this.getVerticalDistance(partialTicks)).orElse(0F);
         }
 
+        /**
+         * Calculates the rotation of this body.
+         *
+         * @param partialTicks The percentage from last tick and this tick
+         * @return The y rotation of this body
+         */
         public float getRotation(float partialTicks)
         {
             return MathHelper.lerp(partialTicks, this.lastRotation, this.rotation);
+        }
+    }
+
+    /**
+     * <p>Holds the result of a ray trace in a simulation.</p>
+     *
+     * @author Ocelot
+     */
+    public static class CelestialBodyRayTraceResult
+    {
+        private final SimulatedBody body;
+        private final Vector3d pos;
+
+        public CelestialBodyRayTraceResult(SimulatedBody body, Vector3d pos)
+        {
+            this.body = body;
+            this.pos = pos;
+        }
+
+        /**
+         * @return The body hit
+         */
+        public SimulatedBody getBody()
+        {
+            return body;
+        }
+
+        /**
+         * @return The specific position the hit was at
+         */
+        public Vector3d getPos()
+        {
+            return pos;
         }
     }
 

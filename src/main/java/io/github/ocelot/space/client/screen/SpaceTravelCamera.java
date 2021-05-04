@@ -1,8 +1,11 @@
 package io.github.ocelot.space.client.screen;
 
+import io.github.ocelot.space.common.planet.CelestialBodySimulation;
 import net.minecraft.client.gui.IGuiEventListener;
 import net.minecraft.util.math.MathHelper;
 import net.minecraft.util.math.vector.Vector3f;
+
+import javax.annotation.Nullable;
 
 public class SpaceTravelCamera implements IGuiEventListener
 {
@@ -14,6 +17,7 @@ public class SpaceTravelCamera implements IGuiEventListener
     private float yaw;
     private float lastZoom;
     private float zoom;
+    private CelestialBodySimulation.SimulatedBody focused;
 
     public SpaceTravelCamera()
     {
@@ -25,6 +29,7 @@ public class SpaceTravelCamera implements IGuiEventListener
         this.yaw = 0;
         this.lastZoom = 0;
         this.zoom = 0;
+        this.focused = null;
     }
 
     public void tick()
@@ -73,6 +78,34 @@ public class SpaceTravelCamera implements IGuiEventListener
         return true;
     }
 
+    public float getX(float partialTicks)
+    {
+        float anchorX = this.focused != null ? this.focused.getX(partialTicks) : MathHelper.lerp(partialTicks, this.lastAnchorPos.x(), this.anchorPos.x());
+        return anchorX - this.getHorizontalDistance(partialTicks) * MathHelper.sin(MathHelper.lerp(partialTicks, this.lastYaw, this.yaw));
+    }
+
+    public float getY(float partialTicks)
+    {
+        float anchorY = this.focused != null ? this.focused.getY(partialTicks) : MathHelper.lerp(partialTicks, this.lastAnchorPos.y(), this.anchorPos.y());
+        return anchorY + this.getVerticalDistance(partialTicks);
+    }
+
+    public float getZ(float partialTicks)
+    {
+        float anchorZ = this.focused != null ? this.focused.getZ(partialTicks) : MathHelper.lerp(partialTicks, this.lastAnchorPos.z(), this.anchorPos.z());
+        return anchorZ - this.getHorizontalDistance(partialTicks) * MathHelper.cos(MathHelper.lerp(partialTicks, this.lastYaw, this.yaw));
+    }
+
+    public float getRotationX(float partialTicks)
+    {
+        return MathHelper.lerp(partialTicks, this.lastPitch, this.pitch);
+    }
+
+    public float getRotationY(float partialTicks)
+    {
+        return MathHelper.lerp(partialTicks, this.lastYaw, this.yaw);
+    }
+
     public void setPosition(float x, float y, float z)
     {
         this.anchorPos.set(x, y, z);
@@ -96,28 +129,14 @@ public class SpaceTravelCamera implements IGuiEventListener
         this.zoom = -zoom;
     }
 
-    public float getX(float partialTicks)
+    /**
+     * Sets the body the camera should follow or <code>null</code> to switch back to the local anchor.
+     *
+     * @param focused The body to focus onto
+     */
+    // TODO add animation
+    public void setFocused(@Nullable CelestialBodySimulation.SimulatedBody focused)
     {
-        return MathHelper.lerp(partialTicks, this.lastAnchorPos.x(), this.anchorPos.x()) - this.getHorizontalDistance(partialTicks) * MathHelper.sin(MathHelper.lerp(partialTicks, this.lastYaw, this.yaw));
-    }
-
-    public float getY(float partialTicks)
-    {
-        return MathHelper.lerp(partialTicks, this.lastAnchorPos.y(), this.anchorPos.y()) + this.getVerticalDistance(partialTicks);
-    }
-
-    public float getZ(float partialTicks)
-    {
-        return MathHelper.lerp(partialTicks, this.lastAnchorPos.z(), this.anchorPos.z()) - this.getHorizontalDistance(partialTicks) * MathHelper.cos(MathHelper.lerp(partialTicks, this.lastYaw, this.yaw));
-    }
-
-    public float getRotationX(float partialTicks)
-    {
-        return MathHelper.lerp(partialTicks, this.lastPitch, this.pitch);
-    }
-
-    public float getRotationY(float partialTicks)
-    {
-        return MathHelper.lerp(partialTicks, this.lastYaw, this.yaw);
+        this.focused = focused;
     }
 }
