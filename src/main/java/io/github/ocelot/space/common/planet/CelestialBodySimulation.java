@@ -123,8 +123,8 @@ public class CelestialBodySimulation
             this.position = new Vector3f();
             this.lastYaw = (float) (simulation.random.nextFloat() * Math.PI * 2);
             this.yaw = this.lastYaw;
-//            this.lastRotation = (float) (simulation.random.nextFloat() * Math.PI * 2);
-//            this.rotation = this.lastRotation;
+            this.lastRotation = (float) (simulation.random.nextFloat() * Math.PI * 2);
+            this.rotation = this.lastRotation;
             this.distanceFromParent = 0;
             this.root = false;
         }
@@ -134,7 +134,7 @@ public class CelestialBodySimulation
             this.lastPosition.set(this.position.x(), this.position.y(), this.position.z());
             this.lastYaw = this.yaw;
             this.lastRotation = this.rotation;
-//            this.rotation += 1F / 180F * Math.PI;
+            this.rotation += 1F / 180F * Math.PI;
             this.yaw += 0.01F / this.body.getScale();
         }
 
@@ -179,9 +179,9 @@ public class CelestialBodySimulation
             float x = this.getX(partialTicks);
             float y = this.getY(partialTicks);
             float z = this.getZ(partialTicks);
+            float rotation = this.getRotation(partialTicks);
             AxisAlignedBB box = new AxisAlignedBB(x - size, y - size, z - size, x + size, y + size, z + size);
-//            return box.clip(rotate(start, -this.rotation), rotate(end, -this.rotation)).map(p -> rotate(p, this.rotation));
-            return box.clip(start, end);
+            return box.clip(rotate(start, rotation, x, z), rotate(end, rotation, x, z)).map(p -> rotate(p, -rotation, x, z));
         }
 
         public float getX(float partialTicks)
@@ -207,12 +207,12 @@ public class CelestialBodySimulation
         }
     }
 
-    private static Vector3d rotate(Vector3d pos, double angle)
+    private static Vector3d rotate(Vector3d pos, double angle, double rotX, double rotZ)
     {
         float cos = MathHelper.cos((float) angle);
         float sin = MathHelper.sin((float) angle);
-        double x = 0.5D + (pos.x - 0.5D) * (double) cos - (pos.z - 0.5D) * (double) sin;
-        double z = 0.5D + (pos.x - 0.5D) * (double) sin + (pos.z - 0.5D) * (double) cos;
+        double x = rotX + (pos.x - rotX) * (double) cos - (pos.z - rotZ) * (double) sin;
+        double z = rotZ + (pos.x - rotX) * (double) sin + (pos.z - rotZ) * (double) cos;
         return new Vector3d(x, pos.y, z);
     }
 }
