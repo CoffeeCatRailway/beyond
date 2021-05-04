@@ -48,8 +48,7 @@ public class SolarSystemWidget extends Widget implements IScreen, NativeResource
 
     private final CelestialBodySimulation simulation;
     private final SpaceTravelCamera camera;
-    private Matrix4f projectionMatrix;
-    private Matrix4f viewMatrix;
+    private CelestialBodySimulation.CelestialBodyRayTraceResult hoveredBody;
     private Framebuffer framebuffer;
     private VertexBuffer skyVBO;
 
@@ -122,12 +121,15 @@ public class SolarSystemWidget extends Widget implements IScreen, NativeResource
     private void renderBody(MatrixStack poseStack, IRenderTypeBuffer buffer, CelestialBodySimulation.SimulatedBody body, float partialTicks)
     {
         float scale = body.getBody().getScale() * 4;
+        boolean hovered = this.hoveredBody != null && this.hoveredBody.getBody().equals(body);
         poseStack.pushPose();
         poseStack.translate(body.getX(partialTicks), body.getY(partialTicks), body.getZ(partialTicks));
         poseStack.mulPose(Vector3f.YP.rotation(body.getRotation(partialTicks)));
         poseStack.scale(scale, scale, scale);
         poseStack.translate(-0.25F, -0.25F, -0.25F);
         CUBE.render(poseStack, SpacePlanetSpriteManager.getSprite(body.getBody().getTexture()).wrap(buffer.getBuffer(body.getBody().isShade() ? SpaceRenderTypes.planetShade() : SpaceRenderTypes.planet())), 15728880, OverlayTexture.NO_OVERLAY);
+        if (hovered)
+            CUBE.render(poseStack, buffer.getBuffer(SpaceRenderTypes.planetSelect()), 15728880, OverlayTexture.NO_OVERLAY, 1.0F, 1.0F, 1.0F, 0.5F);
         poseStack.popPose();
     }
 
@@ -161,7 +163,8 @@ public class SolarSystemWidget extends Widget implements IScreen, NativeResource
         RenderSystem.matrixMode(GL_PROJECTION);
         RenderSystem.pushMatrix();
         RenderSystem.loadIdentity();
-        RenderSystem.multMatrix(this.projectionMatrix = Matrix4f.perspective(70, (float) this.width / (float) this.height, 0.3F, 10000.0F));
+        Matrix4f projectionMatrix = Matrix4f.perspective(70, (float) this.width / (float) this.height, 0.3F, 10000.0F);
+        RenderSystem.multMatrix(projectionMatrix);
         RenderSystem.matrixMode(GL_MODELVIEW);
         RenderSystem.pushMatrix();
         RenderSystem.loadIdentity();
@@ -202,29 +205,17 @@ public class SolarSystemWidget extends Widget implements IScreen, NativeResource
         float cameraZ = this.camera.getZ(partialTicks);
         matrixStack1.translate(-cameraX, -cameraY, -cameraZ);
 
-        this.viewMatrix = matrixStack1.last().pose().copy();
+        Matrix4f viewMatrix = matrixStack1.last().pose().copy();
+        Vector3d ray = MousePicker.getRay(projectionMatrix, viewMatrix, (float) (mouseX - this.x) / (float) this.width * 2F - 1F, (float) (mouseY - this.y) / (float) this.height * 2F - 1F);
+        Vector3d start = new Vector3d(cameraX, cameraY, cameraZ);
+        Vector3d end = start.add(ray.multiply(1000, 1000, 1000));
+        this.hoveredBody = this.simulation.clip(start, end, partialTicks).orElse(null);
 
         matrixStack1.pushPose();
         this.simulation.getBodies().forEach(body -> this.renderBody(matrixStack1, buffer, body, partialTicks));
         matrixStack1.popPose();
 
         buffer.endBatch();
-
-//        Vector3d ray = MousePicker.getRay(this.projectionMatrix, this.viewMatrix, (float) (mouseX - this.x) / (float) this.width * 2F - 1F, (float) (mouseY - this.y) / (float) this.height * 2F - 1F);
-//        Vector3d start = new Vector3d(cameraX, cameraY, cameraZ);
-//        Vector3d end = start.add(ray.multiply(1000, 1000, 1000));
-//        Optional<CelestialBodySimulation.CelestialBodyRayTraceResult> resultOptional = this.simulation.clip(start, end, partialTicks);
-//
-//        resultOptional.ifPresent(result ->
-//        {
-//            Vector3d pos = result.getPos();
-//            matrixStack1.pushPose();
-//            matrixStack1.translate(pos.x() - 1, pos.y() - 1, pos.z() - 1);
-//            matrixStack1.scale(2, 2, 2);
-//            Minecraft.getInstance().getBlockRenderer().renderBlock(Blocks.DIAMOND_BLOCK.defaultBlockState(), matrixStack1, buffer, 15728880, OverlayTexture.NO_OVERLAY, EmptyModelData.INSTANCE);
-//            matrixStack1.popPose();
-//            buffer.endBatch();
-//        });
 
         RenderSystem.matrixMode(GL_PROJECTION);
         RenderSystem.popMatrix();
@@ -257,17 +248,10 @@ public class SolarSystemWidget extends Widget implements IScreen, NativeResource
             return false;
         if (this.camera.mouseClicked(mouseX, mouseY, mouseButton))
             return true;
-        if (mouseButton == 0)
+        if (this.hoveredBody != null && mouseButton == 0)
         {
-            Vector3d ray = MousePicker.getRay(this.projectionMatrix, this.viewMatrix, (float) (mouseX - this.x) / (float) this.width * 2F - 1F, (float) (mouseY - this.y) / (float) this.height * 2F - 1F);
-            Vector3d start = new Vector3d(this.camera.getX(1.0F), this.camera.getY(1.0F), this.camera.getZ(1.0F));
-            Vector3d end = start.add(ray.multiply(1000, 1000, 1000));
-
-            return this.simulation.clip(start, end, 1.0F).map(result ->
-            {
-                this.camera.setFocused(result.getBody());
-                return true;
-            }).orElse(false);
+            this.camera.setFocused(this.hoveredBody.getBody());
+            return true;
         }
         return false;
     }
