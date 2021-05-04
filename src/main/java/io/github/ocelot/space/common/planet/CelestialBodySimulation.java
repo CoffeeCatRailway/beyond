@@ -100,7 +100,7 @@ public class CelestialBodySimulation
             this.lastYaw = this.yaw;
             this.lastRotation = this.rotation;
             this.rotation += 1F / 180F * Math.PI;
-            this.yaw += 0.01F / MathHelper.sqrt(this.body.getScale());
+            this.yaw += 0.01F / this.body.getScale();
         }
 
         private void move()
