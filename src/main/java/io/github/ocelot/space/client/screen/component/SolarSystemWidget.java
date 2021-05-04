@@ -70,7 +70,7 @@ public class SolarSystemWidget extends Widget implements IScreen, NativeResource
             this.skyVBO.close();
 
         this.skyVBO = new VertexBuffer(DefaultVertexFormats.POSITION_COLOR);
-        Random random = new Random();
+        Random random = new Random(10842L);
         bufferbuilder.begin(7, DefaultVertexFormats.POSITION_COLOR);
 
         for (int i = 0; i < 3000; ++i)
