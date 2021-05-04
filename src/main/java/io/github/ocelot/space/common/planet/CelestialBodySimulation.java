@@ -1,7 +1,9 @@
 package io.github.ocelot.space.common.planet;
 
 import net.minecraft.util.ResourceLocation;
+import net.minecraft.util.math.AxisAlignedBB;
 import net.minecraft.util.math.MathHelper;
+import net.minecraft.util.math.vector.Vector3d;
 import net.minecraft.util.math.vector.Vector3f;
 
 import java.util.*;
@@ -56,15 +58,26 @@ public class CelestialBodySimulation
         }
     }
 
+    public void tick()
+    {
+        this.bodies.values().forEach(SimulatedBody::move);
+        this.bodies.values().forEach(SimulatedBody::tick);
+    }
+
     public Stream<SimulatedBody> getBodies()
     {
         return this.bodies.values().stream();
     }
 
-    public void tick()
+    public Optional<Vector3d> clip(Vector3d start, Vector3d end)
     {
-        this.bodies.values().forEach(SimulatedBody::move);
-        this.bodies.values().forEach(SimulatedBody::tick);
+        for (SimulatedBody body : this.bodies.values())
+        {
+            Optional<Vector3d> result = body.clip(start, end);
+            if (result.isPresent())
+                return result;
+        }
+        return Optional.empty();
     }
 
     public static class SimulatedBody
@@ -88,8 +101,8 @@ public class CelestialBodySimulation
             this.position = new Vector3f();
             this.lastYaw = (float) (simulation.random.nextFloat() * Math.PI * 2);
             this.yaw = this.lastYaw;
-            this.lastRotation = (float) (simulation.random.nextFloat() * Math.PI * 2);
-            this.rotation = this.lastRotation;
+//            this.lastRotation = (float) (simulation.random.nextFloat() * Math.PI * 2);
+//            this.rotation = this.lastRotation;
             this.distanceFromParent = 0;
             this.root = false;
         }
@@ -99,7 +112,7 @@ public class CelestialBodySimulation
             this.lastPosition.set(this.position.x(), this.position.y(), this.position.z());
             this.lastYaw = this.yaw;
             this.lastRotation = this.rotation;
-            this.rotation += 1F / 180F * Math.PI;
+//            this.rotation += 1F / 180F * Math.PI;
             this.yaw += 0.01F / this.body.getScale();
         }
 
@@ -138,6 +151,14 @@ public class CelestialBodySimulation
             return body;
         }
 
+        public Optional<Vector3d> clip(Vector3d start, Vector3d end)
+        {
+            float size = this.body.getScale();
+            AxisAlignedBB box = new AxisAlignedBB(this.position.x() - size, this.position.y() - size, this.position.z() - size, this.position.x() + size, this.position.y() + size, this.position.z() + size);
+//            return box.clip(rotate(start, -this.rotation), rotate(end, -this.rotation)).map(p -> rotate(p, this.rotation));
+            return box.clip(start, end);
+        }
+
         public float getX(float partialTicks)
         {
             Optional<SimulatedBody> optional = this.body.getParent().map(this.simulation.bodies::get);
@@ -159,5 +180,14 @@ public class CelestialBodySimulation
         {
             return MathHelper.lerp(partialTicks, this.lastRotation, this.rotation);
         }
+    }
+
+    private static Vector3d rotate(Vector3d pos, double angle)
+    {
+        float cos = MathHelper.cos((float) angle);
+        float sin = MathHelper.sin((float) angle);
+        double x = 0.5D + (pos.x - 0.5D) * (double) cos - (pos.z - 0.5D) * (double) sin;
+        double z = 0.5D + (pos.x - 0.5D) * (double) sin + (pos.z - 0.5D) * (double) cos;
+        return new Vector3d(x, pos.y, z);
     }
 }

@@ -1,0 +1,15 @@
+{
+  "required": true,
+  "package": "io.github.ocelot.space.mixin",
+  "compatibilityLevel": "JAVA_8",
+  "minVersion": "0.8",
+  "refmap": "space.refmap.json",
+  "mixins": [
+  ],
+  "client": [
+    "client.Matrix4fAccessor"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}

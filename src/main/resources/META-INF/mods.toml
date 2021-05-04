@@ -3,9 +3,9 @@ loaderVersion = "[36,)"
 license = "MIT"
 issueTrackerURL = "https://github.com/Ocelot5836/space-prototype/issues"
 [[mods]]
-modId = "space"
+modId = "${modId}"
 version = "${modVersion}"
-displayName = "Space Prototype"
+displayName = "${modName}"
 #updateJSONURL="https://change.me.example.invalid/updates.json"
 #displayURL="https://change.me.to.your.mods.homepage.example.invalid/"
 #logoFile = "examplemod.png"
@@ -14,14 +14,14 @@ authors = "Ocelot"
 description = '''
 Prototype for a space exploration mod.
 '''
-[[dependencies.space]]
+[[dependencies.${modId}]]
 modId = "forge"
 mandatory = true
 versionRange = "[36,)"
 ordering = "NONE"
 side = "BOTH"
 
-[[dependencies.space]]
+[[dependencies.${modId}]]
 modId = "minecraft"
 mandatory = true
 versionRange = "[1.16.5,1.17)"
