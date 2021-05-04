@@ -12,6 +12,7 @@ public class CelestialBodyDefinitions
 {
     public static final ImmutableMap<ResourceLocation, CelestialBody> SOLAR_SYSTEM;
     public static final ImmutableMap<ResourceLocation, CelestialBody> LARGE_SOLAR_SYSTEM;
+    public static final ImmutableMap<ResourceLocation, CelestialBody> BINARY_SOLAR_SYSTEM;
 
     static
     {
@@ -64,6 +65,24 @@ public class CelestialBodyDefinitions
                 }
             }
             LARGE_SOLAR_SYSTEM = bodies.build();
+        }
+
+        {
+            ImmutableMap.Builder<ResourceLocation, CelestialBody> bodies = new ImmutableMap.Builder<>();
+            ResourceLocation sun1 = create(bodies, "sun1", "sun", builder ->
+            {
+                builder.setParent(new ResourceLocation(SpacePrototype.MOD_ID, "sun2"));
+                builder.setScale(5.0F);
+                builder.setShade(false);
+            });
+            ResourceLocation sun2 = create(bodies, "sun2", "sun", builder ->
+            {
+                builder.setParent(new ResourceLocation(SpacePrototype.MOD_ID, "sun1"));
+                builder.setScale(5.0F);
+                builder.setShade(false);
+            });
+            ResourceLocation earth = create(bodies, "earth", "earth", builder -> builder.setParent(sun1));
+            BINARY_SOLAR_SYSTEM = bodies.build();
         }
     }
 

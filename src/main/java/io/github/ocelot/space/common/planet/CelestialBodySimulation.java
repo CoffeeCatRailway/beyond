@@ -140,10 +140,8 @@ public class CelestialBodySimulation
 
         public float getX(float partialTicks)
         {
-            if (this.root)
-                return 0F;
             Optional<SimulatedBody> optional = this.body.getParent().map(this.simulation.bodies::get);
-            return optional.map(simulatedBody -> simulatedBody.getX(partialTicks) + this.getHorizontalDistance(partialTicks)).orElse(0F);
+            return optional.map(simulatedBody -> (this.root ? 0 : simulatedBody.getX(partialTicks)) + this.getHorizontalDistance(partialTicks)).orElse(0F);
         }
 
         public float getY(float partialTicks)
@@ -153,10 +151,8 @@ public class CelestialBodySimulation
 
         public float getZ(float partialTicks)
         {
-            if (this.root)
-                return 0F;
             Optional<SimulatedBody> optional = this.body.getParent().map(this.simulation.bodies::get);
-            return optional.map(simulatedBody -> simulatedBody.getZ(partialTicks) + this.getVerticalDistance(partialTicks)).orElse(0F);
+            return optional.map(simulatedBody -> (this.root ? 0 : simulatedBody.getZ(partialTicks)) + this.getVerticalDistance(partialTicks)).orElse(0F);
         }
 
         public float getRotation(float partialTicks)

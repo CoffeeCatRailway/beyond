@@ -53,7 +53,7 @@ public class SolarSystemWidget extends Widget implements IScreen, NativeResource
     {
         super(x, y, width, height, new StringTextComponent(""));
 
-        this.simulation = new CelestialBodySimulation(CelestialBodyDefinitions.LARGE_SOLAR_SYSTEM);
+        this.simulation = new CelestialBodySimulation(CelestialBodyDefinitions.BINARY_SOLAR_SYSTEM);
         this.camera = new SpaceTravelCamera();
         this.camera.setZoom(80);
         this.camera.setPitch((float) (24F * Math.PI / 180F));
