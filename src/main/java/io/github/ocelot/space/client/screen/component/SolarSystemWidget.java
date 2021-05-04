@@ -177,8 +177,10 @@ public class SolarSystemWidget extends Widget implements IScreen, NativeResource
         RenderSystem.depthMask(false);
         RenderSystem.color3f(1.0F, 1.0F, 1.0F);
 
-        matrixStack1.mulPose(Vector3f.XN.rotation(this.camera.getRotationX(partialTicks)));
-        matrixStack1.mulPose(Vector3f.YN.rotation(this.camera.getRotationY(partialTicks)));
+        float cameraRotationX = this.camera.getRotationX(partialTicks);
+        float cameraRotationY = this.camera.getRotationY(partialTicks);
+        matrixStack1.mulPose(Vector3f.XN.rotation(cameraRotationX));
+        matrixStack1.mulPose(Vector3f.YN.rotation(cameraRotationY));
 
         if (this.skyVBO == null)
             this.generateSky();
@@ -203,9 +205,9 @@ public class SolarSystemWidget extends Widget implements IScreen, NativeResource
         matrixStack1.translate(-cameraX, -cameraY, -cameraZ);
 
         MatrixStack viewStack = new MatrixStack();
-//        viewStack.mulPose(Vector3f.YN.rotation(this.camera.getRotationY(partialTicks)));
-//        viewStack.mulPose(Vector3f.XN.rotation(this.camera.getRotationX(partialTicks)));
-        viewStack.translate(cameraX, cameraY, cameraZ);
+        viewStack.mulPose(Vector3f.XN.rotation(cameraRotationX));
+        viewStack.mulPose(Vector3f.YN.rotation(cameraRotationY));
+        viewStack.translate(-cameraX, -cameraY, -cameraZ);
         Matrix4f viewMatrix = viewStack.last().pose().copy();
 
         matrixStack1.pushPose();
@@ -217,7 +219,7 @@ public class SolarSystemWidget extends Widget implements IScreen, NativeResource
         Vector3d ray = MousePicker.getRay(projectionMatrix, viewMatrix, (float) (mouseX - this.x) / (float) this.width * 2F - 1F, (float) (mouseY - this.y) / (float) this.height * 2F - 1F);
         Vector3d start = new Vector3d(cameraX, cameraY, cameraZ);
         Vector3d end = start.add(ray.multiply(1000, 1000, 1000));
-        Optional<Vector3d> pos = this.simulation.clip(start, end);
+        Optional<Vector3d> pos = this.simulation.clip(start, end, partialTicks);
 
         pos.ifPresent(p ->
         {

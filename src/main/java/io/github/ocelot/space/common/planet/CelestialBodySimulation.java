@@ -69,17 +69,39 @@ public class CelestialBodySimulation
         return this.bodies.values().stream();
     }
 
-    public Optional<Vector3d> clip(Vector3d start, Vector3d end)
+    /**
+     * Casts a ray through the simulation to calculate an intersection with a celesial body.
+     *
+     * @param start        The starting position of the ray
+     * @param end          The ending position of the ray
+     * @param partialTicks The percentage from last update and this update
+     * @return The optional result of the ray trace
+     */
+    public Optional<Vector3d> clip(Vector3d start, Vector3d end, float partialTicks)
     {
+        Vector3d result = null;
+        double resultDistanceSq = Double.MAX_VALUE;
         for (SimulatedBody body : this.bodies.values())
         {
-            Optional<Vector3d> result = body.clip(start, end);
-            if (result.isPresent())
-                return result;
+            Optional<Vector3d> bodyResult = body.clip(start, end, partialTicks);
+            if (!bodyResult.isPresent())
+                continue;
+
+            double bodyResultDistanceSq = start.distanceToSqr(bodyResult.get());
+            if (bodyResultDistanceSq < resultDistanceSq)
+            {
+                result = bodyResult.get();
+                resultDistanceSq = bodyResultDistanceSq;
+            }
         }
-        return Optional.empty();
+        return Optional.ofNullable(result);
     }
 
+    /**
+     * <p>A body in the simulation.</p>
+     *
+     * @author Ocelot
+     */
     public static class SimulatedBody
     {
         private final CelestialBodySimulation simulation;
@@ -151,10 +173,13 @@ public class CelestialBodySimulation
             return body;
         }
 
-        public Optional<Vector3d> clip(Vector3d start, Vector3d end)
+        public Optional<Vector3d> clip(Vector3d start, Vector3d end, float partialTicks)
         {
             float size = this.body.getScale();
-            AxisAlignedBB box = new AxisAlignedBB(this.position.x() - size, this.position.y() - size, this.position.z() - size, this.position.x() + size, this.position.y() + size, this.position.z() + size);
+            float x = this.getX(partialTicks);
+            float y = this.getY(partialTicks);
+            float z = this.getZ(partialTicks);
+            AxisAlignedBB box = new AxisAlignedBB(x - size, y - size, z - size, x + size, y + size, z + size);
 //            return box.clip(rotate(start, -this.rotation), rotate(end, -this.rotation)).map(p -> rotate(p, this.rotation));
             return box.clip(start, end);
         }
