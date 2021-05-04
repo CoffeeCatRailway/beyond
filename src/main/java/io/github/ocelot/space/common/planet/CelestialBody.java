@@ -91,7 +91,7 @@ public class CelestialBody
         {
             this.parent = null;
             this.texture = texture;
-            this.shade = false;
+            this.shade = true;
             this.scale = 1.0F;
         }
 

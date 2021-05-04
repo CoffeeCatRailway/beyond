@@ -6,12 +6,16 @@ import com.mojang.blaze3d.systems.RenderSystem;
 import io.github.ocelot.sonar.client.render.ShapeRenderer;
 import io.github.ocelot.space.client.SpacePlanetSpriteManager;
 import io.github.ocelot.space.client.screen.SpaceTravelCamera;
+import io.github.ocelot.space.common.init.SpaceRenderTypes;
 import io.github.ocelot.space.common.planet.CelestialBodyDefinitions;
 import io.github.ocelot.space.common.planet.CelestialBodySimulation;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screen.IScreen;
 import net.minecraft.client.gui.widget.Widget;
-import net.minecraft.client.renderer.*;
+import net.minecraft.client.renderer.BufferBuilder;
+import net.minecraft.client.renderer.IRenderTypeBuffer;
+import net.minecraft.client.renderer.RenderHelper;
+import net.minecraft.client.renderer.Tessellator;
 import net.minecraft.client.renderer.model.ModelRenderer;
 import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
@@ -42,16 +46,15 @@ public class SolarSystemWidget extends Widget implements IScreen, NativeResource
     }
 
     private final CelestialBodySimulation simulation;
-    private SpaceTravelCamera camera;
+    private final SpaceTravelCamera camera;
     private Framebuffer framebuffer;
     private VertexBuffer skyVBO;
-    private int ticks;
 
     public SolarSystemWidget(int x, int y, int width, int height)
     {
         super(x, y, width, height, new StringTextComponent(""));
-        this.active = false;
         this.simulation = new CelestialBodySimulation(CelestialBodyDefinitions.SOLAR_SYSTEM);
+        this.camera = new SpaceTravelCamera();
     }
 
     private void generateSky()
@@ -114,18 +117,27 @@ public class SolarSystemWidget extends Widget implements IScreen, NativeResource
         float scale = body.getBody().getScale() * 4;
         poseStack.pushPose();
         poseStack.translate(MathHelper.lerp(partialTicks, body.getLastPosition().x(), body.getPosition().x()), MathHelper.lerp(partialTicks, body.getLastPosition().y(), body.getPosition().y()), MathHelper.lerp(partialTicks, body.getLastPosition().z(), body.getPosition().z()));
-        poseStack.mulPose(Vector3f.YP.rotationDegrees(MathHelper.lerp(partialTicks, body.getLastRotation(), body.getRotation())));
+//        poseStack.mulPose(Vector3f.YP.rotationDegrees(MathHelper.lerp(partialTicks, body.getLastRotation(), body.getRotation())));
         poseStack.scale(scale, scale, scale);
         poseStack.translate(-0.25F, -0.25F, -0.25F);
-        CUBE.render(poseStack, SpacePlanetSpriteManager.getSprite(body.getBody().getTexture()).wrap(buffer.getBuffer(RenderType.entitySolid(SpacePlanetSpriteManager.ATLAS_LOCATION))), 15728880, OverlayTexture.NO_OVERLAY);
+        CUBE.render(poseStack, SpacePlanetSpriteManager.getSprite(body.getBody().getTexture()).wrap(buffer.getBuffer(body.getBody().isShade() ? SpaceRenderTypes.planetShade() : SpaceRenderTypes.planet())), 15728880, OverlayTexture.NO_OVERLAY);
         poseStack.popPose();
+    }
+
+    private void invalidateFramebuffer()
+    {
+        if (this.framebuffer != null)
+        {
+            this.framebuffer.destroyBuffers();
+            this.framebuffer = null;
+        }
     }
 
     @Override
     public void tick()
     {
-        this.ticks++;
         this.simulation.tick();
+        this.camera.tick();
     }
 
     @SuppressWarnings("deprecation")
@@ -135,7 +147,6 @@ public class SolarSystemWidget extends Widget implements IScreen, NativeResource
         Minecraft minecraft = Minecraft.getInstance();
         this.renderBg(poseStack, minecraft, mouseX, mouseY);
 
-        float time = this.ticks + partialTicks;
         if (this.framebuffer == null)
             this.framebuffer = new Framebuffer(this.width * minecraft.options.guiScale, this.height * minecraft.options.guiScale, true, Minecraft.ON_OSX);
         this.framebuffer.bindWrite(true);
@@ -157,13 +168,10 @@ public class SolarSystemWidget extends Widget implements IScreen, NativeResource
         RenderSystem.depthMask(false);
         RenderSystem.color3f(1.0F, 1.0F, 1.0F);
 
-//        matrixStack1.mulPose(Vector3f.ZN.rotationDegrees(0));
-//        matrixStack1.mulPose(Vector3f.YN.rotationDegrees(mouseX));
-//        matrixStack1.mulPose(Vector3f.XN.rotationDegrees(mouseY));
+        matrixStack1.mulPose(Vector3f.XN.rotation(this.camera.getRotationX(partialTicks)));
+        matrixStack1.mulPose(Vector3f.YN.rotation(this.camera.getRotationY(partialTicks)));
 
         matrixStack1.pushPose();
-        matrixStack1.mulPose(Vector3f.YP.rotation(time / 1200F));
-        matrixStack1.mulPose(Vector3f.XP.rotation(time / 1100F));
         if (this.skyVBO == null)
             this.generateSky();
         this.skyVBO.bind();
@@ -181,10 +189,7 @@ public class SolarSystemWidget extends Widget implements IScreen, NativeResource
         RenderSystem.enableLighting();
         RenderHelper.setupLevel(matrixStack1.last().pose());
 
-        matrixStack1.translate(-this.camera.getPosX(partialTicks), -this.camera.getPosY(partialTicks) - 4.0F, -this.camera.getPosZ(partialTicks) - 30.0F);
-        matrixStack1.mulPose(Vector3f.XP.rotation(this.camera.getRotationX(partialTicks)));
-        matrixStack1.mulPose(Vector3f.YP.rotation(this.camera.getRotationY(partialTicks)));
-        matrixStack1.mulPose(Vector3f.ZP.rotation(this.camera.getRotationZ(partialTicks)));
+        matrixStack1.translate(-this.camera.getX(partialTicks), -this.camera.getY(partialTicks), -this.camera.getZ(partialTicks));
 
         matrixStack1.pushPose();
 
@@ -229,19 +234,19 @@ public class SolarSystemWidget extends Widget implements IScreen, NativeResource
     @Override
     public boolean mouseDragged(double mouseX, double mouseY, int mouseButton, double dx, double dy)
     {
-        return super.mouseDragged(mouseX, mouseY, mouseButton, dx, dy);
+        return this.camera.mouseDragged(mouseX, mouseY, mouseButton, dx, dy);
     }
 
     @Override
     public boolean mouseClicked(double mouseX, double mouseY, int mouseButton)
     {
-        return super.mouseClicked(mouseX, mouseY, mouseButton);
+        return this.isHovered() && this.camera.mouseClicked(mouseX, mouseY, mouseButton);
     }
 
     @Override
     public boolean mouseScrolled(double mouseX, double mouseY, double amount)
     {
-        return true;
+        return this.isHovered() && this.camera.mouseScrolled(mouseX, mouseY, amount);
     }
 
     @Override
@@ -252,10 +257,20 @@ public class SolarSystemWidget extends Widget implements IScreen, NativeResource
             this.skyVBO.close();
             this.skyVBO = null;
         }
-        if (this.framebuffer != null)
-        {
-            this.framebuffer.destroyBuffers();
-            this.framebuffer = null;
-        }
+        this.invalidateFramebuffer();
+    }
+
+    @Override
+    public void setWidth(int width)
+    {
+        super.setWidth(width);
+        this.invalidateFramebuffer();
+    }
+
+    @Override
+    public void setHeight(int height)
+    {
+        super.setHeight(height);
+        this.invalidateFramebuffer();
     }
 }

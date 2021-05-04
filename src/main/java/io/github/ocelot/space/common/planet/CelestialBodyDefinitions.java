@@ -16,10 +16,15 @@ public class CelestialBodyDefinitions
         ImmutableMap.Builder<ResourceLocation, CelestialBody> bodies = new ImmutableMap.Builder<>();
         ResourceLocation sun = create(bodies, "sun", builder ->
         {
-            builder.setScale(4.0F);
+            builder.setScale(5.0F);
             builder.setShade(false);
         });
-        ResourceLocation moon = create(bodies, "moon", builder -> builder.setParent(sun));
+        ResourceLocation earth = create(bodies, "earth", builder -> builder.setParent(sun));
+        ResourceLocation moon = create(bodies, "moon", builder ->
+        {
+            builder.setScale(0.5F);
+            builder.setParent(earth);
+        });
         SOLAR_SYSTEM = bodies.build();
     }
 

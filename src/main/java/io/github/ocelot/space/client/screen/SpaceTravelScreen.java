@@ -4,9 +4,9 @@ import com.mojang.blaze3d.matrix.MatrixStack;
 import io.github.ocelot.space.SpacePrototype;
 import io.github.ocelot.space.client.screen.component.SolarSystemWidget;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.IGuiEventListener;
 import net.minecraft.client.gui.screen.IScreen;
 import net.minecraft.client.gui.screen.Screen;
-import net.minecraft.client.gui.widget.Widget;
 import net.minecraft.util.text.TranslationTextComponent;
 import org.lwjgl.system.NativeResource;
 
@@ -15,27 +15,37 @@ import org.lwjgl.system.NativeResource;
  */
 public class SpaceTravelScreen extends Screen
 {
-    private SolarSystemWidget solarSystemWidget;
+    private final SolarSystemWidget solarSystemWidget;
 
     public SpaceTravelScreen()
     {
         super(new TranslationTextComponent("screen." + SpacePrototype.MOD_ID + ".space_travel"));
+        this.addButton(this.solarSystemWidget = new SolarSystemWidget(0, 0, this.width, this.height));
+    }
+
+    private void repositionWidgets()
+    {
+        this.solarSystemWidget.setWidth(this.width);
+        this.solarSystemWidget.setHeight(this.height);
     }
 
     @Override
-    protected void init()
+    public void init(Minecraft minecraft, int width, int height)
     {
-        if (this.solarSystemWidget != null)
-            this.solarSystemWidget.free();
-        this.addButton(this.solarSystemWidget = new SolarSystemWidget(0, 0, this.width, this.height));
+        this.minecraft = minecraft;
+        this.itemRenderer = minecraft.getItemRenderer();
+        this.font = minecraft.font;
+        this.width = width;
+        this.height = height;
+        this.repositionWidgets();
     }
 
     @Override
     public void tick()
     {
-        for (Widget widget : this.buttons)
-            if (widget instanceof IScreen)
-                ((IScreen) widget).tick();
+        for (IGuiEventListener listener : this.children)
+            if (listener instanceof IScreen)
+                ((IScreen) listener).tick();
     }
 
     @Override
@@ -49,8 +59,30 @@ public class SpaceTravelScreen extends Screen
     @Override
     public void removed()
     {
-        for (Widget widget : this.buttons)
-            if (widget instanceof NativeResource)
-                ((NativeResource) widget).free();
+        for (IGuiEventListener listener : this.children)
+            if (listener instanceof NativeResource)
+                ((NativeResource) listener).free();
+    }
+
+    @Override
+    public boolean mouseClicked(double mouseX, double mouseY, int mouseButton)
+    {
+        for (IGuiEventListener iguieventlistener : this.children())
+        {
+            if (iguieventlistener.mouseClicked(mouseX, mouseY, mouseButton))
+            {
+                this.setFocused(iguieventlistener);
+                this.setDragging(true);
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    @Override
+    public boolean mouseDragged(double mouseX, double mouseY, int mouseButton, double dx, double dy)
+    {
+        return this.getFocused() != null && this.isDragging() && this.getFocused().mouseDragged(mouseX, mouseY, mouseButton, dx, dy);
     }
 }

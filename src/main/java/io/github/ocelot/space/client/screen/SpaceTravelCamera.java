@@ -1,90 +1,117 @@
 package io.github.ocelot.space.client.screen;
 
+import net.minecraft.client.gui.IGuiEventListener;
 import net.minecraft.util.math.MathHelper;
 import net.minecraft.util.math.vector.Vector3f;
 
-public class SpaceTravelCamera
+public class SpaceTravelCamera implements IGuiEventListener
 {
-    private final Vector3f lastPosition;
-    private final Vector3f position;
-    private final Vector3f positionDst;
-    private final Vector3f lastRotation;
-    private final Vector3f rotation;
-    private final Vector3f rotationDst;
+    private final Vector3f lastAnchorPos;
+    private final Vector3f anchorPos;
+    private float lastPitch;
+    private float pitch;
+    private float lastYaw;
+    private float yaw;
     private float lastZoom;
     private float zoom;
-    private float zoomDst;
 
     public SpaceTravelCamera()
     {
-        this.lastPosition = new Vector3f();
-        this.position = new Vector3f();
-        this.positionDst = new Vector3f();
-        this.lastRotation = new Vector3f();
-        this.rotation = new Vector3f();
-        this.rotationDst = new Vector3f();
+        this.lastAnchorPos = new Vector3f();
+        this.anchorPos = new Vector3f();
+        this.lastPitch = 0;
+        this.pitch = 0;
+        this.lastYaw = 0;
+        this.yaw = 0;
         this.lastZoom = 0;
         this.zoom = 0;
-        this.zoomDst = 0;
     }
 
     public void tick()
     {
-        this.lastPosition.set(this.position.x(), this.position.y(), this.position.z());
-        this.lastRotation.set(this.rotation.x(), this.rotation.y(), this.rotation.z());
+        this.lastAnchorPos.set(this.lastAnchorPos.x(), this.lastAnchorPos.y(), this.lastAnchorPos.z());
+        this.lastPitch = this.pitch;
+        this.lastYaw = this.yaw;
         this.lastZoom = this.zoom;
-        this.position.add((this.positionDst.x() - this.position.x()) * 0.25F, (this.positionDst.y() - this.position.y()) * 0.25F, (this.positionDst.z() - this.position.z()) * 0.25F);
-        this.rotation.add((this.rotationDst.x() - this.rotation.x()) * 0.25F, (this.rotationDst.y() - this.rotation.y()) * 0.25F, (this.rotationDst.z() - this.rotation.z()) * 0.25F);
-        this.zoom += (this.zoomDst * 0.25F - this.zoom);
     }
 
-    public void setPositionDst(float x, float y, float z)
+    private float getHorizontalDistance(float partialTicks)
     {
-        this.positionDst.set(x, y, z);
+        return MathHelper.lerp(partialTicks, this.lastZoom, this.zoom) * MathHelper.cos(MathHelper.lerp(partialTicks, this.lastPitch, this.pitch));
     }
 
-    public void setRotationDst(float x, float y, float z)
+    private float getVerticalDistance(float partialTicks)
     {
-        this.rotationDst.set(x, y, z);
+        return MathHelper.lerp(partialTicks, this.lastZoom, this.zoom) * MathHelper.sin(MathHelper.lerp(partialTicks, this.lastPitch, this.pitch));
     }
 
-    public void setZoomDst(float zoom)
+    @Override
+    public boolean mouseDragged(double mouseX, double mouseY, int mouseButton, double dx, double dy)
     {
-        this.zoomDst = zoom;
+        if (mouseButton == 1)
+        {
+            this.yaw -= dx / 180F;
+            this.pitch -= dy / 180F;
+            return true;
+        }
+        return false;
     }
 
-    public float getPosX(float partialTicks)
+    @Override
+    public boolean mouseClicked(double mouseX, double mouseY, int mouseButton)
     {
-        return MathHelper.lerp(partialTicks, this.lastPosition.x(), this.position.x());
+        return mouseButton == 1;
     }
 
-    public float getPosY(float partialTicks)
+    @Override
+    public boolean mouseScrolled(double mouseX, double mouseY, double amount)
     {
-        return MathHelper.lerp(partialTicks, this.lastPosition.y(), this.position.y());
+        this.zoom += amount * 4.0F;
+        return true;
     }
 
-    public float getPosZ(float partialTicks)
+    public void setPosition(float x, float y, float z)
     {
-        return MathHelper.lerp(partialTicks, this.lastPosition.z(), this.position.z());
+        this.anchorPos.set(x, y, z);
+    }
+
+    public void setPitch(float pitch)
+    {
+        this.pitch = pitch;
+    }
+
+    public void setYaw(float yaw)
+    {
+        this.yaw = yaw;
+    }
+
+    public void setZoom(float zoom)
+    {
+        this.zoom = zoom;
+    }
+
+    public float getX(float partialTicks)
+    {
+        return MathHelper.lerp(partialTicks, this.lastAnchorPos.x(), this.anchorPos.x()) - this.getHorizontalDistance(partialTicks) * MathHelper.sin(MathHelper.lerp(partialTicks, this.lastYaw, this.yaw));
+    }
+
+    public float getY(float partialTicks)
+    {
+        return MathHelper.lerp(partialTicks, this.lastAnchorPos.z(), this.anchorPos.z()) + this.getVerticalDistance(partialTicks);
+    }
+
+    public float getZ(float partialTicks)
+    {
+        return MathHelper.lerp(partialTicks, this.lastAnchorPos.z(), this.anchorPos.z()) - this.getHorizontalDistance(partialTicks) * MathHelper.cos(MathHelper.lerp(partialTicks, this.lastYaw, this.yaw));
     }
 
     public float getRotationX(float partialTicks)
     {
-        return MathHelper.lerp(partialTicks, this.lastRotation.x(), this.rotation.x());
+        return MathHelper.lerp(partialTicks, this.lastPitch, this.pitch);
     }
 
     public float getRotationY(float partialTicks)
     {
-        return MathHelper.lerp(partialTicks, this.lastRotation.y(), this.rotation.y());
-    }
-
-    public float getRotationZ(float partialTicks)
-    {
-        return MathHelper.lerp(partialTicks, this.lastRotation.z(), this.rotation.z());
-    }
-
-    public float getZoom(float partialTicks)
-    {
-        return MathHelper.lerp(partialTicks, this.lastZoom, this.zoom);
+        return MathHelper.lerp(partialTicks, this.lastYaw, this.yaw);
     }
 }
