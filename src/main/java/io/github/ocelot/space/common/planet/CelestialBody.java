@@ -3,6 +3,7 @@ package io.github.ocelot.space.common.planet;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import net.minecraft.util.ResourceLocation;
+import net.minecraft.util.text.ITextComponent;
 import org.apache.commons.lang3.Validate;
 
 import javax.annotation.Nullable;
@@ -18,19 +19,22 @@ public class CelestialBody
     public static final Codec<CelestialBody> CODEC = RecordCodecBuilder.create(instance -> instance.group(
             ResourceLocation.CODEC.optionalFieldOf("parent").forGetter(CelestialBody::getParent),
             ResourceLocation.CODEC.fieldOf("texture").forGetter(CelestialBody::getTexture),
+            Codec.STRING.fieldOf("displayName").<ITextComponent>xmap(ITextComponent.Serializer::fromJson, ITextComponent.Serializer::toJson).forGetter(CelestialBody::getDisplayName),
             Codec.BOOL.optionalFieldOf("shade", true).forGetter(CelestialBody::isShade),
             Codec.FLOAT.optionalFieldOf("scale", 1.0F).forGetter(CelestialBody::getScale)
-    ).apply(instance, (parent, texture, shade, scale) -> new CelestialBody(parent.orElse(null), texture, shade, scale)));
+    ).apply(instance, (parent, texture, displayName, shade, scale) -> new CelestialBody(parent.orElse(null), texture, displayName, shade, scale)));
 
     private final ResourceLocation parent;
     private final ResourceLocation texture;
+    private final ITextComponent displayName;
     private final boolean shade;
     private final float scale;
 
-    public CelestialBody(@Nullable ResourceLocation parent, ResourceLocation texture, boolean shade, float scale)
+    public CelestialBody(@Nullable ResourceLocation parent, ResourceLocation texture, ITextComponent displayName, boolean shade, float scale)
     {
         this.parent = parent;
         this.texture = texture;
+        this.displayName = displayName;
         this.shade = shade;
         this.scale = scale;
     }
@@ -52,6 +56,14 @@ public class CelestialBody
     }
 
     /**
+     * @return The display name of this body
+     */
+    public ITextComponent getDisplayName()
+    {
+        return displayName;
+    }
+
+    /**
      * @return Whether or not this body should have lighting
      */
     public boolean isShade()
@@ -70,9 +82,9 @@ public class CelestialBody
     /**
      * @return A new builder for a celestial body
      */
-    public static Builder builder(ResourceLocation texture)
+    public static Builder builder()
     {
-        return new Builder(texture);
+        return new Builder();
     }
 
     /**
@@ -84,13 +96,15 @@ public class CelestialBody
     {
         private ResourceLocation parent;
         private ResourceLocation texture;
+        private ITextComponent displayName;
         private boolean shade;
         private float scale;
 
-        private Builder(ResourceLocation texture)
+        private Builder()
         {
             this.parent = null;
-            this.texture = texture;
+            this.texture = null;
+            this.displayName = null;
             this.shade = true;
             this.scale = 1.0F;
         }
@@ -114,6 +128,17 @@ public class CelestialBody
         public Builder setTexture(ResourceLocation texture)
         {
             this.texture = texture;
+            return this;
+        }
+
+        /**
+         * Sets the display name of this body.
+         *
+         * @param displayName The name to use
+         */
+        public Builder setDisplayName(ITextComponent displayName)
+        {
+            this.displayName = displayName;
             return this;
         }
 
@@ -144,7 +169,8 @@ public class CelestialBody
         public CelestialBody build()
         {
             Validate.notNull(this.texture);
-            return new CelestialBody(this.parent, this.texture, this.shade, this.scale);
+            Validate.notNull(this.displayName);
+            return new CelestialBody(this.parent, this.texture, this.displayName, this.shade, this.scale);
         }
     }
 }

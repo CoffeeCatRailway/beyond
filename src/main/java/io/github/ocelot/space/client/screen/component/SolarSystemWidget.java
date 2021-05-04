@@ -12,6 +12,7 @@ import io.github.ocelot.space.common.planet.CelestialBodyDefinitions;
 import io.github.ocelot.space.common.planet.CelestialBodySimulation;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screen.IScreen;
+import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.client.gui.widget.Widget;
 import net.minecraft.client.renderer.BufferBuilder;
 import net.minecraft.client.renderer.IRenderTypeBuffer;
@@ -25,9 +26,15 @@ import net.minecraft.client.shader.Framebuffer;
 import net.minecraft.util.math.vector.Matrix4f;
 import net.minecraft.util.math.vector.Vector3d;
 import net.minecraft.util.math.vector.Vector3f;
+import net.minecraft.util.text.IFormattableTextComponent;
+import net.minecraft.util.text.ITextComponent;
 import net.minecraft.util.text.StringTextComponent;
+import net.minecraft.util.text.TextFormatting;
 import org.lwjgl.system.NativeResource;
 
+import javax.annotation.Nullable;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Random;
 
 import static org.lwjgl.opengl.GL11.*;
@@ -46,17 +53,18 @@ public class SolarSystemWidget extends Widget implements IScreen, NativeResource
         CUBE.addBox(0, 0, 0, 8, 8, 8, 0);
     }
 
+    private final Screen parent;
     private final CelestialBodySimulation simulation;
     private final SpaceTravelCamera camera;
     private CelestialBodySimulation.CelestialBodyRayTraceResult hoveredBody;
     private Framebuffer framebuffer;
     private VertexBuffer skyVBO;
 
-    public SolarSystemWidget(int x, int y, int width, int height)
+    public SolarSystemWidget(@Nullable Screen parent, int x, int y, int width, int height)
     {
         super(x, y, width, height, StringTextComponent.EMPTY);
-
-        this.simulation = new CelestialBodySimulation(CelestialBodyDefinitions.SOLAR_SYSTEM);
+        this.parent = parent;
+        this.simulation = new CelestialBodySimulation(CelestialBodyDefinitions.LARGE_SOLAR_SYSTEM);
         this.camera = new SpaceTravelCamera();
         this.camera.setZoom(80);
         this.camera.setPitch((float) (24F * Math.PI / 180F));
@@ -149,6 +157,13 @@ public class SolarSystemWidget extends Widget implements IScreen, NativeResource
         this.camera.tick();
     }
 
+    @Override
+    public void render(MatrixStack matrixStack, int mouseX, int mouseY, float partialTicks)
+    {
+        this.hoveredBody = null;
+        super.render(matrixStack, mouseX, mouseY, partialTicks);
+    }
+
     @SuppressWarnings("deprecation")
     @Override
     public void renderButton(MatrixStack poseStack, int mouseX, int mouseY, float partialTicks)
@@ -233,6 +248,22 @@ public class SolarSystemWidget extends Widget implements IScreen, NativeResource
         ShapeRenderer.drawRectWithTexture(poseStack, this.x, this.y, 0, 1, this.width, this.height, 1, -1, 1, 1);
         this.framebuffer.unbindRead();
         poseStack.popPose();
+
+        if (this.isHovered())
+            this.renderToolTip(poseStack, mouseX, mouseY);
+    }
+
+    @Override
+    public void renderToolTip(MatrixStack poseStack, int mouseX, int mouseY)
+    {
+        if (this.hoveredBody != null)
+        {
+            List<ITextComponent> tooltip = new ArrayList<>();
+            tooltip.add(this.hoveredBody.getBody().getBody().getDisplayName());
+            if (Minecraft.getInstance().options.advancedItemTooltips)
+                tooltip.add(new StringTextComponent(this.hoveredBody.getBody().getId().toString()).withStyle(TextFormatting.DARK_GRAY));
+            this.parent.renderComponentTooltip(poseStack, tooltip, mouseX, mouseY);
+        }
     }
 
     @Override
@@ -287,5 +318,11 @@ public class SolarSystemWidget extends Widget implements IScreen, NativeResource
     {
         super.setHeight(height);
         this.invalidateFramebuffer();
+    }
+
+    @Override
+    protected IFormattableTextComponent createNarrationMessage()
+    {
+        return StringTextComponent.EMPTY.copy();
     }
 }

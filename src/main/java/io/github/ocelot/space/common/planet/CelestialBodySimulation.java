@@ -170,7 +170,7 @@ public class CelestialBodySimulation
             if (!optional.isPresent())
                 return;
             float scale = optional.get().getBody().getScale();
-            this.distanceFromParent = (float) (this.simulation.random.nextGaussian() * scale * 0.25F + scale * 5F);
+            this.distanceFromParent = scale * 5F;
         }
 
         private float getHorizontalDistance(float partialTicks)
@@ -209,7 +209,7 @@ public class CelestialBodySimulation
          */
         public Optional<Vector3d> clip(Vector3d start, Vector3d end, float partialTicks)
         {
-            float size = this.body.getScale();
+            float size = Math.max(this.body.getScale(), 0.25F);
             float x = this.getX(partialTicks);
             float y = this.getY(partialTicks);
             float z = this.getZ(partialTicks);

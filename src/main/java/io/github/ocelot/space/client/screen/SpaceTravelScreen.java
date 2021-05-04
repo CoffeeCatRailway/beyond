@@ -20,7 +20,7 @@ public class SpaceTravelScreen extends Screen
     public SpaceTravelScreen()
     {
         super(new TranslationTextComponent("screen." + SpacePrototype.MOD_ID + ".space_travel"));
-        this.addButton(this.solarSystemWidget = new SolarSystemWidget(0, 0, this.width, this.height));
+        this.addButton(this.solarSystemWidget = new SolarSystemWidget(this, 0, 0, this.width, this.height));
     }
 
     private void repositionWidgets()
