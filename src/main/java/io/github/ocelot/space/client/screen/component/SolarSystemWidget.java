@@ -3,27 +3,26 @@ package io.github.ocelot.space.client.screen.component;
 import com.mojang.blaze3d.matrix.MatrixStack;
 import com.mojang.blaze3d.platform.GlStateManager;
 import com.mojang.blaze3d.systems.RenderSystem;
+import io.github.ocelot.sonar.client.render.BakedModelRenderer;
 import io.github.ocelot.sonar.client.render.ShapeRenderer;
+import io.github.ocelot.space.SpacePrototype;
 import io.github.ocelot.space.client.MousePicker;
 import io.github.ocelot.space.client.SpacePlanetSpriteManager;
 import io.github.ocelot.space.client.screen.SpaceTravelCamera;
 import io.github.ocelot.space.common.init.SpaceRenderTypes;
-import io.github.ocelot.space.common.simulation.CelestialBodyDefinitions;
-import io.github.ocelot.space.common.simulation.CelestialBodySimulation;
-import io.github.ocelot.space.common.simulation.SimulatedBody;
+import io.github.ocelot.space.common.simulation.*;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screen.IScreen;
 import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.client.gui.widget.Widget;
-import net.minecraft.client.renderer.BufferBuilder;
-import net.minecraft.client.renderer.IRenderTypeBuffer;
-import net.minecraft.client.renderer.RenderHelper;
-import net.minecraft.client.renderer.Tessellator;
+import net.minecraft.client.renderer.*;
 import net.minecraft.client.renderer.model.ModelRenderer;
 import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
 import net.minecraft.client.renderer.vertex.VertexBuffer;
 import net.minecraft.client.shader.Framebuffer;
+import net.minecraft.inventory.container.PlayerContainer;
+import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.math.vector.Matrix4f;
 import net.minecraft.util.math.vector.Vector3d;
 import net.minecraft.util.math.vector.Vector3f;
@@ -31,6 +30,7 @@ import net.minecraft.util.text.IFormattableTextComponent;
 import net.minecraft.util.text.ITextComponent;
 import net.minecraft.util.text.StringTextComponent;
 import net.minecraft.util.text.TextFormatting;
+import net.minecraftforge.client.model.data.EmptyModelData;
 import org.lwjgl.system.NativeResource;
 
 import javax.annotation.Nullable;
@@ -51,7 +51,7 @@ public class SolarSystemWidget extends Widget implements IScreen, NativeResource
 
     static
     {
-        CUBE.addBox(0, 0, 0, 8, 8, 8, 0);
+        CUBE.addBox(0, 0, 0, 8, 8, 8, 4);
     }
 
     private final Screen parent;
@@ -65,10 +65,17 @@ public class SolarSystemWidget extends Widget implements IScreen, NativeResource
     {
         super(x, y, width, height, StringTextComponent.EMPTY);
         this.parent = parent;
-        this.simulation = new CelestialBodySimulation(CelestialBodyDefinitions.SOLAR_SYSTEM);
+        this.simulation = new CelestialBodySimulation(CelestialBodyDefinitions.SOLAR_SYSTEM.get());
         this.camera = new SpaceTravelCamera();
         this.camera.setZoom(80);
         this.camera.setPitch((float) (24F * Math.PI / 180F));
+
+        ArtificialSatellite satellite = new ArtificialSatellite(this.simulation, new ResourceLocation(SpacePrototype.MOD_ID, "satellite_test"));
+        satellite.setParent(new ResourceLocation(SpacePrototype.MOD_ID, "earth"));
+        satellite.setDistanceFromParent(5F);
+        satellite.setModel(new ResourceLocation(SpacePrototype.MOD_ID, "body/satellite"));
+        satellite.setDisplayName(new StringTextComponent("Satellite Test"));
+        this.simulation.add(satellite);
     }
 
     private void generateSky()
@@ -127,7 +134,8 @@ public class SolarSystemWidget extends Widget implements IScreen, NativeResource
         this.skyVBO.upload(bufferbuilder);
     }
 
-    private void renderBody(MatrixStack poseStack, IRenderTypeBuffer buffer, SimulatedBody body, float partialTicks)
+    @SuppressWarnings("deprecation")
+    private void renderBody(MatrixStack poseStack, IRenderTypeBuffer.Impl buffer, SimulatedBody body, float partialTicks)
     {
         float scale = body.getSize();
         boolean hovered = this.hoveredBody != null && this.hoveredBody.getBody().equals(body);
@@ -136,15 +144,30 @@ public class SolarSystemWidget extends Widget implements IScreen, NativeResource
         poseStack.mulPose(Vector3f.ZP.rotation(body.getRotationZ(partialTicks)));
         poseStack.mulPose(Vector3f.YP.rotation(body.getRotationY(partialTicks)));
         poseStack.mulPose(Vector3f.XP.rotation(body.getRotationX(partialTicks)));
-        poseStack.scale(scale * 2, scale * 2, scale * 2);
+        poseStack.scale(scale, scale, scale);
+        poseStack.translate(-0.25F, -0.25F, -0.25F);
 
-        if (body instanceof CelestialBodySimulation.SimulatedBodyOld)
+        switch (body.getRenderType())
         {
-            CelestialBodySimulation.SimulatedBodyOld b = (CelestialBodySimulation.SimulatedBodyOld) body;
-            poseStack.translate(-0.25F, -0.25F, -0.25F);
-            CUBE.render(poseStack, SpacePlanetSpriteManager.getSprite(b.getTexture()).wrap(buffer.getBuffer(b.isShade() ? SpaceRenderTypes.planetShade() : SpaceRenderTypes.planet())), 15728880, OverlayTexture.NO_OVERLAY);
-            if (hovered)
-                CUBE.render(poseStack, buffer.getBuffer(SpaceRenderTypes.planetSelect()), 15728880, OverlayTexture.NO_OVERLAY, 1.0F, 1.0F, 1.0F, 0.5F);
+            case CUBE:
+                if (body instanceof NaturalSimulatedBody)
+                {
+                    NaturalSimulatedBody b = (NaturalSimulatedBody) body;
+                    CUBE.render(poseStack, SpacePlanetSpriteManager.getSprite(b.getTexture()).wrap(buffer.getBuffer(b.isShade() ? SpaceRenderTypes.planetShade() : SpaceRenderTypes.planet())), 15728880, OverlayTexture.NO_OVERLAY);
+                    if (hovered)
+                        CUBE.render(poseStack, buffer.getBuffer(SpaceRenderTypes.planetSelect()), 15728880, OverlayTexture.NO_OVERLAY, 1.0F, 1.0F, 1.0F, 0.5F);
+                }
+                break;
+            case MODEL:
+                if (body instanceof ModelSimulatedBody)
+                {
+                    ModelSimulatedBody b = (ModelSimulatedBody) body;
+                    BakedModelRenderer.renderModel(b.getModel(), buffer.getBuffer(RenderType.entityCutout(PlayerContainer.BLOCK_ATLAS)), poseStack, 1.0F, 1.0F, 1.0F, 15728880, OverlayTexture.NO_OVERLAY, EmptyModelData.INSTANCE);
+                }
+                break;
+            case PLAYER:
+                // TODO player
+                break;
         }
 
         poseStack.popPose();

@@ -1,11 +1,11 @@
 package io.github.ocelot.space.common.simulation;
 
+import net.minecraft.client.Minecraft;
 import net.minecraft.util.ResourceLocation;
-import net.minecraft.util.math.MathHelper;
 import net.minecraft.util.math.vector.Vector3d;
-import net.minecraft.util.text.ITextComponent;
 
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Stream;
 
 /**
@@ -16,11 +16,13 @@ import java.util.stream.Stream;
 public class CelestialBodySimulation
 {
     private final Map<ResourceLocation, SimulatedBody> bodies;
+    private final Set<ResourceLocation> removedBodies;
     private final Random random;
 
     public CelestialBodySimulation(Map<ResourceLocation, CelestialBody> bodies)
     {
         this.bodies = new HashMap<>();
+        this.removedBodies = ConcurrentHashMap.newKeySet();
         this.random = new Random();
 
         for (Map.Entry<ResourceLocation, CelestialBody> entry : bodies.entrySet())
@@ -32,10 +34,10 @@ public class CelestialBodySimulation
                 if (!bodies.containsKey(parent))
                     continue;
             }
-            this.bodies.put(entry.getKey(), new SimulatedBodyOld(this, entry.getKey(), body));
+            this.bodies.put(entry.getKey(), new NaturalSimulatedBody(this, entry.getKey(), body));
         }
 
-        Set<SimulatedBody> initializedBodies = new HashSet<>();
+//        Set<SimulatedBody> initializedBodies = new HashSet<>();
         List<SimulatedBody> unvisitedBodies = new ArrayList<>(this.bodies.values());
 
         while (!unvisitedBodies.isEmpty())
@@ -44,19 +46,18 @@ public class CelestialBodySimulation
             Optional<SimulatedBody> optionalParent = body.getParent().map(this.bodies::get);
             if (!optionalParent.isPresent() || !unvisitedBodies.contains(optionalParent.get()))
             {
-                if (optionalParent.isPresent())
-                    ((SimulatedBodyOld) body).randomizeDistance();
+                ((NaturalSimulatedBody) body).initializePosition();
             }
-            else if (initializedBodies.contains(optionalParent.get()))
-            {
-                ((SimulatedBodyOld) body).randomizeDistance();
-                ((SimulatedBodyOld) body).root = true;
-            }
+//            else if (initializedBodies.contains(optionalParent.get()))
+//            {
+//                ((NaturalSimulatedBody) body).initializePosition();
+//                body.setRoot(true);
+//            }
             else
             {
                 unvisitedBodies.add(body);
             }
-            initializedBodies.add(body);
+//            initializedBodies.add(body);
         }
     }
 
@@ -65,7 +66,43 @@ public class CelestialBodySimulation
      */
     public void tick()
     {
+        this.removedBodies.forEach(this.bodies::remove);
+        this.removedBodies.clear();
         this.bodies.values().forEach(SimulatedBody::tick);
+    }
+
+    /**
+     * Adds the specified body to the simulation.
+     *
+     * @param body The body to add
+     */
+    public boolean add(SimulatedBody body)
+    {
+        if (this.bodies.containsKey(body.getId()))
+            return false;
+        Minecraft.getInstance().execute(() -> this.bodies.put(body.getId(), body));
+        return true;
+    }
+
+    /**
+     * Removes the specified body from the simulation.
+     *
+     * @param id The id of the body to remove
+     */
+    public void remove(ResourceLocation id)
+    {
+        this.removedBodies.add(id);
+    }
+
+    /**
+     * Retrieves a body by the specified id.
+     *
+     * @param id The id of the body to get
+     * @return The body with that id or <code>null</code> for no body with that id
+     */
+    public SimulatedBody getBody(ResourceLocation id)
+    {
+        return this.bodies.get(id);
     }
 
     /**
@@ -74,6 +111,11 @@ public class CelestialBodySimulation
     public Stream<SimulatedBody> getBodies()
     {
         return this.bodies.values().stream();
+    }
+
+    public Random getRandom()
+    {
+        return random;
     }
 
     /**
@@ -104,143 +146,6 @@ public class CelestialBodySimulation
             }
         }
         return resultBody != null ? Optional.of(new CelestialBodyRayTraceResult(resultBody, result)) : Optional.empty();
-    }
-
-    /**
-     * <p>A body in the simulation.</p>
-     *
-     * @author Ocelot
-     */
-    public static class SimulatedBodyOld implements SimulatedBody
-    {
-        private final CelestialBodySimulation simulation;
-        private final ResourceLocation id;
-        private final CelestialBody body;
-        private float lastYaw;
-        private float yaw;
-        private float lastRotation;
-        private float rotation;
-        private float distanceFromParent;
-        private boolean root;
-
-        public SimulatedBodyOld(CelestialBodySimulation simulation, ResourceLocation id, CelestialBody body)
-        {
-            this.simulation = simulation;
-            this.id = id;
-            this.body = body;
-            this.lastYaw = (float) (simulation.random.nextFloat() * Math.PI * 2);
-            this.yaw = this.lastYaw;
-            this.lastRotation = (float) (simulation.random.nextFloat() * Math.PI * 2);
-            this.rotation = this.lastRotation;
-            this.distanceFromParent = 0;
-            this.root = false;
-        }
-
-        @Override
-        public void tick()
-        {
-            this.lastYaw = this.yaw;
-            this.lastRotation = this.rotation;
-            this.rotation += 1F / 180F * Math.PI;
-            this.yaw += 0.01F / this.body.getSize();
-        }
-
-        private void randomizeDistance()
-        {
-            Optional<SimulatedBody> optional = this.body.getParent().map(this.simulation.bodies::get);
-            if (!optional.isPresent())
-                return;
-            float scale = optional.get().getSize();
-            this.distanceFromParent = scale * 5F;
-        }
-
-        private float getHorizontalDistance(float partialTicks)
-        {
-            return this.distanceFromParent * MathHelper.cos(MathHelper.lerp(partialTicks, this.lastYaw, this.yaw));
-        }
-
-        private float getVerticalDistance(float partialTicks)
-        {
-            return this.distanceFromParent * MathHelper.sin(MathHelper.lerp(partialTicks, this.lastYaw, this.yaw));
-        }
-
-        /**
-         * @return The texture of this body
-         */
-        public ResourceLocation getTexture()
-        {
-            return this.body.getTexture();
-        }
-
-        /**
-         * @return Whether or not shading should be applied to this body
-         */
-        public boolean isShade()
-        {
-            return this.body.isShade();
-        }
-
-        @Override
-        public ResourceLocation getId()
-        {
-            return id;
-        }
-
-        @Override
-        public Optional<ResourceLocation> getParent()
-        {
-            return this.body.getParent();
-        }
-
-        @Override
-        public ITextComponent getDisplayName()
-        {
-            return this.body.getDisplayName();
-        }
-
-        @Override
-        public float getSize()
-        {
-            return this.body.getSize();
-        }
-
-        @Override
-        public float getX(float partialTicks)
-        {
-            Optional<SimulatedBody> optional = this.body.getParent().map(this.simulation.bodies::get);
-            return optional.map(simulatedBody -> (this.root ? 0 : simulatedBody.getX(partialTicks)) + this.getHorizontalDistance(partialTicks)).orElse(0F);
-        }
-
-        @Override
-        public float getY(float partialTicks)
-        {
-            return 0;
-        }
-
-        @Override
-        public float getZ(float partialTicks)
-        {
-            Optional<SimulatedBody> optional = this.body.getParent().map(this.simulation.bodies::get);
-            return optional.map(simulatedBody -> (this.root ? 0 : simulatedBody.getZ(partialTicks)) + this.getVerticalDistance(partialTicks)).orElse(0F);
-        }
-
-        @Override
-        public float getRotationX(float partialTicks)
-        {
-            return this.getRotationY(partialTicks);
-        }
-
-        @Override
-        public float getRotationY(float partialTicks)
-        {
-            return MathHelper.lerp(partialTicks, this.lastRotation, this.rotation);
-        }
-
-        @Override
-        public float getRotationZ(float partialTicks)
-        {
-            return this.getRotationY(partialTicks);
-        }
     }
 
     /**

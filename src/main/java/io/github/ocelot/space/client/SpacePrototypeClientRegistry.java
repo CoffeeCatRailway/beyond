@@ -1,9 +1,13 @@
 package io.github.ocelot.space.client;
 
 import io.github.ocelot.space.SpacePrototype;
+import net.minecraft.client.Minecraft;
+import net.minecraft.util.ResourceLocation;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.event.ColorHandlerEvent;
+import net.minecraftforge.client.event.ModelRegistryEvent;
 import net.minecraftforge.client.event.ParticleFactoryRegisterEvent;
+import net.minecraftforge.client.model.ModelLoader;
 import net.minecraftforge.eventbus.api.IEventBus;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.ModContainer;
@@ -67,5 +71,12 @@ public class SpacePrototypeClientRegistry
     @SubscribeEvent
     public static void onEvent(ColorHandlerEvent.Block event)
     {
+    }
+
+    @SubscribeEvent
+    public static void onEvent(ModelRegistryEvent event)
+    {
+        for (ResourceLocation location : Minecraft.getInstance().getResourceManager().listResources("models/body", s -> s.endsWith(".json")))
+            ModelLoader.addSpecialModel(new ResourceLocation(location.getNamespace(), location.getPath().substring(7, location.getPath().length() - 5)));
     }
 }

@@ -12,7 +12,7 @@ import net.minecraft.util.text.ITextComponent;
 import java.util.Optional;
 
 /**
- * <p>An abstract body in a {@link CelestialBodySimulation}.</p>
+ * <p>A single moving body in a {@link CelestialBodySimulation}.</p>
  *
  * @author Ocelot
  */
@@ -120,4 +120,26 @@ public interface SimulatedBody
      * @return The z rotation of this body
      */
     float getRotationZ(float partialTicks);
+
+    /**
+     * @return The type of renderer to use
+     */
+    RenderType getRenderType();
+
+    /**
+     * Marks this body as a root or not.
+     *
+     * @param root The body to use as root
+     */
+    void setRoot(boolean root);
+
+    /**
+     * <p>The types of bodies that can be rendered.</p>
+     *
+     * @author Ocelot
+     */
+    enum RenderType
+    {
+        CUBE, MODEL, PLAYER
+    }
 }

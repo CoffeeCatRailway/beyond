@@ -21,22 +21,25 @@ public class CelestialBody
             ResourceLocation.CODEC.fieldOf("texture").forGetter(CelestialBody::getTexture),
             Codec.STRING.fieldOf("displayName").<ITextComponent>xmap(ITextComponent.Serializer::fromJson, ITextComponent.Serializer::toJson).forGetter(CelestialBody::getDisplayName),
             Codec.BOOL.optionalFieldOf("shade", true).forGetter(CelestialBody::isShade),
-            Codec.FLOAT.optionalFieldOf("size", 1.0F).forGetter(CelestialBody::getSize)
-    ).apply(instance, (parent, texture, displayName, shade, scale) -> new CelestialBody(parent.orElse(null), texture, displayName, shade, scale)));
+            Codec.FLOAT.optionalFieldOf("size", 1.0F).forGetter(CelestialBody::getSize),
+            Codec.FLOAT.optionalFieldOf("distanceFactor", 1.0F).forGetter(CelestialBody::getDistanceFactor)
+    ).apply(instance, (parent, texture, displayName, shade, scale, distanceFactor) -> new CelestialBody(parent.orElse(null), texture, displayName, shade, scale, distanceFactor)));
 
     private final ResourceLocation parent;
     private final ResourceLocation texture;
     private final ITextComponent displayName;
     private final boolean shade;
     private final float size;
+    private final float distanceFactor;
 
-    public CelestialBody(@Nullable ResourceLocation parent, ResourceLocation texture, ITextComponent displayName, boolean shade, float size)
+    public CelestialBody(@Nullable ResourceLocation parent, ResourceLocation texture, ITextComponent displayName, boolean shade, float size, float distanceFactor)
     {
         this.parent = parent;
         this.texture = texture;
         this.displayName = displayName;
         this.shade = shade;
         this.size = size;
+        this.distanceFactor = distanceFactor;
     }
 
     /**
@@ -80,6 +83,14 @@ public class CelestialBody
     }
 
     /**
+     * @return The additional modifier to the distance from the parent
+     */
+    public float getDistanceFactor()
+    {
+        return distanceFactor;
+    }
+
+    /**
      * @return A new builder for a celestial body
      */
     public static Builder builder()
@@ -99,6 +110,7 @@ public class CelestialBody
         private ITextComponent displayName;
         private boolean shade;
         private float scale;
+        private float distanceFactor;
 
         private Builder()
         {
@@ -107,6 +119,7 @@ public class CelestialBody
             this.displayName = null;
             this.shade = true;
             this.scale = 1.0F;
+            this.distanceFactor = 1.0F;
         }
 
         /**
@@ -164,13 +177,24 @@ public class CelestialBody
         }
 
         /**
+         * Sets the extra distance to go away from the parent body
+         *
+         * @param distanceFactor The additional modifier to the distance from the parent body
+         */
+        public Builder setDistanceFactor(float distanceFactor)
+        {
+            this.distanceFactor = distanceFactor;
+            return this;
+        }
+
+        /**
          * @return A new body with the specified parameters
          */
         public CelestialBody build()
         {
             Validate.notNull(this.texture);
             Validate.notNull(this.displayName);
-            return new CelestialBody(this.parent, this.texture, this.displayName, this.shade, this.scale);
+            return new CelestialBody(this.parent, this.texture, this.displayName, this.shade, this.scale, this.distanceFactor);
         }
     }
 }
