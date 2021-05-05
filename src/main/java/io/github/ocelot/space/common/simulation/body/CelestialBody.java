@@ -1,4 +1,4 @@
-package io.github.ocelot.space.common.simulation;
+package io.github.ocelot.space.common.simulation.body;
 
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
@@ -22,8 +22,9 @@ public class CelestialBody
             Codec.STRING.fieldOf("displayName").<ITextComponent>xmap(ITextComponent.Serializer::fromJson, ITextComponent.Serializer::toJson).forGetter(CelestialBody::getDisplayName),
             Codec.BOOL.optionalFieldOf("shade", true).forGetter(CelestialBody::isShade),
             Codec.FLOAT.optionalFieldOf("size", 1.0F).forGetter(CelestialBody::getSize),
-            Codec.FLOAT.optionalFieldOf("distanceFactor", 1.0F).forGetter(CelestialBody::getDistanceFactor)
-    ).apply(instance, (parent, texture, displayName, shade, scale, distanceFactor) -> new CelestialBody(parent.orElse(null), texture, displayName, shade, scale, distanceFactor)));
+            Codec.FLOAT.optionalFieldOf("distanceFactor", 1.0F).forGetter(CelestialBody::getDistanceFactor),
+            CelestialBodyAtmosphere.CODEC.optionalFieldOf("atmosphere").forGetter(CelestialBody::getAtmosphere)
+    ).apply(instance, (parent, texture, displayName, shade, scale, distanceFactor, atmosphere) -> new CelestialBody(parent.orElse(null), texture, displayName, shade, scale, distanceFactor, atmosphere.orElse(null))));
 
     private final ResourceLocation parent;
     private final ResourceLocation texture;
@@ -31,8 +32,9 @@ public class CelestialBody
     private final boolean shade;
     private final float size;
     private final float distanceFactor;
+    private final CelestialBodyAtmosphere atmosphere;
 
-    public CelestialBody(@Nullable ResourceLocation parent, ResourceLocation texture, ITextComponent displayName, boolean shade, float size, float distanceFactor)
+    public CelestialBody(@Nullable ResourceLocation parent, ResourceLocation texture, ITextComponent displayName, boolean shade, float size, float distanceFactor, CelestialBodyAtmosphere atmosphere)
     {
         this.parent = parent;
         this.texture = texture;
@@ -40,6 +42,7 @@ public class CelestialBody
         this.shade = shade;
         this.size = size;
         this.distanceFactor = distanceFactor;
+        this.atmosphere = atmosphere;
     }
 
     /**
@@ -91,6 +94,14 @@ public class CelestialBody
     }
 
     /**
+     * @return The atmosphere to show around this body
+     */
+    public Optional<CelestialBodyAtmosphere> getAtmosphere()
+    {
+        return Optional.ofNullable(this.atmosphere);
+    }
+
+    /**
      * @return A new builder for a celestial body
      */
     public static Builder builder()
@@ -111,6 +122,7 @@ public class CelestialBody
         private boolean shade;
         private float scale;
         private float distanceFactor;
+        private CelestialBodyAtmosphere atmosphere;
 
         private Builder()
         {
@@ -120,6 +132,7 @@ public class CelestialBody
             this.shade = true;
             this.scale = 1.0F;
             this.distanceFactor = 1.0F;
+            this.atmosphere = null;
         }
 
         /**
@@ -188,13 +201,24 @@ public class CelestialBody
         }
 
         /**
+         * Sets the atmosphere to render around the body.
+         *
+         * @param atmosphere The atmosphere to show around the body or <code>null</code> for none
+         */
+        public Builder setAtmosphere(CelestialBodyAtmosphere atmosphere)
+        {
+            this.atmosphere = atmosphere;
+            return this;
+        }
+
+        /**
          * @return A new body with the specified parameters
          */
         public CelestialBody build()
         {
             Validate.notNull(this.texture);
             Validate.notNull(this.displayName);
-            return new CelestialBody(this.parent, this.texture, this.displayName, this.shade, this.scale, this.distanceFactor);
+            return new CelestialBody(this.parent, this.texture, this.displayName, this.shade, this.scale, this.distanceFactor, this.atmosphere);
         }
     }
 }

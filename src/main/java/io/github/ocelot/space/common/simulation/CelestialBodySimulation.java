@@ -1,5 +1,6 @@
 package io.github.ocelot.space.common.simulation;
 
+import io.github.ocelot.space.common.simulation.body.CelestialBody;
 import net.minecraft.client.Minecraft;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.math.vector.Vector3d;
@@ -37,7 +38,6 @@ public class CelestialBodySimulation
             this.bodies.put(entry.getKey(), new NaturalSimulatedBody(this, entry.getKey(), body));
         }
 
-//        Set<SimulatedBody> initializedBodies = new HashSet<>();
         List<SimulatedBody> unvisitedBodies = new ArrayList<>(this.bodies.values());
 
         while (!unvisitedBodies.isEmpty())
@@ -48,16 +48,10 @@ public class CelestialBodySimulation
             {
                 ((NaturalSimulatedBody) body).initializePosition();
             }
-//            else if (initializedBodies.contains(optionalParent.get()))
-//            {
-//                ((NaturalSimulatedBody) body).initializePosition();
-//                body.setRoot(true);
-//            }
             else
             {
                 unvisitedBodies.add(body);
             }
-//            initializedBodies.add(body);
         }
     }
 

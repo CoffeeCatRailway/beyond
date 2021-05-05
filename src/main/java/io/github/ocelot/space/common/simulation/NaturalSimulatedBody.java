@@ -1,5 +1,6 @@
 package io.github.ocelot.space.common.simulation;
 
+import io.github.ocelot.space.common.simulation.body.CelestialBody;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.text.ITextComponent;
 

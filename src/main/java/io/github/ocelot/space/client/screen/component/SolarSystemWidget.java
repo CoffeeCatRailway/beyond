@@ -11,6 +11,7 @@ import io.github.ocelot.space.client.SpacePlanetSpriteManager;
 import io.github.ocelot.space.client.screen.SpaceTravelCamera;
 import io.github.ocelot.space.common.init.SpaceRenderTypes;
 import io.github.ocelot.space.common.simulation.*;
+import io.github.ocelot.space.common.simulation.body.CelestialBodyDefinitions;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screen.IScreen;
 import net.minecraft.client.gui.screen.Screen;
@@ -70,12 +71,19 @@ public class SolarSystemWidget extends Widget implements IScreen, NativeResource
         this.camera.setZoom(80);
         this.camera.setPitch((float) (24F * Math.PI / 180F));
 
-        ArtificialSatellite satellite = new ArtificialSatellite(this.simulation, new ResourceLocation(SpacePrototype.MOD_ID, "satellite_test"));
-        satellite.setParent(new ResourceLocation(SpacePrototype.MOD_ID, "earth"));
-        satellite.setDistanceFromParent(5F);
-        satellite.setModel(new ResourceLocation(SpacePrototype.MOD_ID, "body/satellite"));
-        satellite.setDisplayName(new StringTextComponent("Satellite Test"));
-        this.simulation.add(satellite);
+        ArtificialSatellite earthSatellite = new ArtificialSatellite(this.simulation, new ResourceLocation(SpacePrototype.MOD_ID, "earth_satellite_test"));
+        earthSatellite.setParent(new ResourceLocation(SpacePrototype.MOD_ID, "earth"));
+        earthSatellite.setDistanceFromParent(5F);
+        earthSatellite.setModel(new ResourceLocation(SpacePrototype.MOD_ID, "body/satellite"));
+        earthSatellite.setDisplayName(new StringTextComponent("Earth Satellite Test"));
+        this.simulation.add(earthSatellite);
+
+        ArtificialSatellite marsSatellite = new ArtificialSatellite(this.simulation, new ResourceLocation(SpacePrototype.MOD_ID, "mars_satellite_test"));
+        marsSatellite.setParent(new ResourceLocation(SpacePrototype.MOD_ID, "mars"));
+        marsSatellite.setDistanceFromParent(5F);
+        marsSatellite.setModel(new ResourceLocation(SpacePrototype.MOD_ID, "body/satellite"));
+        marsSatellite.setDisplayName(new StringTextComponent("Mars Satellite Test"));
+        this.simulation.add(marsSatellite);
     }
 
     private void generateSky()

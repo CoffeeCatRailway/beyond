@@ -1,4 +1,4 @@
-package io.github.ocelot.space.common.simulation;
+package io.github.ocelot.space.common.simulation.body;
 
 import io.github.ocelot.space.SpacePrototype;
 import net.minecraft.util.ResourceLocation;
@@ -27,15 +27,40 @@ public class CelestialBodyDefinitions
                     builder.setScale(20.0F);
                     builder.setShade(false);
                 });
+                ResourceLocation mercury = create(bodies, "mercury", "Mercury", "mercury", builder ->
+                {
+                    builder.setScale(3.0F);
+                    builder.setDistanceFactor(0.25F);
+                    builder.setParent(sun);
+                });
+                ResourceLocation venus = create(bodies, "venus", "Venus", "venus", builder ->
+                {
+                    builder.setScale(3.0F);
+                    builder.setDistanceFactor(0.5F);
+                    builder.setParent(sun);
+                });
                 ResourceLocation earth = create(bodies, "earth", "Earth", "earth", builder ->
                 {
                     builder.setScale(4.0F);
+                    builder.setDistanceFactor(0.8F);
                     builder.setParent(sun);
                 });
                 ResourceLocation moon = create(bodies, "moon", "Moon", "moon", builder ->
                 {
                     builder.setScale(2.0F);
                     builder.setParent(earth);
+                });
+                ResourceLocation mars = create(bodies, "mars", "Mars", "mars", builder ->
+                {
+                    builder.setScale(3.5F);
+                    builder.setDistanceFactor(1.2F);
+                    builder.setParent(sun);
+                });
+                ResourceLocation jupiter = create(bodies, "jupiter", "Jupiter", "jupiter", builder ->
+                {
+                    builder.setScale(12.0F);
+                    builder.setDistanceFactor(5.0F);
+                    builder.setParent(sun);
                 });
                 for (int i = 0; i < 1000; i++)
                 {
