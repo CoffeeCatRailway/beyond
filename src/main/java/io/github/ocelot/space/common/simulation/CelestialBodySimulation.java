@@ -1,10 +1,9 @@
-package io.github.ocelot.space.common.planet;
+package io.github.ocelot.space.common.simulation;
 
 import net.minecraft.util.ResourceLocation;
-import net.minecraft.util.math.AxisAlignedBB;
 import net.minecraft.util.math.MathHelper;
 import net.minecraft.util.math.vector.Vector3d;
-import net.minecraft.util.math.vector.Vector3f;
+import net.minecraft.util.text.ITextComponent;
 
 import java.util.*;
 import java.util.stream.Stream;
@@ -33,7 +32,7 @@ public class CelestialBodySimulation
                 if (!bodies.containsKey(parent))
                     continue;
             }
-            this.bodies.put(entry.getKey(), new SimulatedBody(this, entry.getKey(), body));
+            this.bodies.put(entry.getKey(), new SimulatedBodyOld(this, entry.getKey(), body));
         }
 
         Set<SimulatedBody> initializedBodies = new HashSet<>();
@@ -42,18 +41,16 @@ public class CelestialBodySimulation
         while (!unvisitedBodies.isEmpty())
         {
             SimulatedBody body = unvisitedBodies.remove(0);
-            Optional<SimulatedBody> optionalParent = body.getBody().getParent().map(this.bodies::get);
+            Optional<SimulatedBody> optionalParent = body.getParent().map(this.bodies::get);
             if (!optionalParent.isPresent() || !unvisitedBodies.contains(optionalParent.get()))
             {
                 if (optionalParent.isPresent())
-                    body.randomizeDistance();
-                body.move();
+                    ((SimulatedBodyOld) body).randomizeDistance();
             }
             else if (initializedBodies.contains(optionalParent.get()))
             {
-                body.randomizeDistance();
-                body.move();
-                body.root = true;
+                ((SimulatedBodyOld) body).randomizeDistance();
+                ((SimulatedBodyOld) body).root = true;
             }
             else
             {
@@ -68,7 +65,6 @@ public class CelestialBodySimulation
      */
     public void tick()
     {
-        this.bodies.values().forEach(SimulatedBody::move);
         this.bodies.values().forEach(SimulatedBody::tick);
     }
 
@@ -115,13 +111,11 @@ public class CelestialBodySimulation
      *
      * @author Ocelot
      */
-    public static class SimulatedBody
+    public static class SimulatedBodyOld implements SimulatedBody
     {
         private final CelestialBodySimulation simulation;
         private final ResourceLocation id;
         private final CelestialBody body;
-        private final Vector3f lastPosition;
-        private final Vector3f position;
         private float lastYaw;
         private float yaw;
         private float lastRotation;
@@ -129,13 +123,11 @@ public class CelestialBodySimulation
         private float distanceFromParent;
         private boolean root;
 
-        public SimulatedBody(CelestialBodySimulation simulation, ResourceLocation id, CelestialBody body)
+        public SimulatedBodyOld(CelestialBodySimulation simulation, ResourceLocation id, CelestialBody body)
         {
             this.simulation = simulation;
             this.id = id;
             this.body = body;
-            this.lastPosition = new Vector3f();
-            this.position = new Vector3f();
             this.lastYaw = (float) (simulation.random.nextFloat() * Math.PI * 2);
             this.yaw = this.lastYaw;
             this.lastRotation = (float) (simulation.random.nextFloat() * Math.PI * 2);
@@ -144,24 +136,13 @@ public class CelestialBodySimulation
             this.root = false;
         }
 
-        private void tick()
+        @Override
+        public void tick()
         {
-            this.lastPosition.set(this.position.x(), this.position.y(), this.position.z());
             this.lastYaw = this.yaw;
             this.lastRotation = this.rotation;
             this.rotation += 1F / 180F * Math.PI;
-            this.yaw += 0.01F / this.body.getScale();
-        }
-
-        private void move()
-        {
-            Optional<SimulatedBody> optional = this.body.getParent().map(this.simulation.bodies::get);
-            if (!optional.isPresent())
-                return;
-
-            SimulatedBody parent = optional.get();
-            this.position.setX(parent.lastPosition.x() + this.distanceFromParent * MathHelper.cos(this.yaw));
-            this.position.setZ(parent.lastPosition.z() + this.distanceFromParent * MathHelper.sin(this.yaw));
+            this.yaw += 0.01F / this.body.getSize();
         }
 
         private void randomizeDistance()
@@ -169,7 +150,7 @@ public class CelestialBodySimulation
             Optional<SimulatedBody> optional = this.body.getParent().map(this.simulation.bodies::get);
             if (!optional.isPresent())
                 return;
-            float scale = optional.get().getBody().getScale();
+            float scale = optional.get().getSize();
             this.distanceFromParent = scale * 5F;
         }
 
@@ -184,84 +165,81 @@ public class CelestialBodySimulation
         }
 
         /**
-         * @return The id of this body in the simulation
+         * @return The texture of this body
          */
+        public ResourceLocation getTexture()
+        {
+            return this.body.getTexture();
+        }
+
+        /**
+         * @return Whether or not shading should be applied to this body
+         */
+        public boolean isShade()
+        {
+            return this.body.isShade();
+        }
+
+        @Override
         public ResourceLocation getId()
         {
             return id;
         }
 
-        /**
-         * @return The attributes of this body in the simulation
-         */
-        public CelestialBody getBody()
+        @Override
+        public Optional<ResourceLocation> getParent()
         {
-            return body;
+            return this.body.getParent();
         }
 
-        /**
-         * Casts a ray through this body to check for an intersection.
-         *
-         * @param start        The starting position of the ray
-         * @param end          The ending position of the ray
-         * @param partialTicks The percentage from last update and this update
-         * @return The optional result of the ray trace
-         */
-        public Optional<Vector3d> clip(Vector3d start, Vector3d end, float partialTicks)
+        @Override
+        public ITextComponent getDisplayName()
         {
-            float size = Math.max(this.body.getScale(), 0.25F);
-            float x = this.getX(partialTicks);
-            float y = this.getY(partialTicks);
-            float z = this.getZ(partialTicks);
-            float rotation = this.getRotation(partialTicks);
-            AxisAlignedBB box = new AxisAlignedBB(x - size, y - size, z - size, x + size, y + size, z + size);
-            return box.clip(rotate(start, rotation, x, z), rotate(end, rotation, x, z)).map(p -> rotate(p, -rotation, x, z));
+            return this.body.getDisplayName();
         }
 
-        /**
-         * Calculates the x position of this body.
-         *
-         * @param partialTicks The percentage from last tick and this tick
-         * @return The x position of this body
-         */
+        @Override
+        public float getSize()
+        {
+            return this.body.getSize();
+        }
+
+        @Override
         public float getX(float partialTicks)
         {
             Optional<SimulatedBody> optional = this.body.getParent().map(this.simulation.bodies::get);
             return optional.map(simulatedBody -> (this.root ? 0 : simulatedBody.getX(partialTicks)) + this.getHorizontalDistance(partialTicks)).orElse(0F);
         }
 
-        /**
-         * Calculates the y position of this body.
-         *
-         * @param partialTicks The percentage from last tick and this tick
-         * @return The y position of this body
-         */
+        @Override
         public float getY(float partialTicks)
         {
-            return this.position.y();
+            return 0;
         }
 
-        /**
-         * Calculates the z position of this body.
-         *
-         * @param partialTicks The percentage from last tick and this tick
-         * @return The z position of this body
-         */
+        @Override
         public float getZ(float partialTicks)
         {
             Optional<SimulatedBody> optional = this.body.getParent().map(this.simulation.bodies::get);
             return optional.map(simulatedBody -> (this.root ? 0 : simulatedBody.getZ(partialTicks)) + this.getVerticalDistance(partialTicks)).orElse(0F);
         }
 
-        /**
-         * Calculates the rotation of this body.
-         *
-         * @param partialTicks The percentage from last tick and this tick
-         * @return The y rotation of this body
-         */
-        public float getRotation(float partialTicks)
+        @Override
+        public float getRotationX(float partialTicks)
+        {
+            return this.getRotationY(partialTicks);
+        }
+
+        @Override
+        public float getRotationY(float partialTicks)
         {
             return MathHelper.lerp(partialTicks, this.lastRotation, this.rotation);
+        }
+
+        @Override
+        public float getRotationZ(float partialTicks)
+        {
+            return this.getRotationY(partialTicks);
         }
     }
 
@@ -296,14 +274,5 @@ public class CelestialBodySimulation
         {
             return pos;
         }
-    }
-
-    private static Vector3d rotate(Vector3d pos, double angle, double rotX, double rotZ)
-    {
-        float cos = MathHelper.cos((float) angle);
-        float sin = MathHelper.sin((float) angle);
-        double x = rotX + (pos.x - rotX) * (double) cos - (pos.z - rotZ) * (double) sin;
-        double z = rotZ + (pos.x - rotX) * (double) sin + (pos.z - rotZ) * (double) cos;
-        return new Vector3d(x, pos.y, z);
     }
 }

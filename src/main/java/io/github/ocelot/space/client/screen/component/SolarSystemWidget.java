@@ -8,8 +8,9 @@ import io.github.ocelot.space.client.MousePicker;
 import io.github.ocelot.space.client.SpacePlanetSpriteManager;
 import io.github.ocelot.space.client.screen.SpaceTravelCamera;
 import io.github.ocelot.space.common.init.SpaceRenderTypes;
-import io.github.ocelot.space.common.planet.CelestialBodyDefinitions;
-import io.github.ocelot.space.common.planet.CelestialBodySimulation;
+import io.github.ocelot.space.common.simulation.CelestialBodyDefinitions;
+import io.github.ocelot.space.common.simulation.CelestialBodySimulation;
+import io.github.ocelot.space.common.simulation.SimulatedBody;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screen.IScreen;
 import net.minecraft.client.gui.screen.Screen;
@@ -64,7 +65,7 @@ public class SolarSystemWidget extends Widget implements IScreen, NativeResource
     {
         super(x, y, width, height, StringTextComponent.EMPTY);
         this.parent = parent;
-        this.simulation = new CelestialBodySimulation(CelestialBodyDefinitions.LARGE_SOLAR_SYSTEM);
+        this.simulation = new CelestialBodySimulation(CelestialBodyDefinitions.SOLAR_SYSTEM);
         this.camera = new SpaceTravelCamera();
         this.camera.setZoom(80);
         this.camera.setPitch((float) (24F * Math.PI / 180F));
@@ -126,18 +127,26 @@ public class SolarSystemWidget extends Widget implements IScreen, NativeResource
         this.skyVBO.upload(bufferbuilder);
     }
 
-    private void renderBody(MatrixStack poseStack, IRenderTypeBuffer buffer, CelestialBodySimulation.SimulatedBody body, float partialTicks)
+    private void renderBody(MatrixStack poseStack, IRenderTypeBuffer buffer, SimulatedBody body, float partialTicks)
     {
-        float scale = body.getBody().getScale() * 4;
+        float scale = body.getSize();
         boolean hovered = this.hoveredBody != null && this.hoveredBody.getBody().equals(body);
         poseStack.pushPose();
         poseStack.translate(body.getX(partialTicks), body.getY(partialTicks), body.getZ(partialTicks));
-        poseStack.mulPose(Vector3f.YP.rotation(body.getRotation(partialTicks)));
-        poseStack.scale(scale, scale, scale);
-        poseStack.translate(-0.25F, -0.25F, -0.25F);
-        CUBE.render(poseStack, SpacePlanetSpriteManager.getSprite(body.getBody().getTexture()).wrap(buffer.getBuffer(body.getBody().isShade() ? SpaceRenderTypes.planetShade() : SpaceRenderTypes.planet())), 15728880, OverlayTexture.NO_OVERLAY);
-        if (hovered)
-            CUBE.render(poseStack, buffer.getBuffer(SpaceRenderTypes.planetSelect()), 15728880, OverlayTexture.NO_OVERLAY, 1.0F, 1.0F, 1.0F, 0.5F);
+        poseStack.mulPose(Vector3f.ZP.rotation(body.getRotationZ(partialTicks)));
+        poseStack.mulPose(Vector3f.YP.rotation(body.getRotationY(partialTicks)));
+        poseStack.mulPose(Vector3f.XP.rotation(body.getRotationX(partialTicks)));
+        poseStack.scale(scale * 2, scale * 2, scale * 2);
+
+        if (body instanceof CelestialBodySimulation.SimulatedBodyOld)
+        {
+            CelestialBodySimulation.SimulatedBodyOld b = (CelestialBodySimulation.SimulatedBodyOld) body;
+            poseStack.translate(-0.25F, -0.25F, -0.25F);
+            CUBE.render(poseStack, SpacePlanetSpriteManager.getSprite(b.getTexture()).wrap(buffer.getBuffer(b.isShade() ? SpaceRenderTypes.planetShade() : SpaceRenderTypes.planet())), 15728880, OverlayTexture.NO_OVERLAY);
+            if (hovered)
+                CUBE.render(poseStack, buffer.getBuffer(SpaceRenderTypes.planetSelect()), 15728880, OverlayTexture.NO_OVERLAY, 1.0F, 1.0F, 1.0F, 0.5F);
+        }
+
         poseStack.popPose();
     }
 
@@ -259,7 +268,7 @@ public class SolarSystemWidget extends Widget implements IScreen, NativeResource
         if (this.hoveredBody != null)
         {
             List<ITextComponent> tooltip = new ArrayList<>();
-            tooltip.add(this.hoveredBody.getBody().getBody().getDisplayName());
+            tooltip.add(this.hoveredBody.getBody().getDisplayName());
             if (Minecraft.getInstance().options.advancedItemTooltips)
                 tooltip.add(new StringTextComponent(this.hoveredBody.getBody().getId().toString()).withStyle(TextFormatting.DARK_GRAY));
             this.parent.renderComponentTooltip(poseStack, tooltip, mouseX, mouseY);

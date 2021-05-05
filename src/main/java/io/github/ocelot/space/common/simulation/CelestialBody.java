@@ -1,4 +1,4 @@
-package io.github.ocelot.space.common.planet;
+package io.github.ocelot.space.common.simulation;
 
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
@@ -21,22 +21,22 @@ public class CelestialBody
             ResourceLocation.CODEC.fieldOf("texture").forGetter(CelestialBody::getTexture),
             Codec.STRING.fieldOf("displayName").<ITextComponent>xmap(ITextComponent.Serializer::fromJson, ITextComponent.Serializer::toJson).forGetter(CelestialBody::getDisplayName),
             Codec.BOOL.optionalFieldOf("shade", true).forGetter(CelestialBody::isShade),
-            Codec.FLOAT.optionalFieldOf("scale", 1.0F).forGetter(CelestialBody::getScale)
+            Codec.FLOAT.optionalFieldOf("size", 1.0F).forGetter(CelestialBody::getSize)
     ).apply(instance, (parent, texture, displayName, shade, scale) -> new CelestialBody(parent.orElse(null), texture, displayName, shade, scale)));
 
     private final ResourceLocation parent;
     private final ResourceLocation texture;
     private final ITextComponent displayName;
     private final boolean shade;
-    private final float scale;
+    private final float size;
 
-    public CelestialBody(@Nullable ResourceLocation parent, ResourceLocation texture, ITextComponent displayName, boolean shade, float scale)
+    public CelestialBody(@Nullable ResourceLocation parent, ResourceLocation texture, ITextComponent displayName, boolean shade, float size)
     {
         this.parent = parent;
         this.texture = texture;
         this.displayName = displayName;
         this.shade = shade;
-        this.scale = scale;
+        this.size = size;
     }
 
     /**
@@ -74,9 +74,9 @@ public class CelestialBody
     /**
      * @return The scale of the body
      */
-    public float getScale()
+    public float getSize()
     {
-        return scale;
+        return size;
     }
 
     /**

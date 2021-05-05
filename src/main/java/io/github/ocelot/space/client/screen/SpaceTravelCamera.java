@@ -1,6 +1,7 @@
 package io.github.ocelot.space.client.screen;
 
-import io.github.ocelot.space.common.planet.CelestialBodySimulation;
+import io.github.ocelot.space.common.simulation.CelestialBodySimulation;
+import io.github.ocelot.space.common.simulation.SimulatedBody;
 import net.minecraft.client.gui.IGuiEventListener;
 import net.minecraft.util.math.MathHelper;
 import net.minecraft.util.math.vector.Vector3f;
@@ -17,7 +18,7 @@ public class SpaceTravelCamera implements IGuiEventListener
     private float yaw;
     private float lastZoom;
     private float zoom;
-    private CelestialBodySimulation.SimulatedBody focused;
+    private SimulatedBody focused;
 
     public SpaceTravelCamera()
     {
@@ -135,7 +136,7 @@ public class SpaceTravelCamera implements IGuiEventListener
      * @param focused The body to focus onto
      */
     // TODO add animation
-    public void setFocused(@Nullable CelestialBodySimulation.SimulatedBody focused)
+    public void setFocused(@Nullable SimulatedBody focused)
     {
         this.focused = focused;
     }
