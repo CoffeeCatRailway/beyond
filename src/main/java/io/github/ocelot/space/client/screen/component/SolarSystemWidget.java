@@ -142,7 +142,6 @@ public class SolarSystemWidget extends Widget implements IScreen, NativeResource
         this.skyVBO.upload(bufferbuilder);
     }
 
-    @SuppressWarnings("deprecation")
     private void renderBody(MatrixStack poseStack, IRenderTypeBuffer.Impl buffer, SimulatedBody body, float partialTicks)
     {
         float scale = body.getSize();
@@ -153,13 +152,13 @@ public class SolarSystemWidget extends Widget implements IScreen, NativeResource
         poseStack.mulPose(Vector3f.YP.rotation(body.getRotationY(partialTicks)));
         poseStack.mulPose(Vector3f.XP.rotation(body.getRotationX(partialTicks)));
         poseStack.scale(scale, scale, scale);
-        poseStack.translate(-0.25F, -0.25F, -0.25F);
 
         switch (body.getRenderType())
         {
             case CUBE:
                 if (body instanceof NaturalSimulatedBody)
                 {
+                    poseStack.translate(-0.25F, -0.25F, -0.25F);
                     NaturalSimulatedBody b = (NaturalSimulatedBody) body;
                     CUBE.render(poseStack, SpacePlanetSpriteManager.getSprite(b.getTexture()).wrap(buffer.getBuffer(b.isShade() ? SpaceRenderTypes.planetShade() : SpaceRenderTypes.planet())), 15728880, OverlayTexture.NO_OVERLAY);
                     if (hovered)
@@ -169,6 +168,7 @@ public class SolarSystemWidget extends Widget implements IScreen, NativeResource
             case MODEL:
                 if (body instanceof ModelSimulatedBody)
                 {
+                    poseStack.translate(-0.5F, -0.5F, -0.5F);
                     ModelSimulatedBody b = (ModelSimulatedBody) body;
                     BakedModelRenderer.renderModel(b.getModel(), buffer.getBuffer(RenderType.entityCutout(PlayerContainer.BLOCK_ATLAS)), poseStack, 1.0F, 1.0F, 1.0F, 15728880, OverlayTexture.NO_OVERLAY, EmptyModelData.INSTANCE);
                 }
@@ -263,7 +263,7 @@ public class SolarSystemWidget extends Widget implements IScreen, NativeResource
         Matrix4f viewMatrix = matrixStack1.last().pose().copy();
         Vector3d ray = MousePicker.getRay(projectionMatrix, viewMatrix, (float) (mouseX - this.x) / (float) this.width * 2F - 1F, (float) (mouseY - this.y) / (float) this.height * 2F - 1F);
         Vector3d start = new Vector3d(cameraX, cameraY, cameraZ);
-        Vector3d end = start.add(ray.multiply(1000, 1000, 1000));
+        Vector3d end = start.add(ray.multiply(Double.MAX_VALUE, Double.MAX_VALUE, Double.MAX_VALUE));
         this.hoveredBody = this.simulation.clip(start, end, partialTicks).orElse(null);
 
         matrixStack1.pushPose();

@@ -20,6 +20,7 @@ public class ArtificialSatellite extends AbstractSimulatedBody implements ModelS
     private ResourceLocation model;
     private ResourceLocation parent;
     private ITextComponent displayName;
+    private float size;
 
     public ArtificialSatellite(CelestialBodySimulation simulation, ResourceLocation id)
     {
@@ -27,6 +28,7 @@ public class ArtificialSatellite extends AbstractSimulatedBody implements ModelS
         this.model = null;
         this.parent = null;
         this.displayName = new StringTextComponent(id.toString());
+        this.size = 1.0F;
     }
 
     @Override
@@ -53,7 +55,7 @@ public class ArtificialSatellite extends AbstractSimulatedBody implements ModelS
     @Override
     public float getSize()
     {
-        return 1.0F;
+        return size;
     }
 
     @Override
@@ -62,18 +64,43 @@ public class ArtificialSatellite extends AbstractSimulatedBody implements ModelS
         return RenderType.MODEL;
     }
 
+    /**
+     * Sets the model to use for this satellite
+     *
+     * @param model The new model to use
+     */
     public void setModel(ResourceLocation model)
     {
         this.model = model;
     }
 
+    /**
+     * Sets the parent body for this satellite
+     *
+     * @param parent The new parent of this body
+     */
     public void setParent(@Nullable ResourceLocation parent)
     {
         this.parent = parent;
     }
 
+    /**
+     * Sets the display name for the satellite.
+     *
+     * @param displayName The new display name
+     */
     public void setDisplayName(ITextComponent displayName)
     {
         this.displayName = displayName;
+    }
+
+    /**
+     * Sets the size of the satellite.
+     *
+     * @param size The new size
+     */
+    public void setSize(float size)
+    {
+        this.size = size;
     }
 }
