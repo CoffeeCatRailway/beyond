@@ -56,12 +56,6 @@ public class CelestialBodyDefinitions
                     builder.setDistanceFactor(1.2F);
                     builder.setParent(sun);
                 });
-                ResourceLocation jupiter = create(bodies, "jupiter", "Jupiter", "jupiter", builder ->
-                {
-                    builder.setScale(12.0F);
-                    builder.setDistanceFactor(5.0F);
-                    builder.setParent(sun);
-                });
                 for (int i = 0; i < 1000; i++)
                 {
                     ResourceLocation asteroid = create(bodies, "asteroid" + i, "Asteroid", "asteroid", builder ->
@@ -71,6 +65,39 @@ public class CelestialBodyDefinitions
                         builder.setParent(sun);
                     });
                 }
+                ResourceLocation jupiter = create(bodies, "jupiter", "Jupiter", "jupiter", builder ->
+                {
+                    builder.setScale(12.0F);
+                    builder.setDistanceFactor(5.0F);
+                    builder.setParent(sun);
+                });
+                ResourceLocation saturn = create(bodies, "saturn", "Saturn", "saturn", builder ->
+                {
+                    builder.setScale(8.0F);
+                    builder.setDistanceFactor(6.0F);
+                    builder.setParent(sun);
+                });
+                for (int i = 0; i < 1000; i++)
+                {
+                    ResourceLocation ring = create(bodies, "saturn_ring_" + i, "Saturn Ring", "asteroid", builder ->
+                    {
+                        builder.setScale(0.5F + random.nextFloat() / 2F - 0.25F);
+                        builder.setDistanceFactor(0.5F + random.nextFloat() / 2F);
+                        builder.setParent(saturn);
+                    });
+                }
+                ResourceLocation uranus = create(bodies, "uranus", "Uranus", "uranus", builder ->
+                {
+                    builder.setScale(6.0F);
+                    builder.setDistanceFactor(7.0F);
+                    builder.setParent(sun);
+                });
+                ResourceLocation neptune = create(bodies, "neptune", "Neptune", "neptune", builder ->
+                {
+                    builder.setScale(6.0F);
+                    builder.setDistanceFactor(8.0F);
+                    builder.setParent(sun);
+                });
             });
         }
     }
