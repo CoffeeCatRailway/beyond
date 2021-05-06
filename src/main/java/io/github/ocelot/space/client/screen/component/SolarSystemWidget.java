@@ -10,7 +10,9 @@ import io.github.ocelot.space.client.MousePicker;
 import io.github.ocelot.space.client.SpacePlanetSpriteManager;
 import io.github.ocelot.space.client.screen.SpaceTravelCamera;
 import io.github.ocelot.space.common.body.CelestialBodyDefinitions;
+import io.github.ocelot.space.common.init.SpaceMessages;
 import io.github.ocelot.space.common.init.SpaceRenderTypes;
+import io.github.ocelot.space.common.network.play.message.CPlanetTravelMessage;
 import io.github.ocelot.space.common.simulation.CelestialBodyRayTraceResult;
 import io.github.ocelot.space.common.simulation.CelestialBodySimulation;
 import io.github.ocelot.space.common.simulation.body.*;
@@ -93,7 +95,6 @@ public class SolarSystemWidget extends Widget implements INestedGuiEventHandler,
                 PlayerRocket rocket = this.simulation.getPlayer(Objects.requireNonNull(Minecraft.getInstance().player).getUUID());
                 if (rocket != null)
                     rocket.travelTo(this.selectedBody.getId());
-//                SpaceMessages.PLAY.sendToServer(new CPlanetTravelMessage(dimension)); // TODO get dimension from body
             });
         }, (button, matrixStack, mouseX, mouseY) ->
         {
@@ -116,6 +117,16 @@ public class SolarSystemWidget extends Widget implements INestedGuiEventHandler,
         this.children.add(this.launchButton);
 
         PlayerRocket localPlayer = new PlayerRocket(this.simulation, new ResourceLocation(SpacePrototype.MOD_ID, "earth"), Objects.requireNonNull(Minecraft.getInstance().player).getGameProfile());
+        localPlayer.addListener((rocket, body) ->
+        {
+            SimulatedBody simulatedBody = this.simulation.getBody(body);
+            if (simulatedBody == null || !simulatedBody.canTeleportTo())
+                return;
+            simulatedBody.getDimension().ifPresent(dimension ->
+            {
+                SpaceMessages.PLAY.sendToServer(new CPlanetTravelMessage(dimension)); // TODO get dimension from body
+            });
+        });
         this.camera.setFocused(localPlayer);
         this.simulation.add(localPlayer);
 
@@ -433,7 +444,7 @@ public class SolarSystemWidget extends Widget implements INestedGuiEventHandler,
                     this.launchButton.x = (int) ((p.x() + 1F) * this.width / 2F + width + sheering + padding);
                     this.launchButton.y = (int) ((-p.y() + 1F) * this.height / 2F + descriptionHeight + 2F * fontRenderer.lineHeight + padding * 2F - length);
                     this.launchButton.visible = true;
-                    this.launchButton.active = this.selectedBody.getDimension().isPresent();// && (Minecraft.getInstance().player == null || !Minecraft.getInstance().player.level.dimension().location().equals(this.selectedBody.getDimension().get()));
+                    this.launchButton.active = this.selectedBody.getDimension().isPresent() && (Minecraft.getInstance().player == null || !Minecraft.getInstance().player.level.dimension().location().equals(this.selectedBody.getDimension().get()));
                 }
 
                 RenderSystem.enableDepthTest();

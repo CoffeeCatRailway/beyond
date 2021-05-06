@@ -5,11 +5,14 @@ import io.github.ocelot.space.SpacePrototype;
 import io.github.ocelot.space.common.simulation.CelestialBodySimulation;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.math.MathHelper;
+import net.minecraft.util.math.vector.Vector3f;
 import net.minecraft.util.text.ITextComponent;
 import net.minecraft.util.text.StringTextComponent;
 import org.apache.commons.codec.digest.DigestUtils;
 
+import java.util.HashSet;
 import java.util.Optional;
+import java.util.Set;
 
 /**
  * <p>The player inside the simulation.</p>
@@ -18,12 +21,14 @@ import java.util.Optional;
  */
 public class PlayerRocket extends AbstractSimulatedBody
 {
-    private static final float TRANSITION_SPEED = 0.025F;
+    private static final float TRANSITION_SPEED = 0.0125F;
 
+    private final Set<Listener> listeners;
     private final GameProfile player;
     private final ITextComponent displayName;
     private ResourceLocation parent;
     private ResourceLocation newParent;
+    private final Vector3f transitionStart;
     private float newDistanceFromParent;
     private float lastTransition;
     private float transition;
@@ -31,15 +36,38 @@ public class PlayerRocket extends AbstractSimulatedBody
     public PlayerRocket(CelestialBodySimulation simulation, ResourceLocation parent, GameProfile player)
     {
         super(simulation, new ResourceLocation(SpacePrototype.MOD_ID, DigestUtils.md5Hex(player.getName())));
-        this.setDistanceFromParent(simulation.getBody(parent).getSize() + 4.0F);
+        this.setDistanceFromParent(simulation.getBody(parent).getSize() * 1.25F);
+        this.listeners = new HashSet<>();
         this.parent = parent;
         this.player = player;
         this.displayName = new StringTextComponent(player.getName());
+        this.transitionStart = new Vector3f();
     }
 
     private float getTransition(float partialTicks)
     {
-        return MathHelper.lerp(partialTicks, this.lastTransition, this.transition);
+        float x = MathHelper.lerp(partialTicks, this.lastTransition, this.transition);
+        return -(MathHelper.cos((float) (Math.PI * x)) - 1F) / 2F;
+    }
+
+    /**
+     * Adds the specified listener to the listening list
+     *
+     * @param listener The listener to add
+     */
+    public void addListener(Listener listener)
+    {
+        this.listeners.add(listener);
+    }
+
+    /**
+     * Removes the specified listener from the listening list
+     *
+     * @param listener The listener to remove
+     */
+    public void removeListener(Listener listener)
+    {
+        this.listeners.remove(listener);
     }
 
     @Override
@@ -56,7 +84,7 @@ public class PlayerRocket extends AbstractSimulatedBody
                 this.parent = this.newParent;
                 this.newParent = null;
                 this.setDistanceFromParent(this.newDistanceFromParent);
-                // TODO notify gui of transition completion
+                this.listeners.forEach(listener -> listener.onArrive(this, this.parent));
             }
         }
     }
@@ -74,21 +102,28 @@ public class PlayerRocket extends AbstractSimulatedBody
     @Override
     public float getX(float partialTicks)
     {
-        float x = super.getX(partialTicks);
         if (this.newParent == null)
-            return x;
+            return super.getX(partialTicks);
         float newX = this.getNewParent().map(this.simulation::getBody).map(simulatedBody -> simulatedBody.getX(partialTicks) + this.getNewHorizontalDistance(partialTicks)).orElse(0F);
-        return MathHelper.lerp(this.getTransition(partialTicks), x, newX);
+        return MathHelper.lerp(this.getTransition(partialTicks), this.transitionStart.x(), newX);
+    }
+
+    @Override
+    public float getY(float partialTicks)
+    {
+        if (this.newParent == null)
+            return super.getY(partialTicks);
+        float newY = 0;
+        return MathHelper.lerp(this.getTransition(partialTicks), this.transitionStart.y(), newY);
     }
 
     @Override
     public float getZ(float partialTicks)
     {
-        float z = super.getZ(partialTicks);
         if (this.newParent == null)
-            return z;
+            return super.getZ(partialTicks);
         float newZ = this.getNewParent().map(this.simulation::getBody).map(simulatedBody -> simulatedBody.getZ(partialTicks) + this.getNewVerticalDistance(partialTicks)).orElse(0F);
-        return MathHelper.lerp(this.getTransition(partialTicks), z, newZ);
+        return MathHelper.lerp(this.getTransition(partialTicks), this.transitionStart.z(), newZ);
     }
 
     @Override
@@ -147,9 +182,27 @@ public class PlayerRocket extends AbstractSimulatedBody
      */
     public void travelTo(ResourceLocation body)
     {
+        SimulatedBody simulatedBody = this.simulation.getBody(body);
+        this.transitionStart.set(this.getX(1.0F), this.getY(1.0F), this.getZ(1.0F));
         this.lastTransition = 0.0F;
         this.transition = 0.0F;
         this.newParent = body;
-        this.newDistanceFromParent = this.simulation.getBody(body).getSize() + 4.0F;
+        this.newDistanceFromParent = simulatedBody.getSize() * 1.25F;
+    }
+
+    /**
+     * <p>.</p>
+     *
+     * @author Ocelot
+     */
+    public interface Listener
+    {
+        /**
+         * Called when the specified player rocket arrives at the specified body.
+         *
+         * @param rocket The rocket travelling
+         * @param body   The body the rocket arrived at
+         */
+        void onArrive(PlayerRocket rocket, ResourceLocation body);
     }
 }
