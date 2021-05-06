@@ -6,9 +6,7 @@
   "refmap": "space.refmap.json",
   "mixins": [
   ],
-  "client": [
-    "client.Matrix4fAccessor"
-  ],
+  "client": ["client.ClientPlayNetHandlerMixin", "client.Matrix4fAccessor", "client.MinecraftMixin"],
   "injectors": {
     "defaultRequire": 1
   }

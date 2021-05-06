@@ -24,6 +24,7 @@ public class SpaceTravelCamera implements IScreen, IGuiEventListener
     private float lastZoom;
     private float zoom;
     private SimulatedBody focused;
+    private boolean inputDisabled;
 
     public SpaceTravelCamera()
     {
@@ -36,6 +37,7 @@ public class SpaceTravelCamera implements IScreen, IGuiEventListener
         this.lastZoom = 0;
         this.zoom = 0;
         this.focused = null;
+        this.inputDisabled = false;
     }
 
     @Override
@@ -60,6 +62,8 @@ public class SpaceTravelCamera implements IScreen, IGuiEventListener
     @Override
     public boolean mouseDragged(double mouseX, double mouseY, int mouseButton, double dx, double dy)
     {
+        if (this.inputDisabled)
+            return false;
         if (mouseButton == 1)
         {
             this.yaw -= dx / 180F;
@@ -73,12 +77,14 @@ public class SpaceTravelCamera implements IScreen, IGuiEventListener
     @Override
     public boolean mouseClicked(double mouseX, double mouseY, int mouseButton)
     {
-        return mouseButton == 1;
+        return !this.inputDisabled && mouseButton == 1;
     }
 
     @Override
     public boolean mouseScrolled(double mouseX, double mouseY, double amount)
     {
+        if (this.inputDisabled)
+            return false;
         this.zoom += amount * 4.0F;
         if (this.zoom > 0)
             this.zoom = 0;
@@ -113,6 +119,11 @@ public class SpaceTravelCamera implements IScreen, IGuiEventListener
         return MathHelper.lerp(partialTicks, this.lastYaw, this.yaw);
     }
 
+    public float getZoom(float partialTicks)
+    {
+        return MathHelper.lerp(partialTicks, this.lastZoom, this.zoom);
+    }
+
     public void setPosition(float x, float y, float z)
     {
         this.anchorPos.set(x, y, z);
@@ -145,5 +156,15 @@ public class SpaceTravelCamera implements IScreen, IGuiEventListener
     public void setFocused(@Nullable SimulatedBody focused)
     {
         this.focused = focused;
+    }
+
+    /**
+     * Sets whether or not input should be disabled for the camera.
+     *
+     * @param inputDisabled Whether or not to disable input
+     */
+    public void setInputDisabled(boolean inputDisabled)
+    {
+        this.inputDisabled = inputDisabled;
     }
 }

@@ -6,6 +6,8 @@ import net.minecraft.network.PacketBuffer;
 import net.minecraft.util.ResourceLocation;
 import net.minecraftforge.fml.network.NetworkEvent;
 
+import javax.annotation.Nullable;
+
 /**
  * @author Ocelot
  */
@@ -17,7 +19,7 @@ public class CPlanetTravelMessage implements SonarMessage<ISpaceServerPlayHandle
     {
     }
 
-    public CPlanetTravelMessage(ResourceLocation bodyId)
+    public CPlanetTravelMessage(@Nullable ResourceLocation bodyId)
     {
         this.bodyId = bodyId;
     }
@@ -25,13 +27,16 @@ public class CPlanetTravelMessage implements SonarMessage<ISpaceServerPlayHandle
     @Override
     public void readPacketData(PacketBuffer buf)
     {
-        this.bodyId = buf.readResourceLocation();
+        if (buf.readBoolean())
+            this.bodyId = buf.readResourceLocation();
     }
 
     @Override
     public void writePacketData(PacketBuffer buf)
     {
-        buf.writeResourceLocation(this.bodyId);
+        buf.writeBoolean(this.bodyId != null);
+        if (this.bodyId != null)
+            buf.writeResourceLocation(this.bodyId);
     }
 
     @Override
@@ -41,8 +46,9 @@ public class CPlanetTravelMessage implements SonarMessage<ISpaceServerPlayHandle
     }
 
     /**
-     * @return The id of the body the client wants to travel to
+     * @return The id of the body the client wants to travel to or <code>null</code> to cancel travelling anywhere
      */
+    @Nullable
     public ResourceLocation getBodyId()
     {
         return bodyId;

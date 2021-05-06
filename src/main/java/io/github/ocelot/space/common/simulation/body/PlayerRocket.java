@@ -2,6 +2,7 @@ package io.github.ocelot.space.common.simulation.body;
 
 import com.mojang.authlib.GameProfile;
 import io.github.ocelot.space.SpacePrototype;
+import io.github.ocelot.space.common.MagicMath;
 import io.github.ocelot.space.common.simulation.CelestialBodySimulation;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.math.MathHelper;
@@ -36,7 +37,7 @@ public class PlayerRocket extends AbstractSimulatedBody
     public PlayerRocket(CelestialBodySimulation simulation, ResourceLocation parent, GameProfile player)
     {
         super(simulation, new ResourceLocation(SpacePrototype.MOD_ID, DigestUtils.md5Hex(player.getName())));
-        this.setDistanceFromParent(simulation.getBody(parent).getSize() * 1.25F);
+        this.setDistanceFromParent(Math.max(simulation.getBody(parent).getSize() * 1.25F, 1.0F));
         this.listeners = new HashSet<>();
         this.parent = parent;
         this.player = player;
@@ -46,8 +47,7 @@ public class PlayerRocket extends AbstractSimulatedBody
 
     private float getTransition(float partialTicks)
     {
-        float x = MathHelper.lerp(partialTicks, this.lastTransition, this.transition);
-        return -(MathHelper.cos((float) (Math.PI * x)) - 1F) / 2F;
+        return MagicMath.ease(MathHelper.lerp(partialTicks, this.lastTransition, this.transition));
     }
 
     /**
@@ -134,7 +134,7 @@ public class PlayerRocket extends AbstractSimulatedBody
 
     public Optional<ResourceLocation> getNewParent()
     {
-        return Optional.of(this.newParent);
+        return Optional.ofNullable(this.newParent);
     }
 
     @Override
@@ -187,11 +187,23 @@ public class PlayerRocket extends AbstractSimulatedBody
         this.lastTransition = 0.0F;
         this.transition = 0.0F;
         this.newParent = body;
-        this.newDistanceFromParent = simulatedBody.getSize() * 1.25F;
+        this.newDistanceFromParent = Math.max(simulatedBody.getSize() * 1.25F, 1.0F);
     }
 
     /**
-     * <p>.</p>
+     * Sets the body this rocket should orbit.
+     *
+     * @param parent The new parent
+     */
+    public void setParent(ResourceLocation parent)
+    {
+        SimulatedBody simulatedBody = this.simulation.getBody(parent);
+        this.parent = parent;
+        this.setDistanceFromParent(Math.max(simulatedBody.getSize() * 1.25F, 1.0F));
+    }
+
+    /**
+     * <p>Listens for when a player in a rocket arrives at a body.</p>
      *
      * @author Ocelot
      */

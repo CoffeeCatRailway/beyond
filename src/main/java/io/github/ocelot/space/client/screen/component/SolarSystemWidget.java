@@ -63,6 +63,8 @@ public class SolarSystemWidget extends Widget implements INestedGuiEventHandler,
     private final Screen parent;
     private final CelestialBodySimulation simulation;
     private final SpaceTravelCamera camera;
+    private final PlayerRocket localRocket;
+    private boolean travelling;
 
     private CelestialBodyRayTraceResult hoveredBody;
     private SimulatedBody selectedBody;
@@ -80,8 +82,24 @@ public class SolarSystemWidget extends Widget implements INestedGuiEventHandler,
         this.parent = parent;
         this.simulation = new CelestialBodySimulation(CelestialBodyDefinitions.SOLAR_SYSTEM.get());
         this.camera = new SpaceTravelCamera();
-        this.camera.setZoom(80);
+        this.camera.setZoom(30);
         this.camera.setPitch((float) (24F * Math.PI / 180F));
+
+        // TODO get initial planet from server
+        ResourceLocation playerDimension = Objects.requireNonNull(Minecraft.getInstance().player).level.dimension().location();
+        this.localRocket = new PlayerRocket(this.simulation, this.simulation.getBodies().filter(body -> body.canTeleportTo() && body.getDimension().isPresent() && body.getDimension().get().equals(playerDimension)).map(SimulatedBody::getId).findFirst().orElseGet(() -> new ResourceLocation(SpacePrototype.MOD_ID, "earth")), Objects.requireNonNull(Minecraft.getInstance().player).getGameProfile());
+        this.localRocket.addListener((rocket, body) ->
+        {
+            SimulatedBody simulatedBody = this.simulation.getBody(body);
+            if (simulatedBody == null || !simulatedBody.canTeleportTo())
+                return;
+            simulatedBody.getDimension().ifPresent(dimension ->
+            {
+                SpaceMessages.PLAY.sendToServer(new CPlanetTravelMessage(dimension)); // TODO get dimension from body
+            });
+        });
+        this.camera.setFocused(this.localRocket);
+        this.simulation.add(this.localRocket);
 
         this.children = new ArrayList<>();
         this.children.add(this.camera);
@@ -91,10 +109,14 @@ public class SolarSystemWidget extends Widget implements INestedGuiEventHandler,
                 return;
             this.selectedBody.getDimension().ifPresent(dimension ->
             {
-                System.out.println("Launch to " + dimension);
+                System.out.println("Launched to " + dimension);
                 PlayerRocket rocket = this.simulation.getPlayer(Objects.requireNonNull(Minecraft.getInstance().player).getUUID());
                 if (rocket != null)
+                {
+                    this.travelling = true;
                     rocket.travelTo(this.selectedBody.getId());
+                    this.selectedBody = null;
+                }
             });
         }, (button, matrixStack, mouseX, mouseY) ->
         {
@@ -116,19 +138,6 @@ public class SolarSystemWidget extends Widget implements INestedGuiEventHandler,
         this.launchButton.visible = false;
         this.children.add(this.launchButton);
 
-        PlayerRocket localPlayer = new PlayerRocket(this.simulation, new ResourceLocation(SpacePrototype.MOD_ID, "earth"), Objects.requireNonNull(Minecraft.getInstance().player).getGameProfile());
-        localPlayer.addListener((rocket, body) ->
-        {
-            SimulatedBody simulatedBody = this.simulation.getBody(body);
-            if (simulatedBody == null || !simulatedBody.canTeleportTo())
-                return;
-            simulatedBody.getDimension().ifPresent(dimension ->
-            {
-                SpaceMessages.PLAY.sendToServer(new CPlanetTravelMessage(dimension)); // TODO get dimension from body
-            });
-        });
-        this.camera.setFocused(localPlayer);
-        this.simulation.add(localPlayer);
 
         ArtificialSatellite earthSatellite = new ArtificialSatellite(this.simulation, new ResourceLocation(SpacePrototype.MOD_ID, "earth_satellite_test"));
         earthSatellite.setParent(new ResourceLocation(SpacePrototype.MOD_ID, "earth"));
@@ -444,7 +453,7 @@ public class SolarSystemWidget extends Widget implements INestedGuiEventHandler,
                     this.launchButton.x = (int) ((p.x() + 1F) * this.width / 2F + width + sheering + padding);
                     this.launchButton.y = (int) ((-p.y() + 1F) * this.height / 2F + descriptionHeight + 2F * fontRenderer.lineHeight + padding * 2F - length);
                     this.launchButton.visible = true;
-                    this.launchButton.active = this.selectedBody.getDimension().isPresent() && (Minecraft.getInstance().player == null || !Minecraft.getInstance().player.level.dimension().location().equals(this.selectedBody.getDimension().get()));
+                    this.launchButton.active = !this.travelling && this.selectedBody.getDimension().isPresent() && (Minecraft.getInstance().player == null || !Minecraft.getInstance().player.level.dimension().location().equals(this.selectedBody.getDimension().get()));
                 }
 
                 RenderSystem.enableDepthTest();
@@ -496,7 +505,7 @@ public class SolarSystemWidget extends Widget implements INestedGuiEventHandler,
         }
 
         this.selectedBody = null;
-        if (this.hoveredBody != null && mouseButton == 0)
+        if (!this.travelling && this.hoveredBody != null && mouseButton == 0)
         {
             this.selectedBody = this.hoveredBody.getBody();
             return true;
@@ -560,6 +569,17 @@ public class SolarSystemWidget extends Widget implements INestedGuiEventHandler,
         for (IGuiEventListener listener : this.children)
             if (listener instanceof NativeResource)
                 ((NativeResource) listener).free();
+        if (!this.travelling)
+            SpaceMessages.PLAY.sendToServer(new CPlanetTravelMessage(null));
+    }
+
+    /**
+     * Teleports the player to the body they are supposed to be on.
+     */
+    public void notifyFailure(ResourceLocation body)
+    {
+        this.travelling = false;
+        this.localRocket.setParent(body);
     }
 
     @Override
@@ -596,6 +616,22 @@ public class SolarSystemWidget extends Widget implements INestedGuiEventHandler,
     public SpaceTravelCamera getCamera()
     {
         return camera;
+    }
+
+    /**
+     * @return The local client player rocket
+     */
+    public PlayerRocket getLocalRocket()
+    {
+        return localRocket;
+    }
+
+    /**
+     * @return Whether or not the local client is travelling to another planet
+     */
+    public boolean isTravelling()
+    {
+        return travelling;
     }
 
     /**

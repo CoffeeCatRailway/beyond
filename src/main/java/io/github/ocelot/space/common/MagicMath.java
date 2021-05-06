@@ -1,6 +1,7 @@
 package io.github.ocelot.space.common;
 
 import io.github.ocelot.space.mixin.client.Matrix4fAccessor;
+import net.minecraft.util.math.MathHelper;
 import net.minecraft.util.math.vector.Matrix4f;
 import net.minecraft.util.math.vector.Vector3d;
 
@@ -11,6 +12,17 @@ import net.minecraft.util.math.vector.Vector3d;
  */
 public class MagicMath
 {
+    /**
+     * Uses a sin wave to ease from 0.0 to 1.0
+     *
+     * @param x The input value expected to be 0.0 to 1.0
+     * @return The result of the function
+     */
+    public static float ease(float x)
+    {
+        return -(MathHelper.cos((float) (Math.PI * x)) - 1F) / 2F;
+    }
+
     /**
      * Transforms the specified vector by the matrix. *W is assumed to be 1*.
      *
