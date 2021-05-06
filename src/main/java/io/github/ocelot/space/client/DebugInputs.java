@@ -1,7 +1,6 @@
 package io.github.ocelot.space.client;
 
 import io.github.ocelot.space.SpacePrototype;
-import io.github.ocelot.space.client.screen.SpaceTravelScreen;
 import net.minecraft.client.Minecraft;
 import net.minecraft.util.Util;
 import net.minecraftforge.api.distmarker.Dist;

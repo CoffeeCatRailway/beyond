@@ -13,8 +13,6 @@ import net.minecraftforge.client.event.ColorHandlerEvent;
 import net.minecraftforge.eventbus.api.EventPriority;
 import net.minecraftforge.eventbus.api.IEventBus;
 
-import java.util.stream.Collectors;
-
 /**
  * @author Ocelot
  */

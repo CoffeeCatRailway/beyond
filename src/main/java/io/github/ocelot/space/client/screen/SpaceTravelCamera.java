@@ -1,6 +1,5 @@
 package io.github.ocelot.space.client.screen;
 
-import io.github.ocelot.space.common.simulation.CelestialBodySimulation;
 import io.github.ocelot.space.common.simulation.SimulatedBody;
 import net.minecraft.client.gui.IGuiEventListener;
 import net.minecraft.client.gui.screen.IScreen;
