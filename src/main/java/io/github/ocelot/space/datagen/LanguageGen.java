@@ -15,5 +15,7 @@ public class LanguageGen extends LanguageProvider
     protected void addTranslations()
     {
         this.add("screen." + SpacePrototype.MOD_ID + ".space_travel", "Space Travel");
+        this.add("gui." + SpacePrototype.MOD_ID + ".launch", "Launch!");
+        this.add("gui." + SpacePrototype.MOD_ID + ".cannot_launch", "Cannot Launch");
     }
 }

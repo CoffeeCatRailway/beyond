@@ -121,6 +121,10 @@ public interface SimulatedBody
      */
     float getRotationZ(float partialTicks);
 
+    boolean canTeleportTo();
+
+    Optional<ResourceLocation> getDimension();
+
     /**
      * @return The type of renderer to use
      */

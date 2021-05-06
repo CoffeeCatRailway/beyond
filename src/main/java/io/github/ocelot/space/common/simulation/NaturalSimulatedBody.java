@@ -77,6 +77,18 @@ public class NaturalSimulatedBody extends AbstractSimulatedBody
     }
 
     @Override
+    public boolean canTeleportTo()
+    {
+        return true;
+    }
+
+    @Override
+    public Optional<ResourceLocation> getDimension()
+    {
+        return this.body.getDimension();
+    }
+
+    @Override
     public RenderType getRenderType()
     {
         return RenderType.CUBE;

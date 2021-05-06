@@ -13,9 +13,13 @@ import io.github.ocelot.space.common.init.SpaceRenderTypes;
 import io.github.ocelot.space.common.simulation.*;
 import io.github.ocelot.space.common.simulation.body.CelestialBodyDefinitions;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.FontRenderer;
+import net.minecraft.client.gui.IGuiEventListener;
+import net.minecraft.client.gui.INestedGuiEventHandler;
 import net.minecraft.client.gui.screen.IScreen;
 import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.client.gui.widget.Widget;
+import net.minecraft.client.gui.widget.button.Button;
 import net.minecraft.client.renderer.*;
 import net.minecraft.client.renderer.model.ModelRenderer;
 import net.minecraft.client.renderer.texture.OverlayTexture;
@@ -23,14 +27,13 @@ import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
 import net.minecraft.client.renderer.vertex.VertexBuffer;
 import net.minecraft.client.shader.Framebuffer;
 import net.minecraft.inventory.container.PlayerContainer;
+import net.minecraft.util.IReorderingProcessor;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.math.vector.Matrix4f;
 import net.minecraft.util.math.vector.Vector3d;
 import net.minecraft.util.math.vector.Vector3f;
-import net.minecraft.util.text.IFormattableTextComponent;
-import net.minecraft.util.text.ITextComponent;
-import net.minecraft.util.text.StringTextComponent;
-import net.minecraft.util.text.TextFormatting;
+import net.minecraft.util.math.vector.Vector4f;
+import net.minecraft.util.text.*;
 import net.minecraftforge.client.model.data.EmptyModelData;
 import org.lwjgl.system.NativeResource;
 
@@ -47,7 +50,7 @@ import static org.lwjgl.opengl.GL11.*;
  *
  * @author Ocelot
  */
-public class SolarSystemWidget extends Widget implements IScreen, NativeResource
+public class SolarSystemWidget extends Widget implements INestedGuiEventHandler, IScreen, NativeResource
 {
     private static final ModelRenderer CUBE = new ModelRenderer(32, 16, 0, 0);
 
@@ -59,9 +62,16 @@ public class SolarSystemWidget extends Widget implements IScreen, NativeResource
     private final Screen parent;
     private final CelestialBodySimulation simulation;
     private final SpaceTravelCamera camera;
+
     private CelestialBodyRayTraceResult hoveredBody;
+    private SimulatedBody selectedBody;
     private Framebuffer framebuffer;
     private VertexBuffer skyVBO;
+
+    private final List<IGuiEventListener> children;
+    private final Button launchButton;
+    private IGuiEventListener focused;
+    private boolean dragging;
 
     public SolarSystemWidget(@Nullable Screen parent, int x, int y, int width, int height)
     {
@@ -71,6 +81,26 @@ public class SolarSystemWidget extends Widget implements IScreen, NativeResource
         this.camera = new SpaceTravelCamera();
         this.camera.setZoom(80);
         this.camera.setPitch((float) (24F * Math.PI / 180F));
+
+        this.children = new ArrayList<>();
+        this.children.add(this.camera);
+        this.launchButton = new Button(0, 0, 50, 20, new TranslationTextComponent("gui." + SpacePrototype.MOD_ID + ".launch"), p_onPress_1_ ->
+        {
+            if (this.selectedBody == null || !this.selectedBody.canTeleportTo())
+                return;
+            this.selectedBody.getDimension().ifPresent(dimension ->
+            {
+                System.out.println("Launch to " + dimension);
+            });
+        }, (button, matrixStack, mouseX, mouseY) ->
+        {
+            if (this.selectedBody == null || !this.selectedBody.canTeleportTo())
+                return;
+            if (this.parent != null && !this.selectedBody.getDimension().isPresent())
+                this.parent.renderTooltip(matrixStack, new TranslationTextComponent("gui." + SpacePrototype.MOD_ID + ".cannot_launch"), mouseX, mouseY);
+        });
+        this.launchButton.visible = false;
+        this.children.add(this.launchButton);
 
         ArtificialSatellite earthSatellite = new ArtificialSatellite(this.simulation, new ResourceLocation(SpacePrototype.MOD_ID, "earth_satellite_test"));
         earthSatellite.setParent(new ResourceLocation(SpacePrototype.MOD_ID, "earth"));
@@ -210,12 +240,15 @@ public class SolarSystemWidget extends Widget implements IScreen, NativeResource
     public void tick()
     {
         this.simulation.tick();
-        this.camera.tick();
+        for (IGuiEventListener listener : this.children)
+            if (listener instanceof IScreen)
+                ((IScreen) listener).tick();
     }
 
     @Override
     public void render(MatrixStack matrixStack, int mouseX, int mouseY, float partialTicks)
     {
+        this.launchButton.visible = false;
         this.hoveredBody = null;
         super.render(matrixStack, mouseX, mouseY, partialTicks);
     }
@@ -240,51 +273,49 @@ public class SolarSystemWidget extends Widget implements IScreen, NativeResource
         RenderSystem.pushMatrix();
         RenderSystem.loadIdentity();
 
-        MatrixStack matrixStack1 = new MatrixStack();
+        MatrixStack matrixStack = new MatrixStack();
 
         GlStateManager._clearColor(0.0F, 0.0F, 0.0F, 1.0F);
         GlStateManager._clear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT, Minecraft.ON_OSX);
 
         RenderSystem.disableTexture();
         RenderSystem.depthMask(false);
-        RenderSystem.color3f(1.0F, 1.0F, 1.0F);
 
         float cameraRotationX = this.camera.getRotationX(partialTicks);
         float cameraRotationY = this.camera.getRotationY(partialTicks);
-        matrixStack1.mulPose(Vector3f.XN.rotation(cameraRotationX));
-        matrixStack1.mulPose(Vector3f.YN.rotation(cameraRotationY));
+        matrixStack.mulPose(Vector3f.XN.rotation(cameraRotationX));
+        matrixStack.mulPose(Vector3f.YN.rotation(cameraRotationY));
 
         if (this.skyVBO == null)
             this.generateSky();
         this.skyVBO.bind();
         DefaultVertexFormats.POSITION_COLOR.setupBufferState(0L);
-        this.skyVBO.draw(matrixStack1.last().pose(), 7);
+        this.skyVBO.draw(matrixStack.last().pose(), 7);
         VertexBuffer.unbind();
         DefaultVertexFormats.POSITION_COLOR.clearBufferState();
 
-        RenderSystem.color4f(1.0F, 1.0F, 1.0F, 1.0F);
         RenderSystem.depthMask(true);
         RenderSystem.enableTexture();
 
         RenderSystem.enableLighting();
-        RenderHelper.setupLevel(matrixStack1.last().pose());
+        RenderHelper.setupLevel(matrixStack.last().pose());
         RenderSystem.disableLighting();
 
         float cameraX = this.camera.getX(partialTicks);
         float cameraY = this.camera.getY(partialTicks);
         float cameraZ = this.camera.getZ(partialTicks);
-        matrixStack1.translate(-cameraX, -cameraY, -cameraZ);
+        matrixStack.translate(-cameraX, -cameraY, -cameraZ);
 
-        Matrix4f viewMatrix = matrixStack1.last().pose().copy();
+        Matrix4f viewMatrix = matrixStack.last().pose().copy();
         Vector3d ray = MousePicker.getRay(projectionMatrix, viewMatrix, (float) (mouseX - this.x) / (float) this.width * 2F - 1F, (float) (mouseY - this.y) / (float) this.height * 2F - 1F);
         Vector3d start = new Vector3d(cameraX, cameraY, cameraZ);
         Vector3d end = start.add(ray.multiply(Double.MAX_VALUE, Double.MAX_VALUE, Double.MAX_VALUE));
         this.hoveredBody = this.simulation.clip(start, end, partialTicks).orElse(null);
 
         IRenderTypeBuffer.Impl buffer = SpaceRenderTypes.planetBuffer();
-        matrixStack1.pushPose();
-        this.simulation.getBodies().forEach(body -> this.renderBody(matrixStack1, buffer, body, partialTicks));
-        matrixStack1.popPose();
+        matrixStack.pushPose();
+        this.simulation.getBodies().forEach(body -> this.renderBody(matrixStack, buffer, body, partialTicks));
+        matrixStack.popPose();
         buffer.endBatch();
 
         RenderSystem.matrixMode(GL_PROJECTION);
@@ -304,6 +335,94 @@ public class SolarSystemWidget extends Widget implements IScreen, NativeResource
         this.framebuffer.unbindRead();
         poseStack.popPose();
 
+        if (this.selectedBody != null)
+        {
+            RenderSystem.color4f(1.0F, 1.0F, 1.0F, this.alpha);
+            RenderSystem.disableTexture();
+            RenderSystem.disableDepthTest();
+
+            Vector4f pos = new Vector4f(this.selectedBody.getX(partialTicks), this.selectedBody.getY(partialTicks), this.selectedBody.getZ(partialTicks), 1.0F);
+            pos.transform(viewMatrix);
+            pos.transform(projectionMatrix);
+            Vector3f p = new Vector3f(pos.x() / pos.w(), pos.y() / pos.w(), pos.z() / pos.w());
+
+            FontRenderer fontRenderer = Minecraft.getInstance().font;
+            ITextComponent description = new StringTextComponent("The moon is Earth's only natural satellite. The moon is a cold, dry orb whose surface is studded with craters and strewn with rocks and dust.").withStyle(TextFormatting.ITALIC, TextFormatting.GRAY);
+            List<IReorderingProcessor> descriptionLines = fontRenderer.split(description, 300);
+
+            int descriptionHeight = descriptionLines.size() * fontRenderer.lineHeight;
+
+            int padding = 8;
+            int boxWidth = Math.max(fontRenderer.width(this.selectedBody.getDisplayName()) * 2, 300) + padding * 2;
+            int boxHeight = descriptionHeight + 2 * fontRenderer.lineHeight + (this.selectedBody.canTeleportTo() ? 20 + padding : 0) + padding * 2;
+            int length = boxHeight + 40;
+            int width = 5;
+            int sheering = 20;
+
+            float lineRed = 38F / 255F;
+            float lineGreen = 30F / 255F;
+            float lineBlue = 36F / 255F;
+            float lineAlpha = 0.8F;
+            float boxRed = 38F / 255F;
+            float boxGreen = 30F / 255F;
+            float boxBlue = 36F / 255F;
+            float boxAlpha = 0.7F;
+
+            if (Math.abs(p.z()) <= 1)
+            {
+                poseStack.pushPose();
+                poseStack.translate((int) ((p.x() + 1F) * this.width / 2F), (int) ((-p.y() + 1F) * this.height / 2F), 0);
+                Matrix4f matrix4f = poseStack.last().pose();
+                BufferBuilder builder = Tessellator.getInstance().getBuilder();
+                builder.begin(GL_TRIANGLES, DefaultVertexFormats.POSITION_COLOR);
+
+                // Line
+                builder.vertex(matrix4f, 0, 0, 0).color(lineRed, lineGreen, lineBlue, lineAlpha).endVertex();
+                builder.vertex(matrix4f, sheering + width, -length, 0).color(lineRed, lineGreen, lineBlue, lineAlpha).endVertex();
+                builder.vertex(matrix4f, sheering, -length, 0).color(lineRed, lineGreen, lineBlue, lineAlpha).endVertex();
+                builder.vertex(matrix4f, 0, 0, 0).color(lineRed, lineGreen, lineBlue, lineAlpha).endVertex();
+                builder.vertex(matrix4f, 1, 0, 0).color(lineRed, lineGreen, lineBlue, lineAlpha).endVertex();
+                builder.vertex(matrix4f, sheering + width, -length, 0).color(lineRed, lineGreen, lineBlue, lineAlpha).endVertex();
+
+                // Box
+                builder.vertex(matrix4f, sheering + width - ((float) boxHeight / (float) length) * (sheering + width - 1), boxHeight - length, 0).color(boxRed, boxGreen, boxBlue, boxAlpha).endVertex();
+                builder.vertex(matrix4f, sheering + width + boxWidth, boxHeight - length, 0).color(boxRed, boxGreen, boxBlue, boxAlpha).endVertex();
+                builder.vertex(matrix4f, sheering + width, -length, 0).color(boxRed, boxGreen, boxBlue, boxAlpha).endVertex();
+                builder.vertex(matrix4f, sheering + width + boxWidth, boxHeight - length, 0).color(boxRed, boxGreen, boxBlue, boxAlpha).endVertex();
+                builder.vertex(matrix4f, sheering + width + boxWidth, -length, 0).color(boxRed, boxGreen, boxBlue, boxAlpha).endVertex();
+                builder.vertex(matrix4f, sheering + width, -length, 0).color(boxRed, boxGreen, boxBlue, boxAlpha).endVertex();
+
+                Tessellator.getInstance().end();
+
+                poseStack.translate(width + sheering, -length, 0.0F);
+                poseStack.pushPose();
+                poseStack.translate(padding, padding, 0);
+                poseStack.scale(2F, 2F, 2F);
+                fontRenderer.drawShadow(poseStack, this.selectedBody.getDisplayName(), 0, 0, -1);
+                poseStack.popPose();
+                for (int i = 0; i < descriptionLines.size(); i++)
+                    fontRenderer.drawShadow(poseStack, descriptionLines.get(i), padding, padding + (i + 2) * fontRenderer.lineHeight, -1);
+
+                poseStack.popPose();
+
+                if (this.selectedBody.canTeleportTo())
+                {
+                    this.launchButton.x = (int) ((p.x() + 1F) * this.width / 2F + width + sheering + padding);
+                    this.launchButton.y = (int) ((-p.y() + 1F) * this.height / 2F + descriptionHeight + 2F * fontRenderer.lineHeight + padding * 2F - length);
+                    this.launchButton.visible = true;
+                    this.launchButton.active = this.selectedBody.getDimension().isPresent();
+                }
+
+                RenderSystem.enableDepthTest();
+                RenderSystem.enableTexture();
+                RenderSystem.color4f(1.0F, 1.0F, 1.0F, 1.0F);
+            }
+        }
+
+        for (IGuiEventListener listener : this.children)
+            if (listener instanceof Widget)
+                ((Widget) listener).render(poseStack, mouseX, mouseY, partialTicks);
+
         if (this.isHovered())
             this.renderToolTip(poseStack, mouseX, mouseY);
     }
@@ -322,32 +441,76 @@ public class SolarSystemWidget extends Widget implements IScreen, NativeResource
     }
 
     @Override
-    public boolean mouseDragged(double mouseX, double mouseY, int mouseButton, double dx, double dy)
+    public Optional<IGuiEventListener> getChildAt(double mouseX, double mouseY)
     {
-        return this.camera.mouseDragged(mouseX, mouseY, mouseButton, dx, dy);
+        return this.isMouseOver(mouseX, mouseY) ? INestedGuiEventHandler.super.getChildAt(mouseX, mouseY) : Optional.empty();
     }
 
     @Override
     public boolean mouseClicked(double mouseX, double mouseY, int mouseButton)
     {
-        if (!this.isHovered())
+        if (!this.isMouseOver(mouseX, mouseY))
             return false;
-        if (this.camera.mouseClicked(mouseX, mouseY, mouseButton))
-            return true;
+        for (IGuiEventListener iguieventlistener : this.children())
+        {
+            if (iguieventlistener.mouseClicked(mouseX, mouseY, mouseButton))
+            {
+                this.setFocused(iguieventlistener);
+                this.setDragging(true);
+                return true;
+            }
+        }
+
+        this.selectedBody = null;
         if (this.hoveredBody != null && mouseButton == 0)
         {
-            this.camera.setFocused(this.hoveredBody.getBody());
+            this.selectedBody = this.hoveredBody.getBody();
             return true;
         }
         return false;
     }
 
     @Override
+    public boolean mouseDragged(double mouseX, double mouseY, int mouseButton, double dx, double dy)
+    {
+        return this.getFocused() != null && this.isDragging() && this.getFocused().mouseDragged(mouseX, mouseY, mouseButton, dx, dy);
+    }
+
+    @Override
     public boolean mouseScrolled(double mouseX, double mouseY, double amount)
     {
-        if (!this.isHovered())
-            return false;
-        return this.camera.mouseScrolled(mouseX, mouseY, amount);
+        return super.mouseScrolled(mouseX, mouseY, amount) || this.camera.mouseScrolled(mouseX, mouseY, amount);
+    }
+
+    @Override
+    public List<? extends IGuiEventListener> children()
+    {
+        return this.children;
+    }
+
+    @Nullable
+    @Override
+    public IGuiEventListener getFocused()
+    {
+        return focused;
+    }
+
+    @Override
+    public boolean isDragging()
+    {
+        return dragging;
+    }
+
+    @Override
+    public void setFocused(@Nullable IGuiEventListener focused)
+    {
+        this.focused = focused;
+    }
+
+    @Override
+    public void setDragging(boolean dragging)
+    {
+        this.dragging = dragging;
     }
 
     @Override
@@ -359,6 +522,10 @@ public class SolarSystemWidget extends Widget implements IScreen, NativeResource
             this.skyVBO = null;
         }
         this.invalidateFramebuffer();
+
+        for (IGuiEventListener listener : this.children)
+            if (listener instanceof NativeResource)
+                ((NativeResource) listener).free();
     }
 
     @Override

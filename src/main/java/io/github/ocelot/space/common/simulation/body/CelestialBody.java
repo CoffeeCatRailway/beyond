@@ -19,25 +19,28 @@ public class CelestialBody
     public static final Codec<CelestialBody> CODEC = RecordCodecBuilder.create(instance -> instance.group(
             ResourceLocation.CODEC.optionalFieldOf("parent").forGetter(CelestialBody::getParent),
             ResourceLocation.CODEC.fieldOf("texture").forGetter(CelestialBody::getTexture),
+            ResourceLocation.CODEC.optionalFieldOf("dimension").forGetter(CelestialBody::getDimension),
             Codec.STRING.fieldOf("displayName").<ITextComponent>xmap(ITextComponent.Serializer::fromJson, ITextComponent.Serializer::toJson).forGetter(CelestialBody::getDisplayName),
             Codec.BOOL.optionalFieldOf("shade", true).forGetter(CelestialBody::isShade),
             Codec.FLOAT.optionalFieldOf("size", 1.0F).forGetter(CelestialBody::getSize),
             Codec.FLOAT.optionalFieldOf("distanceFactor", 1.0F).forGetter(CelestialBody::getDistanceFactor),
             CelestialBodyAtmosphere.CODEC.optionalFieldOf("atmosphere").forGetter(CelestialBody::getAtmosphere)
-    ).apply(instance, (parent, texture, displayName, shade, scale, distanceFactor, atmosphere) -> new CelestialBody(parent.orElse(null), texture, displayName, shade, scale, distanceFactor, atmosphere.orElse(null))));
+    ).apply(instance, (parent, texture, dimension, displayName, shade, scale, distanceFactor, atmosphere) -> new CelestialBody(parent.orElse(null), texture, dimension.orElse(null), displayName, shade, scale, distanceFactor, atmosphere.orElse(null))));
 
     private final ResourceLocation parent;
     private final ResourceLocation texture;
+    private final ResourceLocation dimension;
     private final ITextComponent displayName;
     private final boolean shade;
     private final float size;
     private final float distanceFactor;
     private final CelestialBodyAtmosphere atmosphere;
 
-    public CelestialBody(@Nullable ResourceLocation parent, ResourceLocation texture, ITextComponent displayName, boolean shade, float size, float distanceFactor, CelestialBodyAtmosphere atmosphere)
+    public CelestialBody(@Nullable ResourceLocation parent, ResourceLocation texture, @Nullable ResourceLocation dimension, ITextComponent displayName, boolean shade, float size, float distanceFactor, CelestialBodyAtmosphere atmosphere)
     {
         this.parent = parent;
         this.texture = texture;
+        this.dimension = dimension;
         this.displayName = displayName;
         this.shade = shade;
         this.size = size;
@@ -59,6 +62,14 @@ public class CelestialBody
     public ResourceLocation getTexture()
     {
         return texture;
+    }
+
+    /**
+     * @return The dimension to teleport to
+     */
+    public Optional<ResourceLocation> getDimension()
+    {
+        return Optional.ofNullable(this.dimension);
     }
 
     /**
@@ -118,6 +129,7 @@ public class CelestialBody
     {
         private ResourceLocation parent;
         private ResourceLocation texture;
+        private ResourceLocation dimension;
         private ITextComponent displayName;
         private boolean shade;
         private float scale;
@@ -128,6 +140,7 @@ public class CelestialBody
         {
             this.parent = null;
             this.texture = null;
+            this.dimension = null;
             this.displayName = null;
             this.shade = true;
             this.scale = 1.0F;
@@ -154,6 +167,17 @@ public class CelestialBody
         public Builder setTexture(ResourceLocation texture)
         {
             this.texture = texture;
+            return this;
+        }
+
+        /**
+         * Sets the dimension to teleport to.
+         *
+         * @param dimension The dimension to teleport to
+         */
+        public Builder setDimension(@Nullable ResourceLocation dimension)
+        {
+            this.dimension = dimension;
             return this;
         }
 
@@ -218,7 +242,7 @@ public class CelestialBody
         {
             Validate.notNull(this.texture);
             Validate.notNull(this.displayName);
-            return new CelestialBody(this.parent, this.texture, this.displayName, this.shade, this.scale, this.distanceFactor, this.atmosphere);
+            return new CelestialBody(this.parent, this.texture, this.dimension, this.displayName, this.shade, this.scale, this.distanceFactor, this.atmosphere);
         }
     }
 }

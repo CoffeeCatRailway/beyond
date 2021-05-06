@@ -1,3 +1,5 @@
 {
+  "gui.space.cannot_launch": "Cannot Launch",
+  "gui.space.launch": "Launch!",
   "screen.space.space_travel": "Space Travel"
 }

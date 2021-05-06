@@ -4,6 +4,7 @@ import io.github.ocelot.space.SpacePrototype;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.Util;
 import net.minecraft.util.text.StringTextComponent;
+import net.minecraft.world.DimensionType;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -41,6 +42,7 @@ public class CelestialBodyDefinitions
                 });
                 ResourceLocation earth = create(bodies, "earth", "Earth", "earth", builder ->
                 {
+                    builder.setDimension(DimensionType.OVERWORLD_LOCATION.location());
                     builder.setScale(4.0F);
                     builder.setDistanceFactor(0.8F);
                     builder.setParent(sun);
@@ -48,6 +50,7 @@ public class CelestialBodyDefinitions
                 });
                 ResourceLocation moon = create(bodies, "moon", "Moon", "moon", builder ->
                 {
+                    builder.setDimension(DimensionType.END_LOCATION.location());
                     builder.setScale(2.0F);
                     builder.setParent(earth);
                 });

@@ -59,6 +59,18 @@ public class ArtificialSatellite extends AbstractSimulatedBody implements ModelS
     }
 
     @Override
+    public boolean canTeleportTo()
+    {
+        return false;
+    }
+
+    @Override
+    public Optional<ResourceLocation> getDimension()
+    {
+        return Optional.empty();
+    }
+
+    @Override
     public RenderType getRenderType()
     {
         return RenderType.MODEL;
