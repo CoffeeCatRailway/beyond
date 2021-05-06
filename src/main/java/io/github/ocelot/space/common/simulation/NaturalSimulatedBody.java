@@ -1,6 +1,7 @@
 package io.github.ocelot.space.common.simulation;
 
 import io.github.ocelot.space.common.simulation.body.CelestialBody;
+import io.github.ocelot.space.common.simulation.body.CelestialBodyAtmosphere;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.text.ITextComponent;
 
@@ -47,6 +48,14 @@ public class NaturalSimulatedBody extends AbstractSimulatedBody
     public boolean isShade()
     {
         return this.body.isShade();
+    }
+
+    /**
+     * @return The atmosphere to render on the body
+     */
+    public Optional<CelestialBodyAtmosphere> getAtmosphere()
+    {
+        return this.body.getAtmosphere();
     }
 
     @Override

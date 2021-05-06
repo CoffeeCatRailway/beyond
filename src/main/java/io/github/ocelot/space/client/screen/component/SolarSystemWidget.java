@@ -158,11 +158,25 @@ public class SolarSystemWidget extends Widget implements IScreen, NativeResource
             case CUBE:
                 if (body instanceof NaturalSimulatedBody)
                 {
+                    poseStack.pushPose();
                     poseStack.translate(-0.25F, -0.25F, -0.25F);
                     NaturalSimulatedBody b = (NaturalSimulatedBody) body;
-                    CUBE.render(poseStack, SpacePlanetSpriteManager.getSprite(b.getTexture()).wrap(buffer.getBuffer(b.isShade() ? SpaceRenderTypes.planetShade() : SpaceRenderTypes.planet())), 15728880, OverlayTexture.NO_OVERLAY);
+                    CUBE.render(poseStack, SpacePlanetSpriteManager.getSprite(b.getTexture()).wrap(buffer.getBuffer(SpaceRenderTypes.planet(b.isShade(), false))), 15728880, OverlayTexture.NO_OVERLAY);
+                    poseStack.popPose();
+
+                    b.getAtmosphere().ifPresent(atmosphere ->
+                    {
+                        poseStack.scale((1.0F + atmosphere.getDistance() / scale), (1.0F + atmosphere.getDistance() / scale), (1.0F + atmosphere.getDistance() / scale));
+                        poseStack.pushPose();
+                        poseStack.translate(-0.25F, -0.25F, -0.25F);
+                        CUBE.render(poseStack, SpacePlanetSpriteManager.getSprite(atmosphere.getTexture()).wrap(buffer.getBuffer(SpaceRenderTypes.planet(b.isShade(), true))), 15728880, OverlayTexture.NO_OVERLAY, 1.0F, 1.0F, 1.0F, atmosphere.getDensity());
+                        poseStack.popPose();
+                    });
                     if (hovered)
+                    {
+                        poseStack.translate(-0.25F, -0.25F, -0.25F);
                         CUBE.render(poseStack, buffer.getBuffer(SpaceRenderTypes.planetSelect()), 15728880, OverlayTexture.NO_OVERLAY, 1.0F, 1.0F, 1.0F, 0.5F);
+                    }
                 }
                 break;
             case MODEL:
@@ -250,7 +264,6 @@ public class SolarSystemWidget extends Widget implements IScreen, NativeResource
         RenderSystem.depthMask(true);
         RenderSystem.enableTexture();
 
-        IRenderTypeBuffer.Impl buffer = Minecraft.getInstance().renderBuffers().bufferSource();
         RenderSystem.enableLighting();
         RenderHelper.setupLevel(matrixStack1.last().pose());
         RenderSystem.disableLighting();
@@ -266,10 +279,13 @@ public class SolarSystemWidget extends Widget implements IScreen, NativeResource
         Vector3d end = start.add(ray.multiply(Double.MAX_VALUE, Double.MAX_VALUE, Double.MAX_VALUE));
         this.hoveredBody = this.simulation.clip(start, end, partialTicks).orElse(null);
 
+        IRenderTypeBuffer.Impl buffer = SpaceRenderTypes.planetBuffer();
         matrixStack1.pushPose();
         this.simulation.getBodies().forEach(body -> this.renderBody(matrixStack1, buffer, body, partialTicks));
         matrixStack1.popPose();
-
+        buffer.endBatch(SpaceRenderTypes.planet(true, false));
+        buffer.endBatch(SpaceRenderTypes.planet(false, false));
+        buffer.endBatch(RenderType.entityCutout(PlayerContainer.BLOCK_ATLAS));
         buffer.endBatch();
 
         RenderSystem.matrixMode(GL_PROJECTION);

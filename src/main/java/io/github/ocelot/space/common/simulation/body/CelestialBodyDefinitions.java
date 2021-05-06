@@ -44,6 +44,7 @@ public class CelestialBodyDefinitions
                     builder.setScale(4.0F);
                     builder.setDistanceFactor(0.8F);
                     builder.setParent(sun);
+                    builder.setAtmosphere(CelestialBodyAtmosphere.builder().setTexture(new ResourceLocation(SpacePrototype.MOD_ID, "earth_clouds")).setDistance(0.0625F).setDensity(0.8F).build());
                 });
                 ResourceLocation moon = create(bodies, "moon", "Moon", "moon", builder ->
                 {
@@ -70,12 +71,14 @@ public class CelestialBodyDefinitions
                     builder.setScale(12.0F);
                     builder.setDistanceFactor(5.0F);
                     builder.setParent(sun);
+                    builder.setAtmosphere(CelestialBodyAtmosphere.builder().setTexture(new ResourceLocation(SpacePrototype.MOD_ID, "jupiter")).setDistance(1.0F).setDensity(0.6F).build());
                 });
                 ResourceLocation saturn = create(bodies, "saturn", "Saturn", "saturn", builder ->
                 {
                     builder.setScale(8.0F);
                     builder.setDistanceFactor(6.0F);
                     builder.setParent(sun);
+                    builder.setAtmosphere(CelestialBodyAtmosphere.builder().setTexture(new ResourceLocation(SpacePrototype.MOD_ID, "saturn")).build());
                 });
                 for (int i = 0; i < 1000; i++)
                 {
@@ -91,12 +94,14 @@ public class CelestialBodyDefinitions
                     builder.setScale(6.0F);
                     builder.setDistanceFactor(7.0F);
                     builder.setParent(sun);
+                    builder.setAtmosphere(CelestialBodyAtmosphere.builder().setTexture(new ResourceLocation(SpacePrototype.MOD_ID, "uranus")).setDistance(1.2F).setDensity(0.6F).build());
                 });
                 ResourceLocation neptune = create(bodies, "neptune", "Neptune", "neptune", builder ->
                 {
                     builder.setScale(6.0F);
                     builder.setDistanceFactor(8.0F);
                     builder.setParent(sun);
+                    builder.setAtmosphere(CelestialBodyAtmosphere.builder().setTexture(new ResourceLocation(SpacePrototype.MOD_ID, "neptune")).setDistance(0.8F).setDensity(0.6F).build());
                 });
             });
         }

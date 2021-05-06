@@ -75,7 +75,7 @@ public class CelestialBodyAtmosphere
         private Builder()
         {
             this.texture = null;
-            this.density = 1.0F;
+            this.density = 0.25F;
             this.distance = 0.25F;
         }
 
