@@ -27,10 +27,12 @@ public final class SpaceRenderTypes extends RenderType
     private static final RenderType PLANET_SELECT = create(SpacePrototype.MOD_ID + ":planet_select", DefaultVertexFormats.NEW_ENTITY, 7, 256, true, true, RenderType.State.builder().setTransparencyState(TRANSLUCENT_TRANSPARENCY).setDiffuseLightingState(NO_DIFFUSE_LIGHTING).setLightmapState(NO_LIGHTMAP).setOverlayState(NO_OVERLAY).createCompositeState(false));
     private static final SortedMap<RenderType, BufferBuilder> FIXED_BUFFERS = Util.make(new Object2ObjectLinkedOpenHashMap<>(), (map) ->
     {
-        for (RenderType planet : PLANETS)
-            put(map, planet);
-        put(map, PLANET_SELECT);
+        put(map, planet(true, false));
+        put(map, SpaceRenderTypes.planet(false, false));
         put(map, RenderType.entityCutout(PlayerContainer.BLOCK_ATLAS));
+        put(map, SpaceRenderTypes.planet(true, true));
+        put(map, SpaceRenderTypes.planet(false, true));
+        put(map, SpaceRenderTypes.planetSelect());
     });
     private static final IRenderTypeBuffer.Impl BUFFER = IRenderTypeBuffer.immediateWithBuffers(FIXED_BUFFERS, new BufferBuilder(256));
 

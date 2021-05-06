@@ -37,6 +37,7 @@ import org.lwjgl.system.NativeResource;
 import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.Random;
 
 import static org.lwjgl.opengl.GL11.*;
@@ -58,7 +59,7 @@ public class SolarSystemWidget extends Widget implements IScreen, NativeResource
     private final Screen parent;
     private final CelestialBodySimulation simulation;
     private final SpaceTravelCamera camera;
-    private CelestialBodySimulation.CelestialBodyRayTraceResult hoveredBody;
+    private CelestialBodyRayTraceResult hoveredBody;
     private Framebuffer framebuffer;
     private VertexBuffer skyVBO;
 
@@ -166,7 +167,8 @@ public class SolarSystemWidget extends Widget implements IScreen, NativeResource
 
                     b.getAtmosphere().ifPresent(atmosphere ->
                     {
-                        poseStack.scale((1.0F + atmosphere.getDistance() / scale), (1.0F + atmosphere.getDistance() / scale), (1.0F + atmosphere.getDistance() / scale));
+                        float distance = 1.0F + atmosphere.getDistance() / scale;
+                        poseStack.scale(distance, distance, distance);
                         poseStack.pushPose();
                         poseStack.translate(-0.25F, -0.25F, -0.25F);
                         CUBE.render(poseStack, SpacePlanetSpriteManager.getSprite(atmosphere.getTexture()).wrap(buffer.getBuffer(SpaceRenderTypes.planet(b.isShade(), true))), 15728880, OverlayTexture.NO_OVERLAY, 1.0F, 1.0F, 1.0F, atmosphere.getDensity());
@@ -283,9 +285,6 @@ public class SolarSystemWidget extends Widget implements IScreen, NativeResource
         matrixStack1.pushPose();
         this.simulation.getBodies().forEach(body -> this.renderBody(matrixStack1, buffer, body, partialTicks));
         matrixStack1.popPose();
-        buffer.endBatch(SpaceRenderTypes.planet(true, false));
-        buffer.endBatch(SpaceRenderTypes.planet(false, false));
-        buffer.endBatch(RenderType.entityCutout(PlayerContainer.BLOCK_ATLAS));
         buffer.endBatch();
 
         RenderSystem.matrixMode(GL_PROJECTION);
@@ -380,5 +379,29 @@ public class SolarSystemWidget extends Widget implements IScreen, NativeResource
     protected IFormattableTextComponent createNarrationMessage()
     {
         return StringTextComponent.EMPTY.copy();
+    }
+
+    /**
+     * @return The current simulation for the system
+     */
+    public CelestialBodySimulation getSimulation()
+    {
+        return simulation;
+    }
+
+    /**
+     * @return The camera viewing the scene
+     */
+    public SpaceTravelCamera getCamera()
+    {
+        return camera;
+    }
+
+    /**
+     * @return The celestial body the mouse is currently over
+     */
+    public Optional<CelestialBodyRayTraceResult> getHoveredBody()
+    {
+        return Optional.ofNullable(this.hoveredBody);
     }
 }
