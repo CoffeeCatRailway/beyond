@@ -9,7 +9,9 @@ import io.github.ocelot.space.SpacePrototype;
 import io.github.ocelot.space.client.MousePicker;
 import io.github.ocelot.space.client.SpacePlanetSpriteManager;
 import io.github.ocelot.space.client.screen.SpaceTravelCamera;
+import io.github.ocelot.space.common.init.SpaceMessages;
 import io.github.ocelot.space.common.init.SpaceRenderTypes;
+import io.github.ocelot.space.common.network.play.message.CPlanetTravelMessage;
 import io.github.ocelot.space.common.simulation.*;
 import io.github.ocelot.space.common.simulation.body.CelestialBodyDefinitions;
 import net.minecraft.client.Minecraft;
@@ -91,13 +93,24 @@ public class SolarSystemWidget extends Widget implements INestedGuiEventHandler,
             this.selectedBody.getDimension().ifPresent(dimension ->
             {
                 System.out.println("Launch to " + dimension);
+                SpaceMessages.PLAY.sendToServer(new CPlanetTravelMessage(dimension)); // TODO get dimension from body
             });
         }, (button, matrixStack, mouseX, mouseY) ->
         {
             if (this.selectedBody == null || !this.selectedBody.canTeleportTo())
                 return;
-            if (this.parent != null && !this.selectedBody.getDimension().isPresent())
-                this.parent.renderTooltip(matrixStack, new TranslationTextComponent("gui." + SpacePrototype.MOD_ID + ".cannot_launch"), mouseX, mouseY);
+            if (this.parent != null)
+            {
+                Optional<ResourceLocation> optionalDimension = this.selectedBody.getDimension();
+                if (!optionalDimension.isPresent())
+                {
+                    this.parent.renderTooltip(matrixStack, new TranslationTextComponent("gui." + SpacePrototype.MOD_ID + ".cannot_launch"), mouseX, mouseY);
+                }
+                else if (Minecraft.getInstance().player != null && Minecraft.getInstance().player.level.dimension().location().equals(optionalDimension.get()))
+                {
+                    this.parent.renderTooltip(matrixStack, new TranslationTextComponent("gui." + SpacePrototype.MOD_ID + ".already_there"), mouseX, mouseY);
+                }
+            }
         });
         this.launchButton.visible = false;
         this.children.add(this.launchButton);
@@ -410,7 +423,7 @@ public class SolarSystemWidget extends Widget implements INestedGuiEventHandler,
                     this.launchButton.x = (int) ((p.x() + 1F) * this.width / 2F + width + sheering + padding);
                     this.launchButton.y = (int) ((-p.y() + 1F) * this.height / 2F + descriptionHeight + 2F * fontRenderer.lineHeight + padding * 2F - length);
                     this.launchButton.visible = true;
-                    this.launchButton.active = this.selectedBody.getDimension().isPresent();
+                    this.launchButton.active = this.selectedBody.getDimension().isPresent() && (Minecraft.getInstance().player == null || !Minecraft.getInstance().player.level.dimension().location().equals(this.selectedBody.getDimension().get()));
                 }
 
                 RenderSystem.enableDepthTest();
