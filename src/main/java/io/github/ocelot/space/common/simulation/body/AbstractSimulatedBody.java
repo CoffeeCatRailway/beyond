@@ -1,10 +1,9 @@
-package io.github.ocelot.space.common.simulation;
+package io.github.ocelot.space.common.simulation.body;
 
+import io.github.ocelot.space.common.simulation.CelestialBodySimulation;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.math.MathHelper;
 import net.minecraft.util.math.vector.Vector3f;
-
-import java.util.Optional;
 
 /**
  * <p>An abstract implementation of {@link SimulatedBody} that handles orbits and parenting.</p>
@@ -19,9 +18,8 @@ public abstract class AbstractSimulatedBody implements SimulatedBody
     private final Vector3f rotation;
     protected float lastYaw;
     protected float yaw;
-    private float distanceFromParent;
-    private float distanceFromParentSqrt;
-    private boolean root;
+    protected float distanceFromParent;
+    protected float distanceFromParentSqrt;
 
     protected AbstractSimulatedBody(CelestialBodySimulation simulation, ResourceLocation id)
     {
@@ -33,7 +31,6 @@ public abstract class AbstractSimulatedBody implements SimulatedBody
         this.yaw = this.lastYaw;
         this.distanceFromParent = 0;
         this.distanceFromParentSqrt = 0;
-        this.root = false;
     }
 
     @Override
@@ -74,10 +71,15 @@ public abstract class AbstractSimulatedBody implements SimulatedBody
     }
 
     @Override
+    public float getDistanceFromParent()
+    {
+        return distanceFromParent;
+    }
+
+    @Override
     public float getX(float partialTicks)
     {
-        Optional<SimulatedBody> optional = this.getParent().map(this.simulation::getBody);
-        return optional.map(simulatedBody -> (this.root ? 0 : simulatedBody.getX(partialTicks)) + this.getHorizontalDistance(partialTicks)).orElse(0F);
+        return this.getParent().map(this.simulation::getBody).map(simulatedBody -> simulatedBody.getX(partialTicks) + this.getHorizontalDistance(partialTicks)).orElse(0F);
     }
 
     @Override
@@ -89,8 +91,7 @@ public abstract class AbstractSimulatedBody implements SimulatedBody
     @Override
     public float getZ(float partialTicks)
     {
-        Optional<SimulatedBody> optional = this.getParent().map(this.simulation::getBody);
-        return optional.map(simulatedBody -> (this.root ? 0 : simulatedBody.getZ(partialTicks)) + this.getVerticalDistance(partialTicks)).orElse(0F);
+        return this.getParent().map(this.simulation::getBody).map(simulatedBody -> simulatedBody.getZ(partialTicks) + this.getVerticalDistance(partialTicks)).orElse(0F);
     }
 
     @Override
@@ -120,12 +121,6 @@ public abstract class AbstractSimulatedBody implements SimulatedBody
     {
         this.distanceFromParent = distanceFromParent;
         this.distanceFromParentSqrt = MathHelper.sqrt(distanceFromParent);
-    }
-
-    @Override
-    public void setRoot(boolean root)
-    {
-        this.root = root;
     }
 
     @Override

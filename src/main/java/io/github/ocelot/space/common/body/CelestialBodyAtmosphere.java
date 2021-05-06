@@ -1,4 +1,4 @@
-package io.github.ocelot.space.common.simulation.body;
+package io.github.ocelot.space.common.body;
 
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;

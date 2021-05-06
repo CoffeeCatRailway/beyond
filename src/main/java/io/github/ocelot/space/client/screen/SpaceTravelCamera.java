@@ -1,6 +1,6 @@
 package io.github.ocelot.space.client.screen;
 
-import io.github.ocelot.space.common.simulation.SimulatedBody;
+import io.github.ocelot.space.common.simulation.body.SimulatedBody;
 import net.minecraft.client.gui.IGuiEventListener;
 import net.minecraft.client.gui.screen.IScreen;
 import net.minecraft.util.math.MathHelper;
@@ -8,6 +8,11 @@ import net.minecraft.util.math.vector.Vector3f;
 
 import javax.annotation.Nullable;
 
+/**
+ * <p>A custom camera implementation for the space simulation.</p>
+ *
+ * @author Ocelot
+ */
 public class SpaceTravelCamera implements IScreen, IGuiEventListener
 {
     private final Vector3f lastAnchorPos;

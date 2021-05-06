@@ -1,6 +1,9 @@
 package io.github.ocelot.space.common.simulation;
 
-import io.github.ocelot.space.common.simulation.body.CelestialBody;
+import io.github.ocelot.space.common.body.CelestialBody;
+import io.github.ocelot.space.common.simulation.body.NaturalSimulatedBody;
+import io.github.ocelot.space.common.simulation.body.PlayerRocket;
+import io.github.ocelot.space.common.simulation.body.SimulatedBody;
 import net.minecraft.client.Minecraft;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.math.vector.Vector3d;
@@ -97,6 +100,17 @@ public class CelestialBodySimulation
     public SimulatedBody getBody(ResourceLocation id)
     {
         return this.bodies.get(id);
+    }
+
+    /**
+     * Retrieves a player rocket by the specified player id.
+     *
+     * @param id The id of the body to get
+     * @return The body with that id or <code>null</code> for no body with that id
+     */
+    public PlayerRocket getPlayer(UUID id)
+    {
+        return (PlayerRocket) this.bodies.values().stream().filter(body -> body instanceof PlayerRocket && ((PlayerRocket) body).getPlayer().getId().equals(id)).findFirst().orElse(null);
     }
 
     /**

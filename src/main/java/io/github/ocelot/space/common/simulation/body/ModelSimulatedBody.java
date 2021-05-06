@@ -1,4 +1,4 @@
-package io.github.ocelot.space.common.simulation;
+package io.github.ocelot.space.common.simulation.body;
 
 import net.minecraft.client.renderer.model.IBakedModel;
 

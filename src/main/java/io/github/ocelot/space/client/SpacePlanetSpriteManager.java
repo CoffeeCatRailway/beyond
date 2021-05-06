@@ -40,6 +40,7 @@ public class SpacePlanetSpriteManager
         {
             Minecraft minecraft = Minecraft.getInstance();
             SonarSpriteUploader spriteUploader = new SonarSpriteUploader(minecraft.textureManager, ATLAS_LOCATION, "planet");
+            spriteUploader.setMipmapLevels(3); // 8 is 2^3
             IResourceManager resourceManager = minecraft.getResourceManager();
             registerSprites(resourceManager, spriteUploader);
             if (resourceManager instanceof IReloadableResourceManager)

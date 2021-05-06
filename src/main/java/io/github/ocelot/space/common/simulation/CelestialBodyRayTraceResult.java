@@ -1,5 +1,6 @@
 package io.github.ocelot.space.common.simulation;
 
+import io.github.ocelot.space.common.simulation.body.SimulatedBody;
 import net.minecraft.util.math.vector.Vector3d;
 
 /**

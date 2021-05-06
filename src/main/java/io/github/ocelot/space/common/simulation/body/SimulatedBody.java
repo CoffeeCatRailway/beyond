@@ -1,7 +1,8 @@
-package io.github.ocelot.space.common.simulation;
+package io.github.ocelot.space.common.simulation.body;
 
 import com.mojang.blaze3d.matrix.MatrixStack;
 import io.github.ocelot.space.common.MagicMath;
+import io.github.ocelot.space.common.simulation.CelestialBodySimulation;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.math.AxisAlignedBB;
 import net.minecraft.util.math.vector.Matrix4f;
@@ -74,6 +75,11 @@ public interface SimulatedBody
     float getSize();
 
     /**
+     * @return The distance from this body and the body being orbited
+     */
+    float getDistanceFromParent();
+
+    /**
      * Calculates the x position of this body.
      *
      * @param partialTicks The percentage from last tick and this tick
@@ -121,21 +127,20 @@ public interface SimulatedBody
      */
     float getRotationZ(float partialTicks);
 
+    /**
+     * @return Whether or not this body can be flown to by players
+     */
     boolean canTeleportTo();
 
+    /**
+     * @return The dimension to teleport the player to if they fly here
+     */
     Optional<ResourceLocation> getDimension();
 
     /**
      * @return The type of renderer to use
      */
     RenderType getRenderType();
-
-    /**
-     * Marks this body as a root or not.
-     *
-     * @param root The body to use as root
-     */
-    void setRoot(boolean root);
 
     /**
      * <p>The types of bodies that can be rendered.</p>

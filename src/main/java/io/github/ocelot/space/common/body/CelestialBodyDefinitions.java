@@ -1,4 +1,4 @@
-package io.github.ocelot.space.common.simulation.body;
+package io.github.ocelot.space.common.body;
 
 import io.github.ocelot.space.SpacePrototype;
 import net.minecraft.util.ResourceLocation;
@@ -25,17 +25,20 @@ public class CelestialBodyDefinitions
                 Random random = new Random();
                 ResourceLocation sun = create(bodies, "sun", "Sun", "sun", builder ->
                 {
+                    builder.setDimension(DimensionType.NETHER_LOCATION.location());
                     builder.setScale(20.0F);
                     builder.setShade(false);
                 });
                 ResourceLocation mercury = create(bodies, "mercury", "Mercury", "mercury", builder ->
                 {
+                    builder.setDimension(DimensionType.END_LOCATION.location());
                     builder.setScale(3.0F);
                     builder.setDistanceFactor(0.25F);
                     builder.setParent(sun);
                 });
                 ResourceLocation venus = create(bodies, "venus", "Venus", "venus", builder ->
                 {
+                    builder.setDimension(DimensionType.END_LOCATION.location());
                     builder.setScale(3.0F);
                     builder.setDistanceFactor(0.5F);
                     builder.setParent(sun);
@@ -56,6 +59,7 @@ public class CelestialBodyDefinitions
                 });
                 ResourceLocation mars = create(bodies, "mars", "Mars", "mars", builder ->
                 {
+                    builder.setDimension(DimensionType.END_LOCATION.location());
                     builder.setScale(3.5F);
                     builder.setDistanceFactor(1.2F);
                     builder.setParent(sun);
@@ -64,6 +68,7 @@ public class CelestialBodyDefinitions
                 {
                     ResourceLocation asteroid = create(bodies, "asteroid" + i, "Asteroid", "asteroid", builder ->
                     {
+                        builder.setDimension(DimensionType.END_LOCATION.location());
                         builder.setScale(1.0F + random.nextFloat() - 0.5F);
                         builder.setDistanceFactor(2.0F + random.nextFloat());
                         builder.setParent(sun);
@@ -71,6 +76,7 @@ public class CelestialBodyDefinitions
                 }
                 ResourceLocation jupiter = create(bodies, "jupiter", "Jupiter", "jupiter", builder ->
                 {
+                    builder.setDimension(DimensionType.END_LOCATION.location());
                     builder.setScale(12.0F);
                     builder.setDistanceFactor(5.0F);
                     builder.setParent(sun);
@@ -78,6 +84,7 @@ public class CelestialBodyDefinitions
                 });
                 ResourceLocation saturn = create(bodies, "saturn", "Saturn", "saturn", builder ->
                 {
+                    builder.setDimension(DimensionType.END_LOCATION.location());
                     builder.setScale(8.0F);
                     builder.setDistanceFactor(6.0F);
                     builder.setParent(sun);
@@ -87,6 +94,7 @@ public class CelestialBodyDefinitions
                 {
                     ResourceLocation ring = create(bodies, "saturn_ring_" + i, "Saturn Ring", "asteroid", builder ->
                     {
+                        builder.setDimension(DimensionType.END_LOCATION.location());
                         builder.setScale(0.5F + random.nextFloat() / 2F - 0.25F);
                         builder.setDistanceFactor(0.5F + random.nextFloat() / 2F);
                         builder.setParent(saturn);
@@ -94,6 +102,7 @@ public class CelestialBodyDefinitions
                 }
                 ResourceLocation uranus = create(bodies, "uranus", "Uranus", "uranus", builder ->
                 {
+                    builder.setDimension(DimensionType.END_LOCATION.location());
                     builder.setScale(6.0F);
                     builder.setDistanceFactor(7.0F);
                     builder.setParent(sun);
@@ -101,6 +110,7 @@ public class CelestialBodyDefinitions
                 });
                 ResourceLocation neptune = create(bodies, "neptune", "Neptune", "neptune", builder ->
                 {
+                    builder.setDimension(DimensionType.END_LOCATION.location());
                     builder.setScale(6.0F);
                     builder.setDistanceFactor(8.0F);
                     builder.setParent(sun);

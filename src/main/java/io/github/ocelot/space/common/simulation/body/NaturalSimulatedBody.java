@@ -1,7 +1,8 @@
-package io.github.ocelot.space.common.simulation;
+package io.github.ocelot.space.common.simulation.body;
 
-import io.github.ocelot.space.common.simulation.body.CelestialBody;
-import io.github.ocelot.space.common.simulation.body.CelestialBodyAtmosphere;
+import io.github.ocelot.space.common.body.CelestialBody;
+import io.github.ocelot.space.common.body.CelestialBodyAtmosphere;
+import io.github.ocelot.space.common.simulation.CelestialBodySimulation;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.text.ITextComponent;
 
@@ -25,7 +26,7 @@ public class NaturalSimulatedBody extends AbstractSimulatedBody
     /**
      * Randomizes the distance from the parent.
      */
-    protected void initializePosition()
+    public void initializePosition()
     {
         Optional<SimulatedBody> optional = this.body.getParent().map(this.simulation::getBody);
         if (!optional.isPresent())

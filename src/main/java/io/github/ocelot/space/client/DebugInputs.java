@@ -18,6 +18,8 @@ import java.nio.file.Paths;
 
 import static org.lwjgl.opengl.GL11.GL_TEXTURE_COMPONENTS;
 import static org.lwjgl.opengl.GL11C.*;
+import static org.lwjgl.opengl.GL12C.GL_TEXTURE_BASE_LEVEL;
+import static org.lwjgl.opengl.GL12C.GL_TEXTURE_MAX_LEVEL;
 import static org.lwjgl.stb.STBImageWrite.stbi_write_png;
 
 @Mod.EventBusSubscriber(modid = SpacePrototype.MOD_ID, value = Dist.CLIENT)
@@ -41,21 +43,28 @@ public class DebugInputs
                     if (!glIsTexture(i))
                         continue;
 
-                    Path outputFile = outputFolder.resolve(i + ".png");
-                    if (!Files.exists(outputFile))
-                        Files.createFile(outputFile);
-
                     glBindTexture(GL_TEXTURE_2D, i);
+                    int base = glGetTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_BASE_LEVEL);
+                    int max = glGetTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL);
+                    if(max == 1000)
+                        max = 0;
 
-                    int width = glGetTexLevelParameteri(GL_TEXTURE_2D, 0, GL_TEXTURE_WIDTH);
-                    int height = glGetTexLevelParameteri(GL_TEXTURE_2D, 0, GL_TEXTURE_HEIGHT);
-                    int components = glGetTexLevelParameteri(GL_TEXTURE_2D, 0, GL_TEXTURE_COMPONENTS);
-                    int componentsCount = components == GL_RGB ? 3 : 4;
+                    for (int level = base; level <= max; level++)
+                    {
+                        Path outputFile = outputFolder.resolve(i + (base == max ? "" : "-" + level) + ".png");
+                        if (!Files.exists(outputFile))
+                            Files.createFile(outputFile);
 
-                    ByteBuffer image = BufferUtils.createByteBuffer(width * height * componentsCount);
-                    glGetTexImage(GL_TEXTURE_2D, 0, components, GL_UNSIGNED_BYTE, image);
+                        int width = glGetTexLevelParameteri(GL_TEXTURE_2D, level, GL_TEXTURE_WIDTH);
+                        int height = glGetTexLevelParameteri(GL_TEXTURE_2D, level, GL_TEXTURE_HEIGHT);
+                        int components = glGetTexLevelParameteri(GL_TEXTURE_2D, level, GL_TEXTURE_COMPONENTS);
+                        int componentsCount = components == GL_RGB ? 3 : 4;
 
-                    Util.ioPool().execute(() -> stbi_write_png(outputFile.toString(), width, height, componentsCount, image, 0));
+                        ByteBuffer image = BufferUtils.createByteBuffer(width * height * componentsCount);
+                        glGetTexImage(GL_TEXTURE_2D, level, components, GL_UNSIGNED_BYTE, image);
+
+                        Util.ioPool().execute(() -> stbi_write_png(outputFile.toString(), width, height, componentsCount, image, 0));
+                    }
                 }
                 Util.getPlatform().openFile(outputFolder.toFile());
             }
