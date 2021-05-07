@@ -37,10 +37,10 @@ minecraft {
             property 'forge.logging.console.level', 'debug'
             property 'mixin.env.remapRefMap', 'true'
             property 'mixin.env.refMapRemappingFile', "${projectDir}/build/createSrgToMcp/output.srg"
-            arg "-mixin.config=space.mixins.json"
+            arg "-mixin.config=beyond.mixins.json"
 
             mods {
-                space {
+                beyond {
                     source sourceSets.main
                 }
             }
@@ -51,10 +51,10 @@ minecraft {
             property 'forge.logging.console.level', 'debug'
             property 'mixin.env.remapRefMap', 'true'
             property 'mixin.env.refMapRemappingFile', "${projectDir}/build/createSrgToMcp/output.srg"
-            arg "-mixin.config=space.mixins.json"
+            arg "-mixin.config=beyond.mixins.json"
 
             mods {
-                space {
+                beyond {
                     source sourceSets.main
                 }
             }
@@ -68,7 +68,7 @@ minecraft {
             args '--mod', project.modId, '--all', '--output', file('src/generated/resources/')
 
             mods {
-                space {
+                beyond {
                     source sourceSets.main
                 }
             }
@@ -128,7 +128,7 @@ processResources {
 jar {
     manifest {
         attributes([
-                "Specification-Title"     : "space",
+                "Specification-Title"     : "beyond",
                 "Specification-Vendor"    : "Ocelot",
                 "Specification-Version"   : "1",
                 "Implementation-Title"    : project.name,
@@ -142,7 +142,7 @@ jar {
 
 shadowJar {
     configurations = [project.configurations.shade]
-    relocate 'io.github.ocelot', 'io.github.ocelot.space.lib'
+    relocate 'io.github.ocelot', 'io.github.ocelot.beyond.lib'
 }
 
 reobf {

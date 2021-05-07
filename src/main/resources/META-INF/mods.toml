@@ -1,7 +1,7 @@
 modLoader = "javafml"
 loaderVersion = "[36,)"
 license = "MIT"
-issueTrackerURL = "https://github.com/Ocelot5836/space-prototype/issues"
+issueTrackerURL = "https://github.com/Ocelot5836/beyond/issues"
 [[mods]]
 modId = "${modId}"
 version = "${modVersion}"
@@ -11,9 +11,7 @@ displayName = "${modName}"
 #logoFile = "examplemod.png"
 #credits = ""
 authors = "Ocelot"
-description = '''
-Prototype for a space exploration mod.
-'''
+description = "Pretty cool space exploration mod broh."
 [[dependencies.${modId}]]
 modId = "forge"
 mandatory = true
