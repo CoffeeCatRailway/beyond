@@ -75,6 +75,7 @@ public class SolarSystemWidget extends Widget implements INestedGuiEventHandler,
     private final Button launchButton;
     private IGuiEventListener focused;
     private boolean dragging;
+    private boolean bubbleHovered;
 
     public SolarSystemWidget(@Nullable Screen parent, int x, int y, int width, int height)
     {
@@ -213,7 +214,7 @@ public class SolarSystemWidget extends Widget implements INestedGuiEventHandler,
     private void renderBody(MatrixStack poseStack, IRenderTypeBuffer.Impl buffer, SimulatedBody body, float partialTicks)
     {
         float scale = body.getSize();
-        boolean hovered = this.hoveredBody != null && this.hoveredBody.getBody().equals(body);
+        boolean hovered = this.hoveredBody != null && this.hoveredBody.getBody().equals(body) && !this.bubbleHovered;
         poseStack.pushPose();
         poseStack.translate(body.getX(partialTicks), body.getY(partialTicks), body.getZ(partialTicks));
         poseStack.mulPose(Vector3f.ZP.rotation(body.getRotationZ(partialTicks)));
@@ -268,6 +269,75 @@ public class SolarSystemWidget extends Widget implements INestedGuiEventHandler,
         }
 
         poseStack.popPose();
+    }
+
+    private void renderBubble(MatrixStack poseStack, int x, int y, int mouseX, int mouseY)
+    {
+        FontRenderer fontRenderer = Minecraft.getInstance().font;
+        ITextComponent description = new StringTextComponent("The moon is Earth's only natural satellite. The moon is a cold, dry orb whose surface is studded with craters and strewn with rocks and dust.").withStyle(TextFormatting.ITALIC, TextFormatting.GRAY);
+        List<IReorderingProcessor> descriptionLines = fontRenderer.split(description, 300);
+
+        int descriptionHeight = descriptionLines.size() * fontRenderer.lineHeight;
+
+        int padding = 8;
+        int boxWidth = Math.max(fontRenderer.width(this.selectedBody.getDisplayName()) * 2, 300) + padding * 2;
+        int boxHeight = descriptionHeight + 2 * fontRenderer.lineHeight + (this.selectedBody.canTeleportTo() ? 20 + padding : 0) + padding * 2;
+        int length = boxHeight + 40;
+        int width = 5;
+        int sheering = 20;
+
+        float lineRed = 38F / 255F;
+        float lineGreen = 30F / 255F;
+        float lineBlue = 36F / 255F;
+        float lineAlpha = 0.8F;
+        float boxRed = 38F / 255F;
+        float boxGreen = 30F / 255F;
+        float boxBlue = 36F / 255F;
+        float boxAlpha = 0.7F;
+
+        poseStack.pushPose();
+        poseStack.translate(x, y, 0);
+        Matrix4f matrix4f = poseStack.last().pose();
+        BufferBuilder builder = Tessellator.getInstance().getBuilder();
+        builder.begin(GL_TRIANGLES, DefaultVertexFormats.POSITION_COLOR);
+
+        // Line
+        builder.vertex(matrix4f, 0, 0, 0).color(lineRed, lineGreen, lineBlue, lineAlpha).endVertex();
+        builder.vertex(matrix4f, sheering + width, -length, 0).color(lineRed, lineGreen, lineBlue, lineAlpha).endVertex();
+        builder.vertex(matrix4f, sheering, -length, 0).color(lineRed, lineGreen, lineBlue, lineAlpha).endVertex();
+        builder.vertex(matrix4f, 0, 0, 0).color(lineRed, lineGreen, lineBlue, lineAlpha).endVertex();
+        builder.vertex(matrix4f, 1, 0, 0).color(lineRed, lineGreen, lineBlue, lineAlpha).endVertex();
+        builder.vertex(matrix4f, sheering + width, -length, 0).color(lineRed, lineGreen, lineBlue, lineAlpha).endVertex();
+
+        // Box
+        builder.vertex(matrix4f, sheering + width - ((float) boxHeight / (float) length) * (sheering + width - 1), boxHeight - length, 0).color(boxRed, boxGreen, boxBlue, boxAlpha).endVertex();
+        builder.vertex(matrix4f, sheering + width + boxWidth, boxHeight - length, 0).color(boxRed, boxGreen, boxBlue, boxAlpha).endVertex();
+        builder.vertex(matrix4f, sheering + width, -length, 0).color(boxRed, boxGreen, boxBlue, boxAlpha).endVertex();
+        builder.vertex(matrix4f, sheering + width + boxWidth, boxHeight - length, 0).color(boxRed, boxGreen, boxBlue, boxAlpha).endVertex();
+        builder.vertex(matrix4f, sheering + width + boxWidth, -length, 0).color(boxRed, boxGreen, boxBlue, boxAlpha).endVertex();
+        builder.vertex(matrix4f, sheering + width, -length, 0).color(boxRed, boxGreen, boxBlue, boxAlpha).endVertex();
+
+        Tessellator.getInstance().end();
+
+        poseStack.translate(width + sheering, -length, 0.0F);
+        poseStack.pushPose();
+        poseStack.translate(padding, padding, 0);
+        poseStack.scale(2F, 2F, 2F);
+        fontRenderer.drawShadow(poseStack, this.selectedBody.getDisplayName(), 0, 0, -1);
+        poseStack.popPose();
+        for (int i = 0; i < descriptionLines.size(); i++)
+            fontRenderer.drawShadow(poseStack, descriptionLines.get(i), padding, padding + (i + 2) * fontRenderer.lineHeight, -1);
+        poseStack.popPose();
+
+        if (this.selectedBody.canTeleportTo())
+        {
+            this.launchButton.x = x + width + sheering + padding;
+            this.launchButton.y = y + descriptionHeight + 2 * fontRenderer.lineHeight + padding * 2 - length;
+            this.launchButton.visible = true;
+            this.launchButton.active = !this.travelling && this.selectedBody.getDimension().isPresent() && (Minecraft.getInstance().player == null || !Minecraft.getInstance().player.level.dimension().location().equals(this.selectedBody.getDimension().get()));
+        }
+
+        this.bubbleHovered = mouseX >= x + width + sheering && mouseX < x + width + sheering + boxWidth && mouseY >= y - length && mouseY < y - length + boxHeight;
     }
 
     private void invalidateFramebuffer()
@@ -378,83 +448,20 @@ public class SolarSystemWidget extends Widget implements INestedGuiEventHandler,
         this.framebuffer.unbindRead();
         poseStack.popPose();
 
+        this.bubbleHovered = false;
         if (this.selectedBody != null)
         {
-            RenderSystem.color4f(1.0F, 1.0F, 1.0F, this.alpha);
-            RenderSystem.disableTexture();
-            RenderSystem.disableDepthTest();
-
             Vector4f pos = new Vector4f(this.selectedBody.getX(partialTicks), this.selectedBody.getY(partialTicks), this.selectedBody.getZ(partialTicks), 1.0F);
             pos.transform(viewMatrix);
             pos.transform(projectionMatrix);
-            Vector3f p = new Vector3f(pos.x() / pos.w(), pos.y() / pos.w(), pos.z() / pos.w());
 
-            FontRenderer fontRenderer = Minecraft.getInstance().font;
-            ITextComponent description = new StringTextComponent("The moon is Earth's only natural satellite. The moon is a cold, dry orb whose surface is studded with craters and strewn with rocks and dust.").withStyle(TextFormatting.ITALIC, TextFormatting.GRAY);
-            List<IReorderingProcessor> descriptionLines = fontRenderer.split(description, 300);
-
-            int descriptionHeight = descriptionLines.size() * fontRenderer.lineHeight;
-
-            int padding = 8;
-            int boxWidth = Math.max(fontRenderer.width(this.selectedBody.getDisplayName()) * 2, 300) + padding * 2;
-            int boxHeight = descriptionHeight + 2 * fontRenderer.lineHeight + (this.selectedBody.canTeleportTo() ? 20 + padding : 0) + padding * 2;
-            int length = boxHeight + 40;
-            int width = 5;
-            int sheering = 20;
-
-            float lineRed = 38F / 255F;
-            float lineGreen = 30F / 255F;
-            float lineBlue = 36F / 255F;
-            float lineAlpha = 0.8F;
-            float boxRed = 38F / 255F;
-            float boxGreen = 30F / 255F;
-            float boxBlue = 36F / 255F;
-            float boxAlpha = 0.7F;
-
-            if (Math.abs(p.z()) <= 1)
+            if (Math.abs(pos.z() / pos.w()) <= 1)
             {
-                poseStack.pushPose();
-                poseStack.translate((int) ((p.x() + 1F) * this.width / 2F), (int) ((-p.y() + 1F) * this.height / 2F), 0);
-                Matrix4f matrix4f = poseStack.last().pose();
-                BufferBuilder builder = Tessellator.getInstance().getBuilder();
-                builder.begin(GL_TRIANGLES, DefaultVertexFormats.POSITION_COLOR);
+                RenderSystem.color4f(1.0F, 1.0F, 1.0F, this.alpha);
+                RenderSystem.disableTexture();
+                RenderSystem.disableDepthTest();
 
-                // Line
-                builder.vertex(matrix4f, 0, 0, 0).color(lineRed, lineGreen, lineBlue, lineAlpha).endVertex();
-                builder.vertex(matrix4f, sheering + width, -length, 0).color(lineRed, lineGreen, lineBlue, lineAlpha).endVertex();
-                builder.vertex(matrix4f, sheering, -length, 0).color(lineRed, lineGreen, lineBlue, lineAlpha).endVertex();
-                builder.vertex(matrix4f, 0, 0, 0).color(lineRed, lineGreen, lineBlue, lineAlpha).endVertex();
-                builder.vertex(matrix4f, 1, 0, 0).color(lineRed, lineGreen, lineBlue, lineAlpha).endVertex();
-                builder.vertex(matrix4f, sheering + width, -length, 0).color(lineRed, lineGreen, lineBlue, lineAlpha).endVertex();
-
-                // Box
-                builder.vertex(matrix4f, sheering + width - ((float) boxHeight / (float) length) * (sheering + width - 1), boxHeight - length, 0).color(boxRed, boxGreen, boxBlue, boxAlpha).endVertex();
-                builder.vertex(matrix4f, sheering + width + boxWidth, boxHeight - length, 0).color(boxRed, boxGreen, boxBlue, boxAlpha).endVertex();
-                builder.vertex(matrix4f, sheering + width, -length, 0).color(boxRed, boxGreen, boxBlue, boxAlpha).endVertex();
-                builder.vertex(matrix4f, sheering + width + boxWidth, boxHeight - length, 0).color(boxRed, boxGreen, boxBlue, boxAlpha).endVertex();
-                builder.vertex(matrix4f, sheering + width + boxWidth, -length, 0).color(boxRed, boxGreen, boxBlue, boxAlpha).endVertex();
-                builder.vertex(matrix4f, sheering + width, -length, 0).color(boxRed, boxGreen, boxBlue, boxAlpha).endVertex();
-
-                Tessellator.getInstance().end();
-
-                poseStack.translate(width + sheering, -length, 0.0F);
-                poseStack.pushPose();
-                poseStack.translate(padding, padding, 0);
-                poseStack.scale(2F, 2F, 2F);
-                fontRenderer.drawShadow(poseStack, this.selectedBody.getDisplayName(), 0, 0, -1);
-                poseStack.popPose();
-                for (int i = 0; i < descriptionLines.size(); i++)
-                    fontRenderer.drawShadow(poseStack, descriptionLines.get(i), padding, padding + (i + 2) * fontRenderer.lineHeight, -1);
-
-                poseStack.popPose();
-
-                if (this.selectedBody.canTeleportTo())
-                {
-                    this.launchButton.x = (int) ((p.x() + 1F) * this.width / 2F + width + sheering + padding);
-                    this.launchButton.y = (int) ((-p.y() + 1F) * this.height / 2F + descriptionHeight + 2F * fontRenderer.lineHeight + padding * 2F - length);
-                    this.launchButton.visible = true;
-                    this.launchButton.active = !this.travelling && this.selectedBody.getDimension().isPresent() && (Minecraft.getInstance().player == null || !Minecraft.getInstance().player.level.dimension().location().equals(this.selectedBody.getDimension().get()));
-                }
+                this.renderBubble(poseStack, (int) ((pos.x() / pos.w() + 1F) * this.width / 2F), (int) ((-pos.y() / pos.w() + 1F) * this.height / 2F), mouseX, mouseY);
 
                 RenderSystem.enableDepthTest();
                 RenderSystem.enableTexture();
@@ -473,7 +480,7 @@ public class SolarSystemWidget extends Widget implements INestedGuiEventHandler,
     @Override
     public void renderToolTip(MatrixStack poseStack, int mouseX, int mouseY)
     {
-        if (this.hoveredBody != null)
+        if (this.hoveredBody != null && !this.bubbleHovered)
         {
             List<ITextComponent> tooltip = new ArrayList<>();
             tooltip.add(this.hoveredBody.getBody().getDisplayName());
@@ -504,11 +511,14 @@ public class SolarSystemWidget extends Widget implements INestedGuiEventHandler,
             }
         }
 
-        this.selectedBody = null;
-        if (!this.travelling && this.hoveredBody != null && mouseButton == 0)
+        if (!this.bubbleHovered)
         {
-            this.selectedBody = this.hoveredBody.getBody();
-            return true;
+            this.selectedBody = null;
+            if (!this.travelling && this.hoveredBody != null && mouseButton == 0)
+            {
+                this.selectedBody = this.hoveredBody.getBody();
+                return true;
+            }
         }
         return false;
     }
