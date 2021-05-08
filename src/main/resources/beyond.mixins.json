@@ -3,8 +3,9 @@
   "package": "io.github.ocelot.beyond.mixin",
   "compatibilityLevel": "JAVA_8",
   "minVersion": "0.8",
-  "refmap": "space.refmap.json",
+  "refmap": "beyond.refmap.json",
   "mixins": [
+    "DimensionTypeAccessor"
   ],
   "client": ["client.ClientPlayNetHandlerMixin", "client.Matrix4fAccessor", "client.MinecraftMixin"],
   "injectors": {

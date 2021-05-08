@@ -3,6 +3,7 @@ package io.github.ocelot.beyond.datagen;
 import com.google.common.collect.ImmutableList;
 import com.mojang.datafixers.util.Pair;
 import io.github.ocelot.beyond.Beyond;
+import io.github.ocelot.beyond.common.init.BeyondBlocks;
 import net.minecraft.block.Block;
 import net.minecraft.data.DataGenerator;
 import net.minecraft.data.loot.*;
@@ -71,6 +72,7 @@ public class LootTableGen extends ForgeLootTableProvider
         @Override
         protected void addTables()
         {
+            this.dropSelf(BeyondBlocks.MOON_ROCK.get());
         }
 
         @Override

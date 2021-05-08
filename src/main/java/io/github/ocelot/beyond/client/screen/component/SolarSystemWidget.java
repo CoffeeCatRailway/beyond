@@ -11,7 +11,7 @@ import io.github.ocelot.beyond.client.SpacePlanetSpriteManager;
 import io.github.ocelot.beyond.client.screen.SpaceTravelCamera;
 import io.github.ocelot.beyond.common.body.CelestialBodyDefinitions;
 import io.github.ocelot.beyond.common.init.BeyondMessages;
-import io.github.ocelot.beyond.common.init.BeyondRenderTypes;
+import io.github.ocelot.beyond.client.BeyondRenderTypes;
 import io.github.ocelot.beyond.common.network.play.message.CPlanetTravelMessage;
 import io.github.ocelot.beyond.common.simulation.CelestialBodyRayTraceResult;
 import io.github.ocelot.beyond.common.simulation.CelestialBodySimulation;

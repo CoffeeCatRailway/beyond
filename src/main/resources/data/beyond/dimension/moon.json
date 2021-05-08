@@ -1,0 +1,12 @@
+{
+  "type": "minecraft:overworld",
+  "generator": {
+    "biome_source": {
+      "biome": "beyond:moon",
+      "type": "minecraft:fixed"
+    },
+    "seed": 0,
+    "settings": "beyond:moon",
+    "type": "minecraft:noise"
+  }
+}

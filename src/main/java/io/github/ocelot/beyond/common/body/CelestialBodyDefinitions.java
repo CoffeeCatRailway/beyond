@@ -1,6 +1,7 @@
 package io.github.ocelot.beyond.common.body;
 
 import io.github.ocelot.beyond.Beyond;
+import io.github.ocelot.beyond.common.init.BeyondDimensions;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.Util;
 import net.minecraft.util.text.StringTextComponent;
@@ -51,7 +52,7 @@ public class CelestialBodyDefinitions
                 });
                 ResourceLocation moon = create(bodies, "moon", "Moon", "moon", builder ->
                 {
-                    builder.setDimension(DimensionType.END_LOCATION.location());
+                    builder.setDimension(BeyondDimensions.MOON.location());
                     builder.setScale(2.0F);
                     builder.setParent(earth);
                 });

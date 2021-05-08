@@ -107,6 +107,8 @@ dependencies {
     compileOnly fg.deobf("com.github.Ocelot5836:Sonar:${project.sonar}:api")
     runtimeOnly fg.deobf("com.github.Ocelot5836:Sonar:${project.sonar}")
     shade "com.github.Ocelot5836:Sonar:${project.sonar}"
+
+    annotationProcessor "org.spongepowered:mixin:0.8.2:processor"
 }
 
 processResources {
@@ -142,7 +144,7 @@ jar {
 
 shadowJar {
     configurations = [project.configurations.shade]
-    relocate 'io.github.ocelot', 'io.github.ocelot.beyond.lib'
+    relocate 'io.github.ocelot.sonar', 'io.github.ocelot.beyond.lib.sonar'
 }
 
 reobf {

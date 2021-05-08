@@ -13,6 +13,24 @@ import net.minecraft.util.math.vector.Vector3d;
 public class MagicMath
 {
     /**
+     * Modifies a linear line to allow a configurable steepness using bias.
+     */
+    public static float bias(float x, float bias)
+    {
+        float k = (float) Math.pow(1.0F - bias, 3);
+        return (x * k) / (x * k - x + 1.0F);
+    }
+
+    /**
+     * Blends a and b together based on the amount of smoothing using k.
+     */
+    public static float smoothMin(float a, float b, float k)
+    {
+        float h = MathHelper.clamp((b - a + k) / (2.0F * k), 0.0F, 1.0F);
+        return a * h + b * (1.0F - h) - k * h * (1.0F - h);
+    }
+
+    /**
      * Uses a sin wave to ease from 0.0 to 1.0
      *
      * @param x The input value expected to be 0.0 to 1.0

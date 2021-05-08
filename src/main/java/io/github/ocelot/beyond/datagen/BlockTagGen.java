@@ -1,8 +1,11 @@
 package io.github.ocelot.beyond.datagen;
 
 import io.github.ocelot.beyond.Beyond;
+import io.github.ocelot.beyond.common.init.BeyondBlocks;
+import io.github.ocelot.beyond.common.init.BeyondTags;
 import net.minecraft.data.BlockTagsProvider;
 import net.minecraft.data.DataGenerator;
+import net.minecraft.tags.BlockTags;
 import net.minecraftforge.common.data.ExistingFileHelper;
 
 public class BlockTagGen extends BlockTagsProvider
@@ -15,5 +18,7 @@ public class BlockTagGen extends BlockTagsProvider
     @Override
     protected void addTags()
     {
+        this.tag(BeyondTags.INFINIBURN_MOON).addTag(BlockTags.INFINIBURN_OVERWORLD);
+        this.tag(BeyondTags.BASE_STONE_MOON).add(BeyondBlocks.MOON_ROCK.get());
     }
 }

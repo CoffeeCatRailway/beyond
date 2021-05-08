@@ -2,6 +2,7 @@ package io.github.ocelot.beyond.client;
 
 import io.github.ocelot.beyond.Beyond;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.screen.ChatScreen;
 import net.minecraft.util.Util;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.event.InputEvent;
@@ -28,7 +29,7 @@ public class DebugInputs
     @SubscribeEvent
     public static void onEvent(InputEvent.KeyInputEvent event)
     {
-        if (FMLLoader.isProduction())
+        if (FMLLoader.isProduction() || Minecraft.getInstance().screen instanceof ChatScreen)
             return;
         if (event.getKey() == GLFW.GLFW_KEY_P)
         {

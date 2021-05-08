@@ -1,7 +1,6 @@
-package io.github.ocelot.beyond.common.init;
+package io.github.ocelot.beyond.client;
 
 import io.github.ocelot.beyond.Beyond;
-import io.github.ocelot.beyond.client.SpacePlanetSpriteManager;
 import it.unimi.dsi.fastutil.objects.Object2ObjectLinkedOpenHashMap;
 import net.minecraft.client.renderer.BufferBuilder;
 import net.minecraft.client.renderer.IRenderTypeBuffer;

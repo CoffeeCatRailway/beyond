@@ -1,11 +1,13 @@
 package io.github.ocelot.beyond;
 
+import io.github.ocelot.beyond.client.SpacePrototypeClientRegistry;
+import io.github.ocelot.beyond.common.init.*;
+import io.github.ocelot.beyond.datagen.*;
 import io.github.ocelot.sonar.Sonar;
 import io.github.ocelot.sonar.SonarModule;
-import io.github.ocelot.beyond.client.SpacePrototypeClientRegistry;
-import io.github.ocelot.beyond.common.init.BeyondMessages;
-import io.github.ocelot.beyond.datagen.*;
+import io.github.ocelot.sonar.common.util.SortedItemGroup;
 import net.minecraft.data.DataGenerator;
+import net.minecraft.item.ItemStack;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.common.data.ExistingFileHelper;
@@ -22,6 +24,15 @@ public class Beyond
 {
     public static final String MOD_ID = "beyond";
 
+    public static final SortedItemGroup TAB = new SortedItemGroup(MOD_ID)
+    {
+        @Override
+        public ItemStack makeIcon()
+        {
+            return new ItemStack(BeyondBlocks.MOON_ROCK.get());
+        }
+    };
+
     public Beyond()
     {
         IEventBus modBus = FMLJavaModLoadingContext.get().getModEventBus();
@@ -34,6 +45,9 @@ public class Beyond
             SpacePrototypeClientRegistry.init(modBus);
             modBus.addListener(SpacePrototypeClientRegistry::setup);
         });
+        BeyondBlocks.BLOCKS.register(modBus);
+        BeyondItems.ITEMS.register(modBus);
+        BeyondWorldCarvers.CARVERS.register(modBus);
         MinecraftForge.EVENT_BUS.register(this);
     }
 
@@ -43,6 +57,7 @@ public class Beyond
 
     private void init(FMLCommonSetupEvent event)
     {
+        BeyondDimensions.init();
         BeyondMessages.init();
     }
 
