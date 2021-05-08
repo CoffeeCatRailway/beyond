@@ -85,7 +85,6 @@ public class SpaceTravelScreen extends Screen
     public void render(MatrixStack poseStack, int mouseX, int mouseY, float partialTicks)
     {
         partialTicks = Minecraft.getInstance().getFrameTime();
-        this.renderBackground(poseStack);
         if (this.zooming != 0)
             this.solarSystemWidget.getCamera().setZoom(MathHelper.lerp(MagicMath.ease(MathHelper.lerp(partialTicks, this.lastZoom, this.zoom)), this.zoomStart, this.zoomEnd));
         super.render(poseStack, mouseX, mouseY, partialTicks);

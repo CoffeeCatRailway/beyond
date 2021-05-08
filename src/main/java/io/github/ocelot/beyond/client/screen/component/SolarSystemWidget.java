@@ -16,6 +16,7 @@ import io.github.ocelot.beyond.common.network.play.message.CPlanetTravelMessage;
 import io.github.ocelot.beyond.common.simulation.CelestialBodyRayTraceResult;
 import io.github.ocelot.beyond.common.simulation.CelestialBodySimulation;
 import io.github.ocelot.beyond.common.simulation.body.*;
+import net.minecraft.client.MainWindow;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.FontRenderer;
 import net.minecraft.client.gui.IGuiEventListener;
@@ -374,7 +375,10 @@ public class SolarSystemWidget extends Widget implements INestedGuiEventHandler,
         this.renderBg(poseStack, minecraft, mouseX, mouseY);
 
         if (this.framebuffer == null)
-            this.framebuffer = new Framebuffer(this.width * minecraft.options.guiScale, this.height * minecraft.options.guiScale, true, Minecraft.ON_OSX);
+        {
+            MainWindow window = Minecraft.getInstance().getWindow();
+            this.framebuffer = new Framebuffer((int) (this.width * window.getGuiScale()), (int) (this.height * window.getGuiScale()), true, Minecraft.ON_OSX);
+        }
         this.framebuffer.bindWrite(true);
 
         RenderSystem.matrixMode(GL_PROJECTION);
