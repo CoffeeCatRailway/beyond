@@ -4,8 +4,6 @@ import com.mojang.blaze3d.matrix.MatrixStack;
 import io.github.ocelot.beyond.Beyond;
 import io.github.ocelot.beyond.client.screen.component.SolarSystemWidget;
 import io.github.ocelot.beyond.common.MagicMath;
-import io.github.ocelot.beyond.common.init.BeyondMessages;
-import io.github.ocelot.beyond.common.network.play.message.CPlanetTravelMessage;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.IGuiEventListener;
 import net.minecraft.client.gui.screen.IScreen;
@@ -124,11 +122,9 @@ public class SpaceTravelScreen extends Screen
     }
 
     @Override
-    public boolean keyPressed(int keyCode, int scanCode, int mods)
+    public boolean shouldCloseOnEsc()
     {
-        if (keyCode == 256)
-            BeyondMessages.PLAY.sendToServer(new CPlanetTravelMessage(null));
-        return super.keyPressed(keyCode, scanCode, mods);
+        return !this.solarSystemWidget.isTravelling();
     }
 
     /**
