@@ -4,8 +4,6 @@ import com.mojang.blaze3d.matrix.MatrixStack;
 import io.github.ocelot.beyond.Beyond;
 import io.github.ocelot.beyond.client.screen.component.SolarSystemWidget;
 import io.github.ocelot.beyond.common.MagicMath;
-import io.github.ocelot.beyond.common.init.BeyondMessages;
-import io.github.ocelot.beyond.common.network.play.message.CPlanetTravelMessage;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.IGuiEventListener;
 import net.minecraft.client.gui.screen.IScreen;
@@ -38,7 +36,7 @@ public class SpaceTravelScreen extends Screen
 
     private void zoom(boolean in)
     {
-        this.zooming = (byte) (in ? -1 : 1);
+        this.zooming = (byte) (in ? 2 : 1);
         this.zoomStart = in ? -this.solarSystemWidget.getCamera().getZoom(1.0F) : 0;
         this.zoomEnd = in ? 0 : -this.solarSystemWidget.getCamera().getZoom(1.0F);
         this.lastZoom = 0;
@@ -72,7 +70,7 @@ public class SpaceTravelScreen extends Screen
             this.zoom += ZOOM_SPEED;
             if (this.zoom >= 1.0F)
             {
-                if (this.zooming == -1)
+                if (this.zooming == 2)
                     this.onClose();
                 this.solarSystemWidget.getCamera().setInputDisabled(false);
                 this.zooming = 0;
@@ -124,11 +122,9 @@ public class SpaceTravelScreen extends Screen
     }
 
     @Override
-    public boolean keyPressed(int keyCode, int scanCode, int mods)
+    public boolean shouldCloseOnEsc()
     {
-        if (keyCode == 256)
-            BeyondMessages.PLAY.sendToServer(new CPlanetTravelMessage(null));
-        return super.keyPressed(keyCode, scanCode, mods);
+        return !this.solarSystemWidget.isTravelling();
     }
 
     /**

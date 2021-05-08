@@ -7,7 +7,11 @@
   "mixins": [
     "DimensionTypeAccessor"
   ],
-  "client": ["client.ClientPlayNetHandlerMixin", "client.Matrix4fAccessor", "client.MinecraftMixin"],
+  "client": [
+    "client.ClientPlayNetHandlerMixin",
+    "client.Matrix4fAccessor",
+    "client.MinecraftMixin"
+  ],
   "injectors": {
     "defaultRequire": 1
   }
