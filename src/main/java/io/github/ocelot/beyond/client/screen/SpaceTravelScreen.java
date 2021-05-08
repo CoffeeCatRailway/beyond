@@ -36,7 +36,7 @@ public class SpaceTravelScreen extends Screen
 
     private void zoom(boolean in)
     {
-        this.zooming = (byte) (in ? -1 : 1);
+        this.zooming = (byte) (in ? 2 : 1);
         this.zoomStart = in ? -this.solarSystemWidget.getCamera().getZoom(1.0F) : 0;
         this.zoomEnd = in ? 0 : -this.solarSystemWidget.getCamera().getZoom(1.0F);
         this.lastZoom = 0;
@@ -70,7 +70,7 @@ public class SpaceTravelScreen extends Screen
             this.zoom += ZOOM_SPEED;
             if (this.zoom >= 1.0F)
             {
-                if (this.zooming == -1)
+                if (this.zooming == 2)
                     this.onClose();
                 this.solarSystemWidget.getCamera().setInputDisabled(false);
                 this.zooming = 0;
@@ -85,6 +85,7 @@ public class SpaceTravelScreen extends Screen
     public void render(MatrixStack poseStack, int mouseX, int mouseY, float partialTicks)
     {
         partialTicks = Minecraft.getInstance().getFrameTime();
+        this.renderBackground(poseStack);
         if (this.zooming != 0)
             this.solarSystemWidget.getCamera().setZoom(MathHelper.lerp(MagicMath.ease(MathHelper.lerp(partialTicks, this.lastZoom, this.zoom)), this.zoomStart, this.zoomEnd));
         super.render(poseStack, mouseX, mouseY, partialTicks);

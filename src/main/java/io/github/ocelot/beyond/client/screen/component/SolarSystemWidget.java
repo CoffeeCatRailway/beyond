@@ -461,7 +461,6 @@ public class SolarSystemWidget extends Widget implements INestedGuiEventHandler,
 
             if (Math.abs(pos.z() / pos.w()) <= 1)
             {
-                RenderSystem.color4f(1.0F, 1.0F, 1.0F, this.alpha);
                 RenderSystem.disableTexture();
                 RenderSystem.disableDepthTest();
 
@@ -469,7 +468,6 @@ public class SolarSystemWidget extends Widget implements INestedGuiEventHandler,
 
                 RenderSystem.enableDepthTest();
                 RenderSystem.enableTexture();
-                RenderSystem.color4f(1.0F, 1.0F, 1.0F, 1.0F);
             }
         }
 
