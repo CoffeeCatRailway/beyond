@@ -1,0 +1,27 @@
+{
+  "config": {
+    "surfaceBlock": {
+      "Name": "space:moon_rock"
+    },
+    "radius": {
+      "min": 8,
+      "max": 24,
+      "bias": 0.5
+    },
+    "rimWidth": {
+      "min": 1.2,
+      "max": 1.4
+    },
+    "rimSteepness": {
+      "min": 0.3,
+      "max": 0.3
+    },
+    "floorHeight": {
+      "min": -0.5,
+      "max": -0.25
+    },
+    "smoothness": 0.4,
+    "probability": 0.1
+  },
+  "type": "beyond:crater"
+}

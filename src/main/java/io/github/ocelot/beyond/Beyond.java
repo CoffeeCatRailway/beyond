@@ -46,6 +46,7 @@ public class Beyond
             modBus.addListener(SpacePrototypeClientRegistry::setup);
         });
         BeyondBlocks.BLOCKS.register(modBus);
+        BeyondFeatures.FEATURES.register(modBus);
         BeyondItems.ITEMS.register(modBus);
         BeyondWorldCarvers.CARVERS.register(modBus);
         MinecraftForge.EVENT_BUS.register(this);

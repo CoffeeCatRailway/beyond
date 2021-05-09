@@ -15,13 +15,11 @@
   "surface_builder": "beyond:moon",
   "carvers": {
     "air": [
-      "beyond:moon_cave"
+      "beyond:moon_crater"
     ]
   },
   "features": [
-    [
-	  "beyond:moon_crater"
-	],
+    [],
     [],
     [],
     [
