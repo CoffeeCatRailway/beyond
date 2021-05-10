@@ -1,10 +1,17 @@
 package io.github.ocelot.beyond.client;
 
 import io.github.ocelot.beyond.Beyond;
+import io.github.ocelot.beyond.client.render.SpaceHelmetLayer;
 import io.github.ocelot.beyond.client.world.MoonRenderInfo;
 import it.unimi.dsi.fastutil.objects.Object2ObjectMap;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.renderer.entity.EntityRendererManager;
+import net.minecraft.client.renderer.entity.LivingRenderer;
+import net.minecraft.client.renderer.entity.VillagerRenderer;
+import net.minecraft.client.renderer.entity.model.EntityModel;
 import net.minecraft.client.world.DimensionRenderInfo;
+import net.minecraft.entity.EntityType;
+import net.minecraft.entity.LivingEntity;
 import net.minecraft.util.ResourceLocation;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.event.ColorHandlerEvent;
@@ -71,6 +78,12 @@ public class SpacePrototypeClientRegistry
             EFFECTS.put(new ResourceLocation(Beyond.MOD_ID, "moon"), new MoonRenderInfo());
         });
 //        RenderingRegistry.registerEntityRenderingHandler(BattlefieldsEntities.THROWABLE_BRICK.get(), manager -> new ThrowableBrickEntityRenderer(manager, Minecraft.getInstance().getItemRenderer()));
+
+        event.enqueueWork(() ->
+        {
+            EntityRendererManager rendererManager = Minecraft.getInstance().getEntityRenderDispatcher();
+            addSpaceHelmet((VillagerRenderer) rendererManager.renderers.get(EntityType.VILLAGER));
+        });
     }
 
     @SubscribeEvent
@@ -88,5 +101,10 @@ public class SpacePrototypeClientRegistry
     {
         for (ResourceLocation location : Minecraft.getInstance().getResourceManager().listResources("models/body", s -> s.endsWith(".json")))
             ModelLoader.addSpecialModel(new ResourceLocation(location.getNamespace(), location.getPath().substring(7, location.getPath().length() - 5)));
+    }
+
+    private static <T extends LivingEntity, M extends EntityModel<T>> void addSpaceHelmet(LivingRenderer<T, M> renderer)
+    {
+        renderer.addLayer(new SpaceHelmetLayer<>(renderer));
     }
 }
