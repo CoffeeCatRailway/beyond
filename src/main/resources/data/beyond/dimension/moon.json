@@ -1,5 +1,5 @@
 {
-  "type": "minecraft:overworld",
+  "type": "beyond:moon",
   "generator": {
     "biome_source": {
       "biome": "beyond:moon",

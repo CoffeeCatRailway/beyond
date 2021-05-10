@@ -30,9 +30,13 @@
     [],
     [],
     [],
-    []
+    [
+      "minecraft:freeze_top_layer"
+    ]
   ],
   "starts": [
+    "minecraft:village_plains",
+    "minecraft:pillager_outpost"
   ],
   "spawners": {
     "monster": [],

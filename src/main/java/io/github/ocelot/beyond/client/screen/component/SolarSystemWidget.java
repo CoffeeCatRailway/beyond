@@ -3,19 +3,20 @@ package io.github.ocelot.beyond.client.screen.component;
 import com.mojang.blaze3d.matrix.MatrixStack;
 import com.mojang.blaze3d.platform.GlStateManager;
 import com.mojang.blaze3d.systems.RenderSystem;
-import io.github.ocelot.sonar.client.render.BakedModelRenderer;
-import io.github.ocelot.sonar.client.render.ShapeRenderer;
 import io.github.ocelot.beyond.Beyond;
+import io.github.ocelot.beyond.client.BeyondRenderTypes;
 import io.github.ocelot.beyond.client.MousePicker;
 import io.github.ocelot.beyond.client.SpacePlanetSpriteManager;
+import io.github.ocelot.beyond.client.render.SpaceStarsRenderer;
 import io.github.ocelot.beyond.client.screen.SpaceTravelCamera;
 import io.github.ocelot.beyond.common.body.CelestialBodyDefinitions;
 import io.github.ocelot.beyond.common.init.BeyondMessages;
-import io.github.ocelot.beyond.client.BeyondRenderTypes;
 import io.github.ocelot.beyond.common.network.play.message.CPlanetTravelMessage;
 import io.github.ocelot.beyond.common.simulation.CelestialBodyRayTraceResult;
 import io.github.ocelot.beyond.common.simulation.CelestialBodySimulation;
 import io.github.ocelot.beyond.common.simulation.body.*;
+import io.github.ocelot.sonar.client.render.BakedModelRenderer;
+import io.github.ocelot.sonar.client.render.ShapeRenderer;
 import net.minecraft.client.MainWindow;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.FontRenderer;
@@ -29,7 +30,6 @@ import net.minecraft.client.renderer.*;
 import net.minecraft.client.renderer.model.ModelRenderer;
 import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
-import net.minecraft.client.renderer.vertex.VertexBuffer;
 import net.minecraft.client.shader.Framebuffer;
 import net.minecraft.inventory.container.PlayerContainer;
 import net.minecraft.util.IReorderingProcessor;
@@ -43,7 +43,10 @@ import net.minecraftforge.client.model.data.EmptyModelData;
 import org.lwjgl.system.NativeResource;
 
 import javax.annotation.Nullable;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
 
 import static org.lwjgl.opengl.GL11.*;
 
@@ -63,6 +66,7 @@ public class SolarSystemWidget extends Widget implements INestedGuiEventHandler,
 
     private final Screen parent;
     private final CelestialBodySimulation simulation;
+    private final SpaceStarsRenderer starsRenderer;
     private final SpaceTravelCamera camera;
     private final PlayerRocket localRocket;
     private boolean travelling;
@@ -70,7 +74,6 @@ public class SolarSystemWidget extends Widget implements INestedGuiEventHandler,
     private CelestialBodyRayTraceResult hoveredBody;
     private SimulatedBody selectedBody;
     private Framebuffer framebuffer;
-    private VertexBuffer skyVBO;
 
     private final List<IGuiEventListener> children;
     private final Button launchButton;
@@ -83,6 +86,7 @@ public class SolarSystemWidget extends Widget implements INestedGuiEventHandler,
         super(x, y, width, height, StringTextComponent.EMPTY);
         this.parent = parent;
         this.simulation = new CelestialBodySimulation(CelestialBodyDefinitions.SOLAR_SYSTEM.get());
+        this.starsRenderer = new SpaceStarsRenderer();
         this.camera = new SpaceTravelCamera();
         this.camera.setZoom(30);
         this.camera.setPitch((float) (24F * Math.PI / 180F));
@@ -154,62 +158,6 @@ public class SolarSystemWidget extends Widget implements INestedGuiEventHandler,
         marsSatellite.setModel(new ResourceLocation(Beyond.MOD_ID, "body/satellite"));
         marsSatellite.setDisplayName(new StringTextComponent("Mars Satellite Test"));
         this.simulation.add(marsSatellite);
-    }
-
-    private void generateSky()
-    {
-        Tessellator tessellator = Tessellator.getInstance();
-        BufferBuilder bufferbuilder = tessellator.getBuilder();
-        if (this.skyVBO != null)
-            this.skyVBO.close();
-
-        this.skyVBO = new VertexBuffer(DefaultVertexFormats.POSITION_COLOR);
-        Random random = new Random(10842L);
-        bufferbuilder.begin(7, DefaultVertexFormats.POSITION_COLOR);
-
-        for (int i = 0; i < 3000; ++i)
-        {
-            double d0 = random.nextFloat() * 2.0F - 1.0F;
-            double d1 = random.nextFloat() * 2.0F - 1.0F;
-            double d2 = random.nextFloat() * 2.0F - 1.0F;
-            double d3 = 0.15F + random.nextFloat() * 0.1F;
-            double d4 = d0 * d0 + d1 * d1 + d2 * d2;
-            if (d4 < 1.0D && d4 > 0.01D)
-            {
-                d4 = 1.0D / Math.sqrt(d4);
-                d0 = d0 * d4;
-                d1 = d1 * d4;
-                d2 = d2 * d4;
-                double d5 = d0 * 100.0D;
-                double d6 = d1 * 100.0D;
-                double d7 = d2 * 100.0D;
-                double d8 = Math.atan2(d0, d2);
-                double d9 = Math.sin(d8);
-                double d10 = Math.cos(d8);
-                double d11 = Math.atan2(Math.sqrt(d0 * d0 + d2 * d2), d1);
-                double d12 = Math.sin(d11);
-                double d13 = Math.cos(d11);
-                double d14 = random.nextDouble() * Math.PI * 2.0D;
-                double d15 = Math.sin(d14);
-                double d16 = Math.cos(d14);
-
-                for (int j = 0; j < 4; ++j)
-                {
-                    double d18 = (double) ((j & 2) - 1) * d3;
-                    double d19 = (double) ((j + 1 & 2) - 1) * d3;
-                    double d21 = d18 * d16 - d19 * d15;
-                    double d22 = d19 * d16 + d18 * d15;
-                    double d23 = d21 * d12 + 0.0D * d13;
-                    double d24 = 0.0D * d12 - d21 * d13;
-                    double d25 = d24 * d9 - d22 * d10;
-                    double d26 = d22 * d9 + d24 * d10;
-                    float blue = 0.7F + random.nextFloat() * 0.3F;
-                    bufferbuilder.vertex(d5 + d25, d6 + d23, d7 + d26).color(blue, blue, 1.0F, random.nextFloat()).endVertex();
-                }
-            }
-        }
-        bufferbuilder.end();
-        this.skyVBO.upload(bufferbuilder);
     }
 
     private void renderBody(MatrixStack poseStack, IRenderTypeBuffer.Impl buffer, SimulatedBody body, float partialTicks)
@@ -395,24 +343,14 @@ public class SolarSystemWidget extends Widget implements INestedGuiEventHandler,
         GlStateManager._clearColor(0.0F, 0.0F, 0.0F, 1.0F);
         GlStateManager._clear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT, Minecraft.ON_OSX);
 
-        RenderSystem.disableTexture();
-        RenderSystem.depthMask(false);
-
         float cameraRotationX = this.camera.getRotationX(partialTicks);
         float cameraRotationY = this.camera.getRotationY(partialTicks);
         matrixStack.mulPose(Vector3f.XN.rotation(cameraRotationX));
         matrixStack.mulPose(Vector3f.YN.rotation(cameraRotationY));
 
-        if (this.skyVBO == null)
-            this.generateSky();
-        this.skyVBO.bind();
-        DefaultVertexFormats.POSITION_COLOR.setupBufferState(0L);
-        this.skyVBO.draw(matrixStack.last().pose(), 7);
-        VertexBuffer.unbind();
-        DefaultVertexFormats.POSITION_COLOR.clearBufferState();
-
+        RenderSystem.depthMask(false);
+        this.starsRenderer.render(matrixStack);
         RenderSystem.depthMask(true);
-        RenderSystem.enableTexture();
 
         RenderSystem.enableLighting();
         RenderHelper.setupLevel(matrixStack.last().pose());
@@ -571,11 +509,7 @@ public class SolarSystemWidget extends Widget implements INestedGuiEventHandler,
     @Override
     public void free()
     {
-        if (this.skyVBO != null)
-        {
-            this.skyVBO.close();
-            this.skyVBO = null;
-        }
+        this.starsRenderer.free();
         this.invalidateFramebuffer();
 
         for (IGuiEventListener listener : this.children)

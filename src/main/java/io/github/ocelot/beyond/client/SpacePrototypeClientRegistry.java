@@ -1,7 +1,10 @@
 package io.github.ocelot.beyond.client;
 
 import io.github.ocelot.beyond.Beyond;
+import io.github.ocelot.beyond.client.world.MoonRenderInfo;
+import it.unimi.dsi.fastutil.objects.Object2ObjectMap;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.world.DimensionRenderInfo;
 import net.minecraft.util.ResourceLocation;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.event.ColorHandlerEvent;
@@ -13,9 +16,11 @@ import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.ModContainer;
 import net.minecraftforge.fml.ModList;
 import net.minecraftforge.fml.common.Mod;
+import net.minecraftforge.fml.common.ObfuscationReflectionHelper;
 import net.minecraftforge.fml.event.lifecycle.FMLClientSetupEvent;
 import org.apache.maven.artifact.versioning.ArtifactVersion;
 
+import java.util.Objects;
 import java.util.Optional;
 
 /**
@@ -26,6 +31,7 @@ import java.util.Optional;
 @Mod.EventBusSubscriber(value = Dist.CLIENT, modid = Beyond.MOD_ID, bus = Mod.EventBusSubscriber.Bus.MOD)
 public class SpacePrototypeClientRegistry
 {
+    private static final Object2ObjectMap<ResourceLocation, DimensionRenderInfo> EFFECTS = Objects.requireNonNull(ObfuscationReflectionHelper.getPrivateValue(DimensionRenderInfo.class, null, "field_239208_a_"));
     private static final String MOD_VERSION;
 
     static
@@ -60,6 +66,10 @@ public class SpacePrototypeClientRegistry
 
     public static void setup(FMLClientSetupEvent event)
     {
+        event.enqueueWork(() ->
+        {
+            EFFECTS.put(new ResourceLocation(Beyond.MOD_ID, "moon"), new MoonRenderInfo());
+        });
 //        RenderingRegistry.registerEntityRenderingHandler(BattlefieldsEntities.THROWABLE_BRICK.get(), manager -> new ThrowableBrickEntityRenderer(manager, Minecraft.getInstance().getItemRenderer()));
     }
 
