@@ -105,13 +105,13 @@ public class SpaceSkyRenderer implements ISkyRenderHandler
         BufferBuilder builder = Tessellator.getInstance().getBuilder();
         RenderSystem.depthMask(false);
         RenderSystem.enableFog();
-        RenderSystem.color3f(f, f1, f2);
+        RenderSystem.color4f(f, f1, f2, 1.0F);
 
         if (this.skyBuffer == null)
             this.createLightSky();
         this.skyBuffer.bind();
         DefaultVertexFormats.POSITION.setupBufferState(0L);
-        this.skyBuffer.draw(poseStack.last().pose(), 7);
+        this.skyBuffer.draw(poseStack.last().pose(), GL_QUADS);
         VertexBuffer.unbind();
         DefaultVertexFormats.POSITION.clearBufferState();
         RenderSystem.disableFog();
@@ -158,6 +158,8 @@ public class SpaceSkyRenderer implements ISkyRenderHandler
 
         RenderSystem.color4f(1.0F, 1.0F, 1.0F, 1.0F);
 
+        // TODO draw other planets
+
         float f12 = 30.0F;
         minecraft.textureManager.bind(SUN_LOCATION);
         Matrix4f matrix4f1 = poseStack.last().pose();
@@ -168,8 +170,6 @@ public class SpaceSkyRenderer implements ISkyRenderHandler
         builder.vertex(matrix4f1, -f12, 100.0F, f12).uv(0.0F, 1.0F).endVertex();
         Tessellator.getInstance().end();
 
-        float f10 = MathHelper.clamp(level.getStarBrightness(partialTicks), 0.0F, 1.0F);
-        RenderSystem.color4f(1.0F, 1.0F, 1.0F, f10);
         STARS.render(poseStack);
 
         RenderSystem.color4f(0.0F, 0.0F, 0.0F, 1.0F);
@@ -184,10 +184,10 @@ public class SpaceSkyRenderer implements ISkyRenderHandler
             if (this.darkBuffer == null)
                 this.createDarkSky();
             this.darkBuffer.bind();
-            DefaultVertexFormats.POSITION_COLOR.setupBufferState(0L);
+            DefaultVertexFormats.POSITION.setupBufferState(0L);
             this.darkBuffer.draw(poseStack.last().pose(), GL_QUADS);
             VertexBuffer.unbind();
-            DefaultVertexFormats.POSITION_COLOR.clearBufferState();
+            DefaultVertexFormats.POSITION.clearBufferState();
             RenderSystem.enableTexture();
         }
 
