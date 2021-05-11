@@ -4,8 +4,7 @@
   "compatibilityLevel": "JAVA_8",
   "minVersion": "0.8",
   "refmap": "beyond.refmap.json",
-  "mixins": [
-  ],
+  "mixins": [],
   "client": [
     "client.ClientPlayNetHandlerMixin",
     "client.Matrix4fAccessor",

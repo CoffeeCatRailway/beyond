@@ -18,13 +18,13 @@ public class DimensionSpaceSettings
 
     public static final Codec<DimensionSpaceSettings> CODEC = RecordCodecBuilder.create(instance -> instance.group(
             Codec.BOOL.optionalFieldOf("oxygenAtmosphere", true).forGetter(DimensionSpaceSettings::isOxygenAtmosphere),
-            Codec.FLOAT.optionalFieldOf("gravityMultiplier", 1.0F).forGetter(DimensionSpaceSettings::getGravityMultiplier)
+            Codec.DOUBLE.optionalFieldOf("gravityMultiplier", 1.0).forGetter(DimensionSpaceSettings::getGravityMultiplier)
     ).apply(instance, DimensionSpaceSettings::new));
 
     private final boolean oxygenAtmosphere; // TODO add support for different gasses?
-    private final float gravityMultiplier;
+    private final double gravityMultiplier;
 
-    public DimensionSpaceSettings(boolean oxygenAtmosphere, float gravityMultiplier)
+    public DimensionSpaceSettings(boolean oxygenAtmosphere, double gravityMultiplier)
     {
         this.oxygenAtmosphere = oxygenAtmosphere;
         this.gravityMultiplier = gravityMultiplier;
@@ -52,7 +52,7 @@ public class DimensionSpaceSettings
     /**
      * @return The factor to multiply gravity by. 0.0 is no gravity and 1.0 is regular earth gravity. Higher values will mean less ability to jump
      */
-    public float getGravityMultiplier()
+    public double getGravityMultiplier()
     {
         return gravityMultiplier;
     }
