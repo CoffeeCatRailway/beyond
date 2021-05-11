@@ -17,6 +17,7 @@ public class ClientPlayNetHandlerMixin
 {
     @Shadow
     private boolean started;
+
     private boolean zooming;
 
     @Inject(method = "handleMovePlayer", at = @At("TAIL"))

@@ -35,8 +35,8 @@ minecraft {
         client {
             workingDirectory project.file('run/client')
             property 'forge.logging.console.level', 'debug'
-            property 'mixin.env.remapRefMap', 'true'
-            property 'mixin.env.refMapRemappingFile', "${projectDir}/build/createSrgToMcp/output.srg"
+//            property 'mixin.env.remapRefMap', 'true'
+//            property 'mixin.env.refMapRemappingFile', "${projectDir}/build/createSrgToMcp/output.srg"
             arg "-mixin.config=beyond.mixins.json"
 
             mods {
@@ -49,8 +49,8 @@ minecraft {
         server {
             workingDirectory project.file('run/server')
             property 'forge.logging.console.level', 'debug'
-            property 'mixin.env.remapRefMap', 'true'
-            property 'mixin.env.refMapRemappingFile', "${projectDir}/build/createSrgToMcp/output.srg"
+//            property 'mixin.env.remapRefMap', 'true'
+//            property 'mixin.env.refMapRemappingFile', "${projectDir}/build/createSrgToMcp/output.srg"
             arg "-mixin.config=beyond.mixins.json"
 
             mods {
@@ -63,8 +63,8 @@ minecraft {
         data {
             workingDirectory project.file('run')
             property 'forge.logging.console.level', 'debug'
-            property 'mixin.env.remapRefMap', 'true'
-            property 'mixin.env.refMapRemappingFile', "${projectDir}/build/createSrgToMcp/output.srg"
+//            property 'mixin.env.remapRefMap', 'true'
+//            property 'mixin.env.refMapRemappingFile', "${projectDir}/build/createSrgToMcp/output.srg"
             args '--mod', project.modId, '--all', '--output', file('src/generated/resources/')
 
             mods {
@@ -108,7 +108,7 @@ dependencies {
     runtimeOnly fg.deobf("com.github.Ocelot5836:Sonar:${project.sonar}")
     shade "com.github.Ocelot5836:Sonar:${project.sonar}"
 
-    annotationProcessor "org.spongepowered:mixin:0.8.2:processor"
+    annotationProcessor "org.spongepowered:mixin:0.8:processor"
 }
 
 processResources {

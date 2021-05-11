@@ -38,7 +38,7 @@ public class DimensionSpaceSettings
      */
     public boolean requiresSpaceSuit(LivingEntity entity)
     {
-        return !oxygenAtmosphere;
+        return !oxygenAtmosphere; // TODO add additional checks
     }
 
     /**
