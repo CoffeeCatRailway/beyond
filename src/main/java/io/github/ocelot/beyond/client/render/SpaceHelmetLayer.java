@@ -2,6 +2,7 @@ package io.github.ocelot.beyond.client.render;
 
 import com.mojang.blaze3d.matrix.MatrixStack;
 import io.github.ocelot.beyond.common.init.BeyondDimensions;
+import io.github.ocelot.beyond.common.world.space.DimensionSpaceSettingsManager;
 import net.minecraft.block.Blocks;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.IRenderTypeBuffer;
@@ -18,6 +19,7 @@ import net.minecraft.item.ItemStack;
 import net.minecraft.util.math.vector.Vector3f;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
+import net.minecraftforge.fml.LogicalSide;
 
 @OnlyIn(Dist.CLIENT)
 public class SpaceHelmetLayer<T extends Entity, M extends EntityModel<T>> extends LayerRenderer<T, M>
@@ -45,7 +47,7 @@ public class SpaceHelmetLayer<T extends Entity, M extends EntityModel<T>> extend
     public void render(MatrixStack poseStack, IRenderTypeBuffer buffer, int packedLight, Entity e, float p_225628_5_, float p_225628_6_, float p_225628_7_, float p_225628_8_, float p_225628_9_, float p_225628_10_)
     {
         // TODO check if there is no oxygen
-        if (!BeyondDimensions.getSpaceProperties(e.level.dimension().location()).isPresent() || !(e instanceof LivingEntity) || !(this.getParentModel() instanceof IHasHead))
+        if (!(e instanceof LivingEntity) || !(this.getParentModel() instanceof IHasHead) || !DimensionSpaceSettingsManager.get(LogicalSide.CLIENT).getSettings(e.level.dimension().location()).requiresSpaceSuit((LivingEntity) e))
             return;
 
         LivingEntity entity = (LivingEntity) e;

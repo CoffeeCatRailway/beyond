@@ -2,6 +2,7 @@ package io.github.ocelot.beyond;
 
 import io.github.ocelot.beyond.client.SpacePrototypeClientRegistry;
 import io.github.ocelot.beyond.common.init.*;
+import io.github.ocelot.beyond.common.world.space.DimensionSpaceSettingsLoader;
 import io.github.ocelot.beyond.datagen.*;
 import io.github.ocelot.sonar.Sonar;
 import io.github.ocelot.sonar.SonarModule;
@@ -11,8 +12,10 @@ import net.minecraft.item.ItemStack;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.common.data.ExistingFileHelper;
+import net.minecraftforge.event.AddReloadListenerEvent;
 import net.minecraftforge.event.entity.EntityAttributeCreationEvent;
 import net.minecraftforge.eventbus.api.IEventBus;
+import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.DistExecutor;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent;
@@ -75,5 +78,11 @@ public class Beyond
         dataGenerator.addProvider(new EntityTypeTagGen(dataGenerator, existingFileHelper));
         dataGenerator.addProvider(new ItemModelGen(dataGenerator));
         dataGenerator.addProvider(new LanguageGen(dataGenerator));
+    }
+
+    @SubscribeEvent
+    public void onEvent(AddReloadListenerEvent event)
+    {
+        event.addListener(DimensionSpaceSettingsLoader.INSTANCE);
     }
 }
