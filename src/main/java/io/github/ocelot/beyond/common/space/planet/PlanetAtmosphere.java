@@ -1,4 +1,4 @@
-package io.github.ocelot.beyond.common.body;
+package io.github.ocelot.beyond.common.space.planet;
 
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
@@ -10,19 +10,19 @@ import org.apache.commons.lang3.Validate;
  *
  * @author Ocelot
  */
-public class CelestialBodyAtmosphere
+public class PlanetAtmosphere
 {
-    public static final Codec<CelestialBodyAtmosphere> CODEC = RecordCodecBuilder.create(instance -> instance.group(
-            ResourceLocation.CODEC.fieldOf("texture").forGetter(CelestialBodyAtmosphere::getTexture),
-            Codec.FLOAT.optionalFieldOf("density", 1.0F).forGetter(CelestialBodyAtmosphere::getDensity),
-            Codec.FLOAT.optionalFieldOf("distance", 1.0F).forGetter(CelestialBodyAtmosphere::getDistance)
-    ).apply(instance, CelestialBodyAtmosphere::new));
+    public static final Codec<PlanetAtmosphere> CODEC = RecordCodecBuilder.create(instance -> instance.group(
+            ResourceLocation.CODEC.fieldOf("texture").forGetter(PlanetAtmosphere::getTexture),
+            Codec.FLOAT.optionalFieldOf("density", 1.0F).forGetter(PlanetAtmosphere::getDensity),
+            Codec.FLOAT.optionalFieldOf("distance", 1.0F).forGetter(PlanetAtmosphere::getDistance)
+    ).apply(instance, PlanetAtmosphere::new));
 
     private final ResourceLocation texture;
     private final float density;
     private final float distance;
 
-    public CelestialBodyAtmosphere(ResourceLocation texture, float density, float distance)
+    public PlanetAtmosphere(ResourceLocation texture, float density, float distance)
     {
         this.texture = texture;
         this.density = density;
@@ -84,7 +84,7 @@ public class CelestialBodyAtmosphere
          *
          * @param texture The texture to use
          */
-        public CelestialBodyAtmosphere.Builder setTexture(ResourceLocation texture)
+        public PlanetAtmosphere.Builder setTexture(ResourceLocation texture)
         {
             this.texture = texture;
             return this;
@@ -95,7 +95,7 @@ public class CelestialBodyAtmosphere
          *
          * @param density The transparency of the layer from 0.0 to 1.0
          */
-        public CelestialBodyAtmosphere.Builder setDensity(float density)
+        public PlanetAtmosphere.Builder setDensity(float density)
         {
             this.density = density;
             return this;
@@ -106,7 +106,7 @@ public class CelestialBodyAtmosphere
          *
          * @param distance The distance from one side of the body to the atmosphere
          */
-        public CelestialBodyAtmosphere.Builder setDistance(float distance)
+        public PlanetAtmosphere.Builder setDistance(float distance)
         {
             this.distance = distance;
             return this;
@@ -115,10 +115,10 @@ public class CelestialBodyAtmosphere
         /**
          * @return A new body with the specified parameters
          */
-        public CelestialBodyAtmosphere build()
+        public PlanetAtmosphere build()
         {
             Validate.notNull(this.texture);
-            return new CelestialBodyAtmosphere(this.texture, this.density, this.distance);
+            return new PlanetAtmosphere(this.texture, this.density, this.distance);
         }
     }
 }

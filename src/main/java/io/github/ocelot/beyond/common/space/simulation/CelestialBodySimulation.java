@@ -1,9 +1,7 @@
-package io.github.ocelot.beyond.common.simulation;
+package io.github.ocelot.beyond.common.space.simulation;
 
-import io.github.ocelot.beyond.common.body.CelestialBody;
-import io.github.ocelot.beyond.common.simulation.body.NaturalSimulatedBody;
-import io.github.ocelot.beyond.common.simulation.body.PlayerRocket;
-import io.github.ocelot.beyond.common.simulation.body.SimulatedBody;
+import io.github.ocelot.beyond.common.space.planet.Planet;
+import io.github.ocelot.beyond.common.util.CelestialBodyRayTraceResult;
 import net.minecraft.client.Minecraft;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.math.vector.Vector3d;
@@ -23,15 +21,15 @@ public class CelestialBodySimulation
     private final Set<ResourceLocation> removedBodies;
     private final Random random;
 
-    public CelestialBodySimulation(Map<ResourceLocation, CelestialBody> bodies)
+    public CelestialBodySimulation(Map<ResourceLocation, Planet> bodies)
     {
         this.bodies = new HashMap<>();
         this.removedBodies = ConcurrentHashMap.newKeySet();
         this.random = new Random();
 
-        for (Map.Entry<ResourceLocation, CelestialBody> entry : bodies.entrySet())
+        for (Map.Entry<ResourceLocation, Planet> entry : bodies.entrySet())
         {
-            CelestialBody body = entry.getValue();
+            Planet body = entry.getValue();
             if (body.getParent().isPresent())
             {
                 ResourceLocation parent = body.getParent().get();

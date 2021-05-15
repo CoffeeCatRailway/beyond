@@ -9,12 +9,12 @@ import io.github.ocelot.beyond.client.MousePicker;
 import io.github.ocelot.beyond.client.SpacePlanetSpriteManager;
 import io.github.ocelot.beyond.client.render.SpaceStarsRenderer;
 import io.github.ocelot.beyond.client.screen.SpaceTravelCamera;
-import io.github.ocelot.beyond.common.body.CelestialBodyDefinitions;
+import io.github.ocelot.beyond.common.space.planet.StaticSolarSystemDefinitions;
 import io.github.ocelot.beyond.common.init.BeyondMessages;
 import io.github.ocelot.beyond.common.network.play.message.CPlanetTravelMessage;
-import io.github.ocelot.beyond.common.simulation.CelestialBodyRayTraceResult;
-import io.github.ocelot.beyond.common.simulation.CelestialBodySimulation;
-import io.github.ocelot.beyond.common.simulation.body.*;
+import io.github.ocelot.beyond.common.simulation.*;
+import io.github.ocelot.beyond.common.space.simulation.*;
+import io.github.ocelot.beyond.common.util.CelestialBodyRayTraceResult;
 import io.github.ocelot.sonar.client.render.BakedModelRenderer;
 import io.github.ocelot.sonar.client.render.ShapeRenderer;
 import net.minecraft.client.MainWindow;
@@ -85,7 +85,7 @@ public class SolarSystemWidget extends Widget implements INestedGuiEventHandler,
     {
         super(x, y, width, height, StringTextComponent.EMPTY);
         this.parent = parent;
-        this.simulation = new CelestialBodySimulation(CelestialBodyDefinitions.SOLAR_SYSTEM.get());
+        this.simulation = new CelestialBodySimulation(StaticSolarSystemDefinitions.SOLAR_SYSTEM.get());
         this.starsRenderer = new SpaceStarsRenderer();
         this.camera = new SpaceTravelCamera();
         this.camera.setZoom(30);

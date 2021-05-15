@@ -1,6 +1,6 @@
-package io.github.ocelot.beyond.common.simulation;
+package io.github.ocelot.beyond.common.util;
 
-import io.github.ocelot.beyond.common.simulation.body.SimulatedBody;
+import io.github.ocelot.beyond.common.space.simulation.SimulatedBody;
 import net.minecraft.util.math.vector.Vector3d;
 
 /**

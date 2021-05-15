@@ -1,8 +1,7 @@
-package io.github.ocelot.beyond.common.simulation.body;
+package io.github.ocelot.beyond.common.space.simulation;
 
 import com.mojang.blaze3d.matrix.MatrixStack;
 import io.github.ocelot.beyond.common.MagicMath;
-import io.github.ocelot.beyond.common.simulation.CelestialBodySimulation;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.math.AxisAlignedBB;
 import net.minecraft.util.math.vector.Matrix4f;

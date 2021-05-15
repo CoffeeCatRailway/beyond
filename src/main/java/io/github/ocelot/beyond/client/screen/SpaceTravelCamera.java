@@ -1,6 +1,6 @@
 package io.github.ocelot.beyond.client.screen;
 
-import io.github.ocelot.beyond.common.simulation.body.SimulatedBody;
+import io.github.ocelot.beyond.common.space.simulation.SimulatedBody;
 import net.minecraft.client.gui.IGuiEventListener;
 import net.minecraft.client.gui.screen.IScreen;
 import net.minecraft.util.math.MathHelper;

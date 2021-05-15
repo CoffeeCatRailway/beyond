@@ -1,6 +1,5 @@
-package io.github.ocelot.beyond.common.simulation.body;
+package io.github.ocelot.beyond.common.space.simulation;
 
-import io.github.ocelot.beyond.common.simulation.CelestialBodySimulation;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.math.MathHelper;
 import net.minecraft.util.math.vector.Vector3f;

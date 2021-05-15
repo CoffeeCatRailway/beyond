@@ -1,6 +1,5 @@
-package io.github.ocelot.beyond.common.simulation.body;
+package io.github.ocelot.beyond.common.space.simulation;
 
-import io.github.ocelot.beyond.common.simulation.CelestialBodySimulation;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.model.IBakedModel;
 import net.minecraft.client.renderer.model.ModelManager;

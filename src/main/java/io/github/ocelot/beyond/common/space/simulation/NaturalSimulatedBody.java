@@ -1,8 +1,7 @@
-package io.github.ocelot.beyond.common.simulation.body;
+package io.github.ocelot.beyond.common.space.simulation;
 
-import io.github.ocelot.beyond.common.body.CelestialBody;
-import io.github.ocelot.beyond.common.body.CelestialBodyAtmosphere;
-import io.github.ocelot.beyond.common.simulation.CelestialBodySimulation;
+import io.github.ocelot.beyond.common.space.planet.Planet;
+import io.github.ocelot.beyond.common.space.planet.PlanetAtmosphere;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.text.ITextComponent;
 
@@ -15,9 +14,9 @@ import java.util.Optional;
  */
 public class NaturalSimulatedBody extends AbstractSimulatedBody
 {
-    private final CelestialBody body;
+    private final Planet body;
 
-    public NaturalSimulatedBody(CelestialBodySimulation simulation, ResourceLocation id, CelestialBody body)
+    public NaturalSimulatedBody(CelestialBodySimulation simulation, ResourceLocation id, Planet body)
     {
         super(simulation, id);
         this.body = body;
@@ -54,7 +53,7 @@ public class NaturalSimulatedBody extends AbstractSimulatedBody
     /**
      * @return The atmosphere to render on the body
      */
-    public Optional<CelestialBodyAtmosphere> getAtmosphere()
+    public Optional<PlanetAtmosphere> getAtmosphere()
     {
         return this.body.getAtmosphere();
     }

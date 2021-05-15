@@ -1,4 +1,4 @@
-package io.github.ocelot.beyond.common.body;
+package io.github.ocelot.beyond.common.space.planet;
 
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
@@ -14,18 +14,18 @@ import java.util.Optional;
  *
  * @author Ocelot
  */
-public class CelestialBody
+public class Planet
 {
-    public static final Codec<CelestialBody> CODEC = RecordCodecBuilder.create(instance -> instance.group(
-            ResourceLocation.CODEC.optionalFieldOf("parent").forGetter(CelestialBody::getParent),
-            ResourceLocation.CODEC.fieldOf("texture").forGetter(CelestialBody::getTexture),
-            ResourceLocation.CODEC.optionalFieldOf("dimension").forGetter(CelestialBody::getDimension),
-            Codec.STRING.fieldOf("displayName").<ITextComponent>xmap(ITextComponent.Serializer::fromJson, ITextComponent.Serializer::toJson).forGetter(CelestialBody::getDisplayName),
-            Codec.BOOL.optionalFieldOf("shade", true).forGetter(CelestialBody::isShade),
-            Codec.FLOAT.optionalFieldOf("size", 1.0F).forGetter(CelestialBody::getSize),
-            Codec.FLOAT.optionalFieldOf("distanceFactor", 1.0F).forGetter(CelestialBody::getDistanceFactor),
-            CelestialBodyAtmosphere.CODEC.optionalFieldOf("atmosphere").forGetter(CelestialBody::getAtmosphere)
-    ).apply(instance, (parent, texture, dimension, displayName, shade, scale, distanceFactor, atmosphere) -> new CelestialBody(parent.orElse(null), texture, dimension.orElse(null), displayName, shade, scale, distanceFactor, atmosphere.orElse(null))));
+    public static final Codec<Planet> CODEC = RecordCodecBuilder.create(instance -> instance.group(
+            ResourceLocation.CODEC.optionalFieldOf("parent").forGetter(Planet::getParent),
+            ResourceLocation.CODEC.fieldOf("texture").forGetter(Planet::getTexture),
+            ResourceLocation.CODEC.optionalFieldOf("dimension").forGetter(Planet::getDimension),
+            Codec.STRING.fieldOf("displayName").<ITextComponent>xmap(ITextComponent.Serializer::fromJson, ITextComponent.Serializer::toJson).forGetter(Planet::getDisplayName),
+            Codec.BOOL.optionalFieldOf("shade", true).forGetter(Planet::isShade),
+            Codec.FLOAT.optionalFieldOf("size", 1.0F).forGetter(Planet::getSize),
+            Codec.FLOAT.optionalFieldOf("distanceFactor", 1.0F).forGetter(Planet::getDistanceFactor),
+            PlanetAtmosphere.CODEC.optionalFieldOf("atmosphere").forGetter(Planet::getAtmosphere)
+    ).apply(instance, (parent, texture, dimension, displayName, shade, scale, distanceFactor, atmosphere) -> new Planet(parent.orElse(null), texture, dimension.orElse(null), displayName, shade, scale, distanceFactor, atmosphere.orElse(null))));
 
     private final ResourceLocation parent;
     private final ResourceLocation texture;
@@ -34,9 +34,9 @@ public class CelestialBody
     private final boolean shade;
     private final float size;
     private final float distanceFactor;
-    private final CelestialBodyAtmosphere atmosphere;
+    private final PlanetAtmosphere atmosphere;
 
-    public CelestialBody(@Nullable ResourceLocation parent, ResourceLocation texture, @Nullable ResourceLocation dimension, ITextComponent displayName, boolean shade, float size, float distanceFactor, CelestialBodyAtmosphere atmosphere)
+    public Planet(@Nullable ResourceLocation parent, ResourceLocation texture, @Nullable ResourceLocation dimension, ITextComponent displayName, boolean shade, float size, float distanceFactor, PlanetAtmosphere atmosphere)
     {
         this.parent = parent;
         this.texture = texture;
@@ -107,7 +107,7 @@ public class CelestialBody
     /**
      * @return The atmosphere to show around this body
      */
-    public Optional<CelestialBodyAtmosphere> getAtmosphere()
+    public Optional<PlanetAtmosphere> getAtmosphere()
     {
         return Optional.ofNullable(this.atmosphere);
     }
@@ -134,7 +134,7 @@ public class CelestialBody
         private boolean shade;
         private float scale;
         private float distanceFactor;
-        private CelestialBodyAtmosphere atmosphere;
+        private PlanetAtmosphere atmosphere;
 
         private Builder()
         {
@@ -229,7 +229,7 @@ public class CelestialBody
          *
          * @param atmosphere The atmosphere to show around the body or <code>null</code> for none
          */
-        public Builder setAtmosphere(CelestialBodyAtmosphere atmosphere)
+        public Builder setAtmosphere(PlanetAtmosphere atmosphere)
         {
             this.atmosphere = atmosphere;
             return this;
@@ -238,11 +238,11 @@ public class CelestialBody
         /**
          * @return A new body with the specified parameters
          */
-        public CelestialBody build()
+        public Planet build()
         {
             Validate.notNull(this.texture);
             Validate.notNull(this.displayName);
-            return new CelestialBody(this.parent, this.texture, this.dimension, this.displayName, this.shade, this.scale, this.distanceFactor, this.atmosphere);
+            return new Planet(this.parent, this.texture, this.dimension, this.displayName, this.shade, this.scale, this.distanceFactor, this.atmosphere);
         }
     }
 }
