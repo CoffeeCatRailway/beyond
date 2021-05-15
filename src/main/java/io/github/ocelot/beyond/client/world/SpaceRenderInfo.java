@@ -3,6 +3,8 @@ package io.github.ocelot.beyond.client.world;
 import net.minecraft.client.world.DimensionRenderInfo;
 import net.minecraft.util.math.vector.Vector3d;
 
+import javax.annotation.Nullable;
+
 /**
  * @author Ocelot
  */
@@ -24,5 +26,11 @@ public class SpaceRenderInfo extends DimensionRenderInfo
     public boolean isFoggyAt(int camX, int camZ)
     {
         return false;
+    }
+
+    @Nullable
+    public float[] getSunriseColor(float dayTime, float partialTicks)
+    {
+        return null;
     }
 }
