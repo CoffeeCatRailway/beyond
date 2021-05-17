@@ -9,10 +9,11 @@ import io.github.ocelot.beyond.client.MousePicker;
 import io.github.ocelot.beyond.client.SpacePlanetSpriteManager;
 import io.github.ocelot.beyond.client.render.SpaceStarsRenderer;
 import io.github.ocelot.beyond.client.screen.SpaceTravelCamera;
-import io.github.ocelot.beyond.common.space.planet.StaticSolarSystemDefinitions;
 import io.github.ocelot.beyond.common.init.BeyondMessages;
 import io.github.ocelot.beyond.common.network.play.message.CPlanetTravelMessage;
-import io.github.ocelot.beyond.common.simulation.*;
+import io.github.ocelot.beyond.common.network.play.message.SOpenSpaceTravelScreenMessage;
+import io.github.ocelot.beyond.common.space.PlayerRocket;
+import io.github.ocelot.beyond.common.space.planet.StaticSolarSystemDefinitions;
 import io.github.ocelot.beyond.common.space.simulation.*;
 import io.github.ocelot.beyond.common.util.CelestialBodyRayTraceResult;
 import io.github.ocelot.sonar.client.render.BakedModelRenderer;
@@ -68,7 +69,7 @@ public class SolarSystemWidget extends Widget implements INestedGuiEventHandler,
     private final CelestialBodySimulation simulation;
     private final SpaceStarsRenderer starsRenderer;
     private final SpaceTravelCamera camera;
-    private final PlayerRocket localRocket;
+    private final PlayerRocketBody localRocket;
     private boolean travelling;
 
     private CelestialBodyRayTraceResult hoveredBody;
@@ -81,19 +82,33 @@ public class SolarSystemWidget extends Widget implements INestedGuiEventHandler,
     private boolean dragging;
     private boolean bubbleHovered;
 
-    public SolarSystemWidget(@Nullable Screen parent, int x, int y, int width, int height)
+    public SolarSystemWidget(@Nullable Screen parent, int x, int y, int width, int height, SOpenSpaceTravelScreenMessage msg)
     {
         super(x, y, width, height, StringTextComponent.EMPTY);
         this.parent = parent;
-        this.simulation = new CelestialBodySimulation(StaticSolarSystemDefinitions.SOLAR_SYSTEM.get());
+        this.simulation = new CelestialBodySimulation(StaticSolarSystemDefinitions.SOLAR_SYSTEM.get()); // TODO load solar system from server
         this.starsRenderer = new SpaceStarsRenderer();
         this.camera = new SpaceTravelCamera();
         this.camera.setZoom(30);
         this.camera.setPitch((float) (24F * Math.PI / 180F));
 
         // TODO get initial planet from server
-        ResourceLocation playerDimension = Objects.requireNonNull(Minecraft.getInstance().player).level.dimension().location();
-        this.localRocket = new PlayerRocket(this.simulation, this.simulation.getBodies().filter(body -> body.canTeleportTo() && body.getDimension().isPresent() && body.getDimension().get().equals(playerDimension)).map(SimulatedBody::getId).findFirst().orElseGet(() -> new ResourceLocation(Beyond.MOD_ID, "earth")), Objects.requireNonNull(Minecraft.getInstance().player).getGameProfile());
+        PlayerRocketBody p = null;
+        for (PlayerRocket rocket : msg.getPlayers())
+        {
+            PlayerRocketBody body = new PlayerRocketBody(this.simulation, rocket);
+            if (rocket.getProfile().getId().equals(Objects.requireNonNull(Minecraft.getInstance().player).getUUID()))
+            {
+                if (p != null)
+                    throw new IllegalStateException("Duplicate local player was located in simulation.");
+                p = body;
+            }
+            this.simulation.add(body);
+        }
+        if (p == null)
+            throw new IllegalStateException("Local player was not located in simulation.");
+
+        this.localRocket = p;
         this.localRocket.addListener((rocket, body) ->
         {
             SimulatedBody simulatedBody = this.simulation.getBody(body);
@@ -101,11 +116,10 @@ public class SolarSystemWidget extends Widget implements INestedGuiEventHandler,
                 return;
             simulatedBody.getDimension().ifPresent(dimension ->
             {
-                BeyondMessages.PLAY.sendToServer(new CPlanetTravelMessage(dimension)); // TODO get dimension from body
+                BeyondMessages.PLAY.sendToServer(new CPlanetTravelMessage(dimension));
             });
         });
         this.camera.setFocused(this.localRocket);
-        this.simulation.add(this.localRocket);
 
         this.children = new ArrayList<>();
         this.children.add(this.camera);
@@ -116,7 +130,7 @@ public class SolarSystemWidget extends Widget implements INestedGuiEventHandler,
             this.selectedBody.getDimension().ifPresent(dimension ->
             {
                 System.out.println("Launched to " + dimension);
-                PlayerRocket rocket = this.simulation.getPlayer(Objects.requireNonNull(Minecraft.getInstance().player).getUUID());
+                PlayerRocketBody rocket = this.simulation.getPlayer(Objects.requireNonNull(Minecraft.getInstance().player).getUUID());
                 if (rocket != null)
                 {
                     this.travelling = true;
@@ -208,10 +222,10 @@ public class SolarSystemWidget extends Widget implements INestedGuiEventHandler,
                 break;
             case PLAYER:
                 // TODO player
-                if (body instanceof PlayerRocket)
+                if (body instanceof PlayerRocketBody)
                 {
                     poseStack.translate(-0.5F, -0.5F, -0.5F);
-                    PlayerRocket b = (PlayerRocket) body;
+                    PlayerRocketBody b = (PlayerRocketBody) body;
                     BakedModelRenderer.renderModel(Minecraft.getInstance().getModelManager().getMissingModel(), buffer.getBuffer(RenderType.entityCutout(PlayerContainer.BLOCK_ATLAS)), poseStack, 1.0F, 1.0F, 1.0F, 15728880, OverlayTexture.NO_OVERLAY, EmptyModelData.INSTANCE);
                 }
                 break;
@@ -567,7 +581,7 @@ public class SolarSystemWidget extends Widget implements INestedGuiEventHandler,
     /**
      * @return The local client player rocket
      */
-    public PlayerRocket getLocalRocket()
+    public PlayerRocketBody getLocalRocket()
     {
         return localRocket;
     }

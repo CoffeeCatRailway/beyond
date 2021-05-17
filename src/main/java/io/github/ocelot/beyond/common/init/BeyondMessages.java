@@ -8,6 +8,8 @@ import io.github.ocelot.beyond.common.network.login.message.CAcknowledgeServerMe
 import io.github.ocelot.beyond.common.network.play.handler.SpaceClientPlayHandler;
 import io.github.ocelot.beyond.common.network.play.handler.SpaceServerPlayHandler;
 import io.github.ocelot.beyond.common.network.play.message.CPlanetTravelMessage;
+import io.github.ocelot.beyond.common.network.play.message.CTemporaryOpenSpaceTravelMessage;
+import io.github.ocelot.beyond.common.network.play.message.SOpenSpaceTravelScreenMessage;
 import io.github.ocelot.beyond.common.network.play.message.SPlanetTravelResponseMessage;
 import io.github.ocelot.beyond.common.world.space.DimensionSpaceSettingsLoader;
 import io.github.ocelot.sonar.common.network.SonarNetworkManager;
@@ -42,6 +44,8 @@ public class BeyondMessages
 
         // Play
         PLAY_MANAGER.register(CPlanetTravelMessage.class, CPlanetTravelMessage::new, NetworkDirection.PLAY_TO_SERVER);
+        PLAY_MANAGER.register(CTemporaryOpenSpaceTravelMessage.class, CTemporaryOpenSpaceTravelMessage::new, NetworkDirection.PLAY_TO_SERVER);
+        PLAY_MANAGER.register(SOpenSpaceTravelScreenMessage.class, SOpenSpaceTravelScreenMessage::new, NetworkDirection.PLAY_TO_CLIENT);
         PLAY_MANAGER.register(SPlanetTravelResponseMessage.class, SPlanetTravelResponseMessage::new, NetworkDirection.PLAY_TO_CLIENT);
     }
 }

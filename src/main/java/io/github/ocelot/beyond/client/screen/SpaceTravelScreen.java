@@ -4,6 +4,8 @@ import com.mojang.blaze3d.matrix.MatrixStack;
 import io.github.ocelot.beyond.Beyond;
 import io.github.ocelot.beyond.client.screen.component.SolarSystemWidget;
 import io.github.ocelot.beyond.common.MagicMath;
+import io.github.ocelot.beyond.common.network.play.message.SOpenSpaceTravelScreenMessage;
+import io.github.ocelot.beyond.common.space.PlayerRocket;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.IGuiEventListener;
 import net.minecraft.client.gui.screen.IScreen;
@@ -27,10 +29,10 @@ public class SpaceTravelScreen extends Screen
     private float lastZoom;
     private float zoom;
 
-    public SpaceTravelScreen()
+    public SpaceTravelScreen(SOpenSpaceTravelScreenMessage msg)
     {
         super(new TranslationTextComponent("screen." + Beyond.MOD_ID + ".space_travel"));
-        this.addButton(this.solarSystemWidget = new SolarSystemWidget(this, 0, 0, this.width, this.height));
+        this.addButton(this.solarSystemWidget = new SolarSystemWidget(this, 0, 0, this.width, this.height, msg));
         this.zoom(false);
     }
 

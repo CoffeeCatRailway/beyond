@@ -6,6 +6,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.math.vector.Vector3d;
 
+import javax.annotation.Nullable;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Stream;
@@ -95,6 +96,7 @@ public class CelestialBodySimulation
      * @param id The id of the body to get
      * @return The body with that id or <code>null</code> for no body with that id
      */
+    @Nullable
     public SimulatedBody getBody(ResourceLocation id)
     {
         return this.bodies.get(id);
@@ -106,9 +108,10 @@ public class CelestialBodySimulation
      * @param id The id of the body to get
      * @return The body with that id or <code>null</code> for no body with that id
      */
-    public PlayerRocket getPlayer(UUID id)
+    @Nullable
+    public PlayerRocketBody getPlayer(UUID id)
     {
-        return (PlayerRocket) this.bodies.values().stream().filter(body -> body instanceof PlayerRocket && ((PlayerRocket) body).getPlayer().getId().equals(id)).findFirst().orElse(null);
+        return (PlayerRocketBody) this.bodies.values().stream().filter(body -> body instanceof PlayerRocketBody && ((PlayerRocketBody) body).getPlayer().getId().equals(id)).findFirst().orElse(null);
     }
 
     /**

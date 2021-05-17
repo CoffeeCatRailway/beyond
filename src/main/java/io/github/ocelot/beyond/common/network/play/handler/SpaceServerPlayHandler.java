@@ -3,7 +3,10 @@ package io.github.ocelot.beyond.common.network.play.handler;
 import io.github.ocelot.beyond.Beyond;
 import io.github.ocelot.beyond.common.init.BeyondMessages;
 import io.github.ocelot.beyond.common.network.play.message.CPlanetTravelMessage;
+import io.github.ocelot.beyond.common.network.play.message.CTemporaryOpenSpaceTravelMessage;
+import io.github.ocelot.beyond.common.network.play.message.SOpenSpaceTravelScreenMessage;
 import io.github.ocelot.beyond.common.network.play.message.SPlanetTravelResponseMessage;
+import io.github.ocelot.beyond.common.space.PlayerRocket;
 import net.minecraft.block.PortalInfo;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.player.ServerPlayerEntity;
@@ -72,5 +75,16 @@ public class SpaceServerPlayHandler implements ISpaceServerPlayHandler
             // TODO return player to correct body
             BeyondMessages.PLAY.reply(new SPlanetTravelResponseMessage(new ResourceLocation(Beyond.MOD_ID, "earth")), ctx);
         });
+    }
+
+    @Override
+    public void handleTemporaryOpenSpaceTravel(CTemporaryOpenSpaceTravelMessage msg, NetworkEvent.Context ctx)
+    {
+        ServerPlayerEntity player = ctx.getSender();
+        if (player == null)
+            return;
+
+        // TODO insert player into simulation and locate their body
+        ctx.enqueueWork(() -> BeyondMessages.PLAY.reply(new SOpenSpaceTravelScreenMessage(new PlayerRocket(player, new ResourceLocation(Beyond.MOD_ID, "earth"))), ctx));
     }
 }

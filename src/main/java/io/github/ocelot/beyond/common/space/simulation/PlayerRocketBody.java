@@ -3,6 +3,7 @@ package io.github.ocelot.beyond.common.space.simulation;
 import com.mojang.authlib.GameProfile;
 import io.github.ocelot.beyond.Beyond;
 import io.github.ocelot.beyond.common.MagicMath;
+import io.github.ocelot.beyond.common.space.PlayerRocket;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.math.MathHelper;
 import net.minecraft.util.math.vector.Vector3f;
@@ -19,12 +20,12 @@ import java.util.Set;
  *
  * @author Ocelot
  */
-public class PlayerRocket extends AbstractSimulatedBody
+public class PlayerRocketBody extends AbstractSimulatedBody
 {
     private static final float TRANSITION_SPEED = 0.0125F;
 
     private final Set<Listener> listeners;
-    private final GameProfile player;
+    private final PlayerRocket rocket;
     private final ITextComponent displayName;
     private ResourceLocation parent;
     private ResourceLocation newParent;
@@ -33,14 +34,14 @@ public class PlayerRocket extends AbstractSimulatedBody
     private float lastTransition;
     private float transition;
 
-    public PlayerRocket(CelestialBodySimulation simulation, ResourceLocation parent, GameProfile player)
+    public PlayerRocketBody(CelestialBodySimulation simulation, PlayerRocket rocket)
     {
-        super(simulation, new ResourceLocation(Beyond.MOD_ID, DigestUtils.md5Hex(player.getName())));
-        this.setDistanceFromParent(Math.max(simulation.getBody(parent).getSize() * 1.25F, 1.0F));
+        super(simulation, rocket.getId());
+        this.setDistanceFromParent(Math.max(Optional.ofNullable(simulation.getBody(rocket.getOrbitingBody())).map(SimulatedBody::getSize).orElse(1.0F) * 1.25F, 1.0F));
         this.listeners = new HashSet<>();
-        this.parent = parent;
-        this.player = player;
-        this.displayName = new StringTextComponent(player.getName());
+        this.parent = rocket.getOrbitingBody();
+        this.rocket = rocket;
+        this.displayName = rocket.getDisplayName();
         this.transitionStart = new Vector3f();
     }
 
@@ -171,7 +172,7 @@ public class PlayerRocket extends AbstractSimulatedBody
      */
     public GameProfile getPlayer()
     {
-        return player;
+        return this.rocket.getProfile();
     }
 
     /**
@@ -214,6 +215,6 @@ public class PlayerRocket extends AbstractSimulatedBody
          * @param rocket The rocket travelling
          * @param body   The body the rocket arrived at
          */
-        void onArrive(PlayerRocket rocket, ResourceLocation body);
+        void onArrive(PlayerRocketBody rocket, ResourceLocation body);
     }
 }
