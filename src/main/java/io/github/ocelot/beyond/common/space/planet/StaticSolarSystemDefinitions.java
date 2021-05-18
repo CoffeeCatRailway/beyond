@@ -26,24 +26,29 @@ public class StaticSolarSystemDefinitions
                 Random random = new Random();
                 ResourceLocation sun = create(bodies, "sun", "Sun", "sun", builder ->
                 {
+                    builder.setDescription(new TextComponent("The sun is a star, a hot ball of glowing gases at the heart of our solar system. Its influence extends far beyond the orbits of distant Neptune and Pluto."));
                     builder.setDimension(DimensionType.NETHER_LOCATION.location());
                     builder.setScale(20.0F);
                     builder.setShade(false);
                 });
                 ResourceLocation mercury = create(bodies, "mercury", "Mercury", "mercury", builder ->
                 {
+                    builder.setDescription(new TextComponent("Mercury is one of the rocky planets. It has a solid surface that is covered with craters. It has no atmosphere, and it doesn't have any moons."));
                     builder.setScale(3.0F);
                     builder.setDistanceFactor(0.25F);
                     builder.setParent(sun);
                 });
                 ResourceLocation venus = create(bodies, "venus", "Venus", "venus", builder ->
                 {
+                    builder.setDescription(new TextComponent("Venus is the brightest object in the sky after the Sun and the Moon, and sometimes looks like a bright star in the morning or evening sky."));
                     builder.setScale(3.0F);
+                    builder.setShade(false);
                     builder.setDistanceFactor(0.5F);
                     builder.setParent(sun);
                 });
                 ResourceLocation earth = create(bodies, "earth", "Earth", "earth", builder ->
                 {
+                    builder.setDescription(new TextComponent("Earth is the planet we live on, one of eight planets in our solar system and the only known place in the universe to support life."));
                     builder.setDimension(DimensionType.OVERWORLD_LOCATION.location());
                     builder.setScale(4.0F);
                     builder.setDistanceFactor(0.8F);
@@ -59,6 +64,7 @@ public class StaticSolarSystemDefinitions
                 });
                 ResourceLocation mars = create(bodies, "mars", "Mars", "mars", builder ->
                 {
+                    builder.setDescription(new TextComponent("Mars is the fourth planet from the Sun and the next planet beyond Earth. It is, on average, more than 142 million miles from the Sun."));
                     builder.setScale(3.5F);
                     builder.setDistanceFactor(1.2F);
                     builder.setParent(sun);
@@ -74,6 +80,7 @@ public class StaticSolarSystemDefinitions
                 }
                 ResourceLocation jupiter = create(bodies, "jupiter", "Jupiter", "jupiter", builder ->
                 {
+                    builder.setDescription(new TextComponent("Jupiter is a gas giant with a mass two and a half times that of all the other planets in the Solar System combined, but less than one-thousandth the mass of the Sun."));
                     builder.setScale(12.0F);
                     builder.setDistanceFactor(5.0F);
                     builder.setParent(sun);
@@ -81,6 +88,7 @@ public class StaticSolarSystemDefinitions
                 });
                 ResourceLocation saturn = create(bodies, "saturn", "Saturn", "saturn", builder ->
                 {
+                    builder.setDescription(new TextComponent("Saturn is a gas giant with an average radius of about nine and a half times that of Earth."));
                     builder.setScale(8.0F);
                     builder.setDistanceFactor(6.0F);
                     builder.setParent(sun);
@@ -97,6 +105,7 @@ public class StaticSolarSystemDefinitions
                 }
                 ResourceLocation uranus = create(bodies, "uranus", "Uranus", "uranus", builder ->
                 {
+                    builder.setDescription(new TextComponent("Uranus is an ice giant (instead of a gas giant). It is mostly made of flowing icy materials above a solid core. Uranus has a thick atmosphere made of methane, hydrogen, and helium. Uranus is the only planet that spins on its side."));
                     builder.setScale(6.0F);
                     builder.setDistanceFactor(7.0F);
                     builder.setParent(sun);
@@ -104,6 +113,7 @@ public class StaticSolarSystemDefinitions
                 });
                 ResourceLocation neptune = create(bodies, "neptune", "Neptune", "neptune", builder ->
                 {
+                    builder.setDescription(new TextComponent("Neptune, like Uranus, is an ice giant. It's similar to a gas giant. It is made of a thick soup of water, ammonia, and methane flowing over a solid core about the size of Earth. Neptune has a thick, windy atmosphere."));
                     builder.setScale(6.0F);
                     builder.setDistanceFactor(8.0F);
                     builder.setParent(sun);
