@@ -23,27 +23,30 @@ public class Planet
             ResourceLocation.CODEC.fieldOf("texture").forGetter(Planet::getTexture),
             ResourceLocation.CODEC.optionalFieldOf("dimension").forGetter(Planet::getDimension),
             Codec.STRING.fieldOf("displayName").<Component>xmap(Component.Serializer::fromJson, Component.Serializer::toJson).forGetter(Planet::getDisplayName),
+            Codec.STRING.optionalFieldOf("description").<Optional<? extends Component>>xmap(json -> json.map(Component.Serializer::fromJson), component -> component.map(Component.Serializer::toJson)).forGetter(Planet::getDescription),
             Codec.BOOL.optionalFieldOf("shade", true).forGetter(Planet::isShade),
             Codec.FLOAT.optionalFieldOf("size", 1.0F).forGetter(Planet::getSize),
             Codec.FLOAT.optionalFieldOf("distanceFactor", 1.0F).forGetter(Planet::getDistanceFactor),
             PlanetAtmosphere.CODEC.optionalFieldOf("atmosphere").forGetter(Planet::getAtmosphere)
-    ).apply(instance, (parent, texture, dimension, displayName, shade, scale, distanceFactor, atmosphere) -> new Planet(parent.orElse(null), texture, dimension.orElse(null), displayName, shade, scale, distanceFactor, atmosphere.orElse(null))));
+    ).apply(instance, (parent, texture, dimension, displayName, description, shade, scale, distanceFactor, atmosphere) -> new Planet(parent.orElse(null), texture, dimension.orElse(null), displayName, description.orElse(null), shade, scale, distanceFactor, atmosphere.orElse(null))));
 
     private final ResourceLocation parent;
     private final ResourceLocation texture;
     private final ResourceLocation dimension;
     private final Component displayName;
+    private final Component description;
     private final boolean shade;
     private final float size;
     private final float distanceFactor;
     private final PlanetAtmosphere atmosphere;
 
-    public Planet(@Nullable ResourceLocation parent, ResourceLocation texture, @Nullable ResourceLocation dimension, Component displayName, boolean shade, float size, float distanceFactor, PlanetAtmosphere atmosphere)
+    public Planet(@Nullable ResourceLocation parent, ResourceLocation texture, @Nullable ResourceLocation dimension, Component displayName, @Nullable Component description, boolean shade, float size, float distanceFactor, PlanetAtmosphere atmosphere)
     {
         this.parent = parent;
         this.texture = texture;
         this.dimension = dimension;
         this.displayName = displayName;
+        this.description = description;
         this.shade = shade;
         this.size = size;
         this.distanceFactor = distanceFactor;
@@ -80,6 +83,14 @@ public class Planet
     public Component getDisplayName()
     {
         return displayName;
+    }
+
+    /**
+     * @return The description text to show under this body
+     */
+    public Optional<Component> getDescription()
+    {
+        return Optional.ofNullable(this.description);
     }
 
     /**
@@ -133,6 +144,7 @@ public class Planet
         private ResourceLocation texture;
         private ResourceLocation dimension;
         private Component displayName;
+        private Component description;
         private boolean shade;
         private float scale;
         private float distanceFactor;
@@ -144,6 +156,7 @@ public class Planet
             this.texture = null;
             this.dimension = null;
             this.displayName = null;
+            this.description = null;
             this.shade = true;
             this.scale = 1.0F;
             this.distanceFactor = 1.0F;
@@ -191,6 +204,17 @@ public class Planet
         public Builder setDisplayName(Component displayName)
         {
             this.displayName = displayName;
+            return this;
+        }
+
+        /**
+         * Sets the description text to show for this body.
+         *
+         * @param description The additional info to use
+         */
+        public Builder setDescription(Component description)
+        {
+            this.description = description;
             return this;
         }
 
@@ -244,7 +268,7 @@ public class Planet
         {
             Validate.notNull(this.texture);
             Validate.notNull(this.displayName);
-            return new Planet(this.parent, this.texture, this.dimension, this.displayName, this.shade, this.scale, this.distanceFactor, this.atmosphere);
+            return new Planet(this.parent, this.texture, this.dimension, this.displayName, this.description, this.shade, this.scale, this.distanceFactor, this.atmosphere);
         }
     }
 }

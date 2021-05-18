@@ -21,8 +21,10 @@ import io.github.ocelot.beyond.client.screen.SpaceTravelCamera;
 import io.github.ocelot.beyond.common.init.BeyondMessages;
 import io.github.ocelot.beyond.common.network.play.message.CPlanetTravelMessage;
 import io.github.ocelot.beyond.common.network.play.message.SOpenSpaceTravelScreenMessage;
-import io.github.ocelot.beyond.common.space.PlayerRocket;
 import io.github.ocelot.beyond.common.space.planet.StaticSolarSystemDefinitions;
+import io.github.ocelot.beyond.common.space.satellite.ArtificialSatellite;
+import io.github.ocelot.beyond.common.space.satellite.PlayerRocket;
+import io.github.ocelot.beyond.common.space.satellite.Satellite;
 import io.github.ocelot.beyond.common.space.simulation.*;
 import io.github.ocelot.beyond.common.util.CelestialBodyRayTraceResult;
 import io.github.ocelot.sonar.client.render.BakedModelRenderer;
@@ -38,7 +40,8 @@ import net.minecraft.client.gui.components.events.ContainerEventHandler;
 import net.minecraft.client.gui.components.events.GuiEventListener;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.model.geom.ModelPart;
-import net.minecraft.client.renderer.*;
+import net.minecraft.client.renderer.MultiBufferSource;
+import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
@@ -52,10 +55,7 @@ import net.minecraftforge.client.model.data.EmptyModelData;
 import org.lwjgl.system.NativeResource;
 
 import javax.annotation.Nullable;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
-import java.util.Optional;
+import java.util.*;
 
 import static org.lwjgl.opengl.GL11.*;
 
@@ -100,16 +100,15 @@ public class SolarSystemWidget extends AbstractWidget implements ContainerEventH
         this.camera.setZoom(30);
         this.camera.setPitch((float) (24F * Math.PI / 180F));
 
-        // TODO get initial planet from server
         PlayerRocketBody p = null;
-        for (PlayerRocket rocket : msg.getPlayers())
+        for (Satellite satellite : msg.getSatellites())
         {
-            PlayerRocketBody body = new PlayerRocketBody(this.simulation, rocket);
-            if (rocket.getProfile().getId().equals(Objects.requireNonNull(Minecraft.getInstance().player).getUUID()))
+            SimulatedBody body = satellite.createBody(this.simulation);
+            if (satellite instanceof PlayerRocket && ((PlayerRocket) satellite).getProfile().getId().equals(Objects.requireNonNull(Minecraft.getInstance().player).getUUID()))
             {
                 if (p != null)
                     throw new IllegalStateException("Duplicate local player was located in simulation.");
-                p = body;
+                p = (PlayerRocketBody) body;
             }
             this.simulation.add(body);
         }
@@ -177,21 +176,6 @@ public class SolarSystemWidget extends AbstractWidget implements ContainerEventH
         });
         this.launchButton.visible = false;
         this.children.add(this.launchButton);
-
-
-        ArtificialSatellite earthSatellite = new ArtificialSatellite(this.simulation, new ResourceLocation(Beyond.MOD_ID, "earth_satellite_test"));
-        earthSatellite.setParent(new ResourceLocation(Beyond.MOD_ID, "earth"));
-        earthSatellite.setDistanceFromParent(5F);
-        earthSatellite.setModel(new ResourceLocation(Beyond.MOD_ID, "body/satellite"));
-        earthSatellite.setDisplayName(new TextComponent("Earth Satellite Test"));
-        this.simulation.add(earthSatellite);
-
-        ArtificialSatellite marsSatellite = new ArtificialSatellite(this.simulation, new ResourceLocation(Beyond.MOD_ID, "mars_satellite_test"));
-        marsSatellite.setParent(new ResourceLocation(Beyond.MOD_ID, "mars"));
-        marsSatellite.setDistanceFromParent(5F);
-        marsSatellite.setModel(new ResourceLocation(Beyond.MOD_ID, "body/satellite"));
-        marsSatellite.setDisplayName(new TextComponent("Mars Satellite Test"));
-        this.simulation.add(marsSatellite);
     }
 
     private void renderBody(PoseStack poseStack, MultiBufferSource.BufferSource buffer, SimulatedBody body, float partialTicks)
@@ -254,16 +238,15 @@ public class SolarSystemWidget extends AbstractWidget implements ContainerEventH
         poseStack.popPose();
     }
 
-    private void renderBubble(PoseStack poseStack, int x, int y, int mouseX, int mouseY)
+    private void renderBubble(PoseStack poseStack, Component title, @Nullable Component description, int x, int y, int mouseX, int mouseY)
     {
         Font fontRenderer = Minecraft.getInstance().font;
-        Component description = new TextComponent("The moon is Earth's only natural satellite. The moon is a cold, dry orb whose surface is studded with craters and strewn with rocks and dust.").withStyle(ChatFormatting.ITALIC, ChatFormatting.GRAY);
-        List<FormattedCharSequence> descriptionLines = fontRenderer.split(description, 300);
+        List<FormattedCharSequence> descriptionLines = description != null ? fontRenderer.split(description.copy().withStyle(ChatFormatting.ITALIC, ChatFormatting.GRAY), 300) : Collections.emptyList();
 
         int descriptionHeight = descriptionLines.size() * fontRenderer.lineHeight;
 
         int padding = 8;
-        int boxWidth = Math.max(fontRenderer.width(this.selectedBody.getDisplayName()) * 2, 300) + padding * 2;
+        int boxWidth = Math.max(fontRenderer.width(title) * 2, 300) + padding * 2;
         int boxHeight = descriptionHeight + 2 * fontRenderer.lineHeight + (this.selectedBody.canTeleportTo() ? 20 + padding : 0) + padding * 2;
         int length = boxHeight + 40;
         int width = 5;
@@ -306,7 +289,7 @@ public class SolarSystemWidget extends AbstractWidget implements ContainerEventH
         poseStack.pushPose();
         poseStack.translate(padding, padding, 0);
         poseStack.scale(2F, 2F, 2F);
-        fontRenderer.drawShadow(poseStack, this.selectedBody.getDisplayName(), 0, 0, -1);
+        fontRenderer.drawShadow(poseStack, title, 0, 0, -1);
         poseStack.popPose();
         for (int i = 0; i < descriptionLines.size(); i++)
             fontRenderer.drawShadow(poseStack, descriptionLines.get(i), padding, padding + (i + 2) * fontRenderer.lineHeight, -1);
@@ -436,7 +419,7 @@ public class SolarSystemWidget extends AbstractWidget implements ContainerEventH
                 RenderSystem.disableTexture();
                 RenderSystem.disableDepthTest();
 
-                this.renderBubble(poseStack, (int) ((pos.x() / pos.w() + 1F) * this.width / 2F), (int) ((-pos.y() / pos.w() + 1F) * this.height / 2F), mouseX, mouseY);
+                this.renderBubble(poseStack, this.selectedBody.getDisplayName(), this.selectedBody.getDescription().orElse(null), (int) ((pos.x() / pos.w() + 1F) * this.width / 2F), (int) ((-pos.y() / pos.w() + 1F) * this.height / 2F), mouseX, mouseY);
 
                 RenderSystem.enableDepthTest();
                 RenderSystem.enableTexture();

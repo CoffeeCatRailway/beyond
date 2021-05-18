@@ -7,10 +7,12 @@ import io.github.ocelot.beyond.common.network.play.message.SPlayerTravelMessage;
 import io.github.ocelot.beyond.common.network.play.message.SUpdateSimulationBodiesMessage;
 import io.github.ocelot.beyond.common.space.planet.Planet;
 import io.github.ocelot.beyond.common.space.planet.StaticSolarSystemDefinitions;
-import io.github.ocelot.beyond.common.space.simulation.CelestialBodySimulation;
-import io.github.ocelot.beyond.common.space.simulation.PlayerRocketBody;
-import io.github.ocelot.beyond.common.space.simulation.SimulatedBody;
+import io.github.ocelot.beyond.common.space.satellite.ArtificialSatellite;
+import io.github.ocelot.beyond.common.space.satellite.PlayerRocket;
+import io.github.ocelot.beyond.common.space.satellite.Satellite;
+import io.github.ocelot.beyond.common.space.simulation.*;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.network.chat.TextComponent;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
@@ -44,6 +46,8 @@ public class SpaceManager extends SavedData
     private SpaceManager()
     {
         super(DATA_NAME);
+
+        // TODO use custom server side implementation of simulation
         // TODO Load simulation from datapack
         this.simulation = new CelestialBodySimulation(StaticSolarSystemDefinitions.SOLAR_SYSTEM.get());
         this.simulation.addListener(new CelestialBodySimulation.PlayerUpdateListener()
@@ -51,15 +55,22 @@ public class SpaceManager extends SavedData
             @Override
             public void onPlayersJoin(PlayerRocketBody... bodies)
             {
-                SpaceManager.this.notifyAllPlayers(new SUpdateSimulationBodiesMessage(Arrays.stream(bodies).map(PlayerRocketBody::getRocket).toArray(PlayerRocket[]::new), new ResourceLocation[0]));
+                SpaceManager.this.notifyAllPlayers(new SUpdateSimulationBodiesMessage(Arrays.stream(bodies).map(PlayerRocketBody::getSatellite).toArray(Satellite[]::new), new ResourceLocation[0]));
             }
 
             @Override
             public void onPlayersLeave(PlayerRocketBody... bodies)
             {
-                SpaceManager.this.notifyAllPlayers(new SUpdateSimulationBodiesMessage(new PlayerRocket[0], Arrays.stream(bodies).map(SimulatedBody::getId).toArray(ResourceLocation[]::new)));
+                SpaceManager.this.notifyAllPlayers(new SUpdateSimulationBodiesMessage(new Satellite[0], Arrays.stream(bodies).map(SimulatedBody::getId).toArray(ResourceLocation[]::new)));
             }
         });
+
+        ArtificialSatelliteBody earthSatellite = new ArtificialSatelliteBody(this.simulation, new ArtificialSatellite(new ResourceLocation(Beyond.MOD_ID, "earth_satellite_test"), new ResourceLocation(Beyond.MOD_ID, "body/satellite"), new TextComponent("Earth Satellite Test"), new ResourceLocation(Beyond.MOD_ID, "earth")));
+        this.simulation.add(earthSatellite);
+
+        ArtificialSatelliteBody marsSatellite = new ArtificialSatelliteBody(this.simulation, new ArtificialSatellite(new ResourceLocation(Beyond.MOD_ID, "mars_satellite_test"), new ResourceLocation(Beyond.MOD_ID, "body/satellite"), new TextComponent("Mars Satellite Test"), new ResourceLocation(Beyond.MOD_ID, "mars")));
+        this.simulation.add(marsSatellite);
+
         MinecraftForge.EVENT_BUS.addListener(this::onTick);
         MinecraftForge.EVENT_BUS.addListener(this::onPlayerLeave);
     }
@@ -71,7 +82,7 @@ public class SpaceManager extends SavedData
             MinecraftServer server = ServerLifecycleHooks.getCurrentServer();
             if (server == null)
                 return;
-            ServerPlayer player = server.getPlayerList().getPlayer(b.getRocket().getProfile().getId());
+            ServerPlayer player = server.getPlayerList().getPlayer(b.getSatellite().getProfile().getId());
             if (player == null)
                 return;
             BeyondMessages.PLAY.send(PacketDistributor.PLAYER.with(() -> player), msg);
@@ -92,9 +103,9 @@ public class SpaceManager extends SavedData
             this.simulation.remove(body.getId());
     }
 
-    private SOpenSpaceTravelScreenMessage createPacket(Stream<PlayerRocketBody> bodies)
+    private SOpenSpaceTravelScreenMessage createPacket(Stream<SatelliteBody<?>> bodies)
     {
-        return new SOpenSpaceTravelScreenMessage(Stream.concat(this.simulation.getPlayers(), bodies).map(PlayerRocketBody::getRocket).toArray(PlayerRocket[]::new));
+        return new SOpenSpaceTravelScreenMessage(Stream.concat(this.simulation.getSatellites(), bodies).map(SatelliteBody::getSatellite).toArray(Satellite[]::new));
     }
 
     /**
@@ -123,7 +134,7 @@ public class SpaceManager extends SavedData
      */
     public void removePlayer(UUID id)
     {
-        this.simulation.getPlayers().filter(body -> body.getRocket().getProfile().getId().equals(id)).map(SimulatedBody::getId).forEach(this.simulation::remove);
+        this.simulation.getPlayers().filter(body -> body.getSatellite().getProfile().getId().equals(id)).map(SimulatedBody::getId).forEach(this.simulation::remove);
     }
 
     /**
@@ -139,7 +150,7 @@ public class SpaceManager extends SavedData
             MinecraftServer server = ServerLifecycleHooks.getCurrentServer();
             if (server == null)
                 return;
-            ServerPlayer player = server.getPlayerList().getPlayer(b.getRocket().getProfile().getId());
+            ServerPlayer player = server.getPlayerList().getPlayer(b.getSatellite().getProfile().getId());
             if (player == null || (sender != null && player.getUUID().equals(sender.getUUID())))
                 return;
             BeyondMessages.PLAY.send(PacketDistributor.PLAYER.with(() -> player), msg);

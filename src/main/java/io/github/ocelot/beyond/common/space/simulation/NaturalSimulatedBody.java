@@ -71,6 +71,12 @@ public class NaturalSimulatedBody extends AbstractSimulatedBody
     }
 
     @Override
+    public Optional<Component> getDescription()
+    {
+        return this.body.getDescription();
+    }
+
+    @Override
     public float getSize()
     {
         return this.body.getSize();

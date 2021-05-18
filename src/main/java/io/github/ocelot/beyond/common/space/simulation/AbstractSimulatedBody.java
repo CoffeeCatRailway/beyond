@@ -15,10 +15,10 @@ public abstract class AbstractSimulatedBody implements SimulatedBody
     private final ResourceLocation id;
     private final Vector3f lastRotation;
     private final Vector3f rotation;
+    private float distanceFromParent;
+    protected float distanceFromParentSqrt;
     protected float lastYaw;
     protected float yaw;
-    protected float distanceFromParent;
-    protected float distanceFromParentSqrt;
 
     protected AbstractSimulatedBody(CelestialBodySimulation simulation, ResourceLocation id)
     {
@@ -26,10 +26,10 @@ public abstract class AbstractSimulatedBody implements SimulatedBody
         this.id = id;
         this.lastRotation = new Vector3f(0.0F, (float) (simulation.getRandom().nextFloat() * Math.PI * 2), 0.0F);
         this.rotation = new Vector3f(this.lastRotation.x(), this.lastRotation.y(), this.lastRotation.z());
-        this.lastYaw = (float) (simulation.getRandom().nextFloat() * Math.PI * 2);
-        this.yaw = this.lastYaw;
         this.distanceFromParent = 0;
         this.distanceFromParentSqrt = 0;
+        this.lastYaw = (float) (simulation.getRandom().nextFloat() * Math.PI * 2);
+        this.yaw = this.lastYaw;
     }
 
     @Override

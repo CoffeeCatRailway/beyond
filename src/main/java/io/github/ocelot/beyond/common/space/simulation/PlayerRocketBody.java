@@ -2,7 +2,7 @@ package io.github.ocelot.beyond.common.space.simulation;
 
 import com.mojang.math.Vector3f;
 import io.github.ocelot.beyond.common.MagicMath;
-import io.github.ocelot.beyond.common.space.PlayerRocket;
+import io.github.ocelot.beyond.common.space.satellite.PlayerRocket;
 import io.github.ocelot.beyond.common.util.Listenable;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
@@ -18,14 +18,13 @@ import java.util.Set;
  *
  * @author Ocelot
  */
-public class PlayerRocketBody extends AbstractSimulatedBody implements Listenable<PlayerRocketBody.PlayerTravelListener>
+public class PlayerRocketBody extends AbstractSimulatedBody implements SatelliteBody<PlayerRocket>, Listenable<PlayerRocketBody.PlayerTravelListener>
 {
     private static final float TRANSITION_SPEED = 0.0125F;
 
     private final Set<PlayerTravelListener> listeners;
     private final PlayerRocket rocket;
     private final Component displayName;
-    private ResourceLocation parent;
     private ResourceLocation newParent;
     private final Vector3f transitionStart;
     private float newDistanceFromParent;
@@ -35,9 +34,8 @@ public class PlayerRocketBody extends AbstractSimulatedBody implements Listenabl
     public PlayerRocketBody(CelestialBodySimulation simulation, PlayerRocket rocket)
     {
         super(simulation, rocket.getId());
-        this.setDistanceFromParent(Math.max(Optional.ofNullable(simulation.getBody(rocket.getOrbitingBody())).map(SimulatedBody::getSize).orElse(1.0F) * 1.25F, 1.0F));
+        this.setDistanceFromParent(Math.max(rocket.getOrbitingBody().map(simulation::getBody).map(SimulatedBody::getSize).orElse(1.0F) * 1.25F, 1.0F));
         this.listeners = new HashSet<>();
-        this.parent = rocket.getOrbitingBody();
         this.rocket = rocket;
         this.displayName = rocket.getDisplayName();
         this.transitionStart = new Vector3f();
@@ -59,10 +57,10 @@ public class PlayerRocketBody extends AbstractSimulatedBody implements Listenabl
             if (this.transition >= 1.0F)
             {
                 this.transition = 1.0F;
-                this.parent = this.newParent;
+                this.rocket.setOrbitingBody(this.newParent);
                 this.newParent = null;
                 this.setDistanceFromParent(this.newDistanceFromParent);
-                this.listeners.forEach(listener -> listener.onArrive(this, this.parent));
+                this.listeners.forEach(listener -> listener.onArrive(this, this.rocket.getOrbitingBody().orElseThrow(() -> new IllegalStateException("Rocket should have a new parent body"))));
             }
         }
     }
@@ -107,7 +105,7 @@ public class PlayerRocketBody extends AbstractSimulatedBody implements Listenabl
     @Override
     public Optional<ResourceLocation> getParent()
     {
-        return Optional.of(this.parent);
+        return this.rocket.getOrbitingBody();
     }
 
     public Optional<ResourceLocation> getNewParent()
@@ -119,6 +117,12 @@ public class PlayerRocketBody extends AbstractSimulatedBody implements Listenabl
     public Component getDisplayName()
     {
         return displayName;
+    }
+
+    @Override
+    public Optional<Component> getDescription()
+    {
+        return Optional.empty();
     }
 
     @Override
@@ -151,12 +155,10 @@ public class PlayerRocketBody extends AbstractSimulatedBody implements Listenabl
         return listeners;
     }
 
-    /**
-     * @return The rocket this body is simulating
-     */
-    public PlayerRocket getRocket()
+    @Override
+    public PlayerRocket getSatellite()
     {
-        return this.rocket;
+        return rocket;
     }
 
     /**
@@ -183,7 +185,7 @@ public class PlayerRocketBody extends AbstractSimulatedBody implements Listenabl
     public void setParent(ResourceLocation parent)
     {
         SimulatedBody simulatedBody = Objects.requireNonNull(this.simulation.getBody(parent));
-        this.parent = parent;
+        this.rocket.setOrbitingBody(parent);
         this.setDistanceFromParent(Math.max(simulatedBody.getSize() * 1.25F, 1.0F));
     }
 

@@ -52,6 +52,7 @@ public class StaticSolarSystemDefinitions
                 });
                 ResourceLocation moon = create(bodies, "moon", "Moon", "moon", builder ->
                 {
+                    builder.setDescription(new TextComponent("The moon is Earth's only natural satellite. The moon is a cold, dry orb whose surface is studded with craters and strewn with rocks and dust."));
                     builder.setDimension(BeyondDimensions.MOON.location());
                     builder.setScale(2.0F);
                     builder.setParent(earth);

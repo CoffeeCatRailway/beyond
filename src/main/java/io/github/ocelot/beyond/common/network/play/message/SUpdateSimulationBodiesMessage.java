@@ -1,7 +1,7 @@
 package io.github.ocelot.beyond.common.network.play.message;
 
 import io.github.ocelot.beyond.common.network.play.handler.ISpaceClientPlayHandler;
-import io.github.ocelot.beyond.common.space.PlayerRocket;
+import io.github.ocelot.beyond.common.space.satellite.Satellite;
 import io.github.ocelot.sonar.common.network.message.SonarMessage;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.resources.ResourceLocation;
@@ -14,25 +14,25 @@ import net.minecraftforge.fml.network.NetworkEvent;
  */
 public class SUpdateSimulationBodiesMessage implements SonarMessage<ISpaceClientPlayHandler>
 {
-    private PlayerRocket[] addedPlayers;
+    private Satellite[] added;
     private ResourceLocation[] removed;
 
     public SUpdateSimulationBodiesMessage()
     {
     }
 
-    public SUpdateSimulationBodiesMessage(PlayerRocket[] addedPlayers, ResourceLocation[] removed)
+    public SUpdateSimulationBodiesMessage(Satellite[] added, ResourceLocation[] removed)
     {
-        this.addedPlayers = addedPlayers;
+        this.added = added;
         this.removed = removed;
     }
 
     @Override
     public void readPacketData(FriendlyByteBuf buf)
     {
-        this.addedPlayers = new PlayerRocket[buf.readVarInt()];
-        for (int i = 0; i < this.addedPlayers.length; i++)
-            this.addedPlayers[i] = new PlayerRocket(buf);
+        this.added = new Satellite[buf.readVarInt()];
+        for (int i = 0; i < this.added.length; i++)
+            this.added[i] = Satellite.read(buf);
         this.removed = new ResourceLocation[buf.readVarInt()];
         for (int i = 0; i < this.removed.length; i++)
             this.removed[i] = buf.readResourceLocation();
@@ -41,9 +41,9 @@ public class SUpdateSimulationBodiesMessage implements SonarMessage<ISpaceClient
     @Override
     public void writePacketData(FriendlyByteBuf buf)
     {
-        buf.writeVarInt(this.addedPlayers.length);
-        for (PlayerRocket rocket : this.addedPlayers)
-            rocket.write(buf);
+        buf.writeVarInt(this.added.length);
+        for (Satellite satellite : this.added)
+            Satellite.write(satellite, buf);
         buf.writeVarInt(this.removed.length);
         for (ResourceLocation remove : this.removed)
             buf.writeResourceLocation(remove);
@@ -56,12 +56,12 @@ public class SUpdateSimulationBodiesMessage implements SonarMessage<ISpaceClient
     }
 
     /**
-     * @return The players currently in the simulation. One is assumed to never the local player and that removal will be ignored.
+     * @return The satellites added to the simulation
      */
     @OnlyIn(Dist.CLIENT)
-    public PlayerRocket[] getAddedPlayers()
+    public Satellite[] getAddedSatellites()
     {
-        return addedPlayers;
+        return added;
     }
 
     /**

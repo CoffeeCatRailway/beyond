@@ -138,7 +138,7 @@ public class CelestialBodySimulation implements Listenable<CelestialBodySimulati
     @Nullable
     public PlayerRocketBody getPlayer(UUID id)
     {
-        return this.getPlayers().filter(body -> body.getRocket().getProfile().getId().equals(id)).findFirst().orElse(null);
+        return this.getPlayers().filter(body -> body.getSatellite().getProfile().getId().equals(id)).findFirst().orElse(null);
     }
 
     /**
@@ -155,6 +155,14 @@ public class CelestialBodySimulation implements Listenable<CelestialBodySimulati
     public Stream<PlayerRocketBody> getPlayers()
     {
         return this.bodies.values().stream().filter(body -> body instanceof PlayerRocketBody).map(body -> (PlayerRocketBody) body);
+    }
+
+    /**
+     * @return All satellite bodies in the simulation
+     */
+    public Stream<SatelliteBody<?>> getSatellites()
+    {
+        return this.bodies.values().stream().filter(body -> body instanceof SatelliteBody<?>).map(body -> (SatelliteBody<?>) body);
     }
 
     /**

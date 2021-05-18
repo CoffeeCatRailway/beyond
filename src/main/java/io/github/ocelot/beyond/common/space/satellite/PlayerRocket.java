@@ -1,19 +1,24 @@
-package io.github.ocelot.beyond.common.space;
+package io.github.ocelot.beyond.common.space.satellite;
 
 import com.mojang.authlib.GameProfile;
 import io.github.ocelot.beyond.Beyond;
+import io.github.ocelot.beyond.common.space.simulation.CelestialBodySimulation;
+import io.github.ocelot.beyond.common.space.simulation.PlayerRocketBody;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Player;
 import org.apache.commons.codec.digest.DigestUtils;
 
+import javax.annotation.Nullable;
+import java.util.Optional;
+
 /**
  * <p>A representation of a player inside a rocket.</p>
  *
  * @author Ocelot
  */
-public class PlayerRocket
+public class PlayerRocket implements Satellite
 {
     private final ResourceLocation id;
     private final GameProfile profile;
@@ -38,11 +43,8 @@ public class PlayerRocket
         this(new GameProfile(buf.readUUID(), buf.readUtf(16)), buf.readComponent(), buf.readResourceLocation());
     }
 
-    /**
-     * Writes this rocket into the specified buffer.
-     *
-     * @param buf The buffer to write data into
-     */
+
+    @Override
     public void write(FriendlyByteBuf buf)
     {
         buf.writeUUID(this.profile.getId());
@@ -51,12 +53,16 @@ public class PlayerRocket
         buf.writeResourceLocation(this.orbitingBody);
     }
 
-    /**
-     * @return The profile for the player
-     */
-    public GameProfile getProfile()
+    @Override
+    public PlayerRocketBody createBody(CelestialBodySimulation simulation)
     {
-        return profile;
+        return new PlayerRocketBody(simulation, this);
+    }
+
+    @Override
+    public Type getType()
+    {
+        return Type.PLAYER;
     }
 
     /**
@@ -68,6 +74,14 @@ public class PlayerRocket
     }
 
     /**
+     * @return The profile for the player
+     */
+    public GameProfile getProfile()
+    {
+        return profile;
+    }
+
+    /**
      * @return The display name of the player
      */
     public Component getDisplayName()
@@ -75,12 +89,20 @@ public class PlayerRocket
         return displayName;
     }
 
-    public ResourceLocation getOrbitingBody()
+    /**
+     * @return The body to orbit
+     */
+    public Optional<ResourceLocation> getOrbitingBody()
     {
-        return orbitingBody;
+        return Optional.ofNullable(this.orbitingBody);
     }
 
-    public void setOrbitingBody(ResourceLocation orbitingBody)
+    /**
+     * Sets the body for this satellite to orbit
+     *
+     * @param orbitingBody The body to orbit
+     */
+    public void setOrbitingBody(@Nullable ResourceLocation orbitingBody)
     {
         this.orbitingBody = orbitingBody;
     }

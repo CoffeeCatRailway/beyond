@@ -6,6 +6,7 @@ import io.github.ocelot.beyond.common.network.play.message.SOpenSpaceTravelScree
 import io.github.ocelot.beyond.common.network.play.message.SPlanetTravelResponseMessage;
 import io.github.ocelot.beyond.common.network.play.message.SPlayerTravelMessage;
 import io.github.ocelot.beyond.common.network.play.message.SUpdateSimulationBodiesMessage;
+import io.github.ocelot.beyond.common.space.satellite.PlayerRocket;
 import io.github.ocelot.beyond.common.world.space.ClientDimensionSpaceSettings;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
@@ -32,7 +33,7 @@ public class SpaceClientPlayHandler implements ISpaceClientPlayHandler
             return;
 
         // Don't open the screen if the player isn't in it
-        if (Arrays.stream(msg.getPlayers()).noneMatch(rocket -> rocket.getProfile().getId().equals(player.getUUID())))
+        if (Arrays.stream(msg.getSatellites()).noneMatch(rocket -> rocket instanceof PlayerRocket && ((PlayerRocket) rocket).getProfile().getId().equals(player.getUUID())))
         {
             LOGGER.warn("Player was not found in the simulation they attempted to join!");
             return;

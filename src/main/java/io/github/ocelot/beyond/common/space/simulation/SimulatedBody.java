@@ -12,6 +12,7 @@ import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 
+import javax.annotation.Nullable;
 import java.util.Optional;
 
 /**
@@ -40,6 +41,11 @@ public interface SimulatedBody
      * @return The name of this body in the simulation
      */
     Component getDisplayName();
+
+    /**
+     * @return The tooltip text of this body in the simulation
+     */
+    Optional<Component> getDescription();
 
     /**
      * Casts a ray through this body to check for an intersection.

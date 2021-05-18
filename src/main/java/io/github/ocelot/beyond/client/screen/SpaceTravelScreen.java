@@ -7,7 +7,7 @@ import io.github.ocelot.beyond.common.MagicMath;
 import io.github.ocelot.beyond.common.network.play.message.SOpenSpaceTravelScreenMessage;
 import io.github.ocelot.beyond.common.network.play.message.SPlayerTravelMessage;
 import io.github.ocelot.beyond.common.network.play.message.SUpdateSimulationBodiesMessage;
-import io.github.ocelot.beyond.common.space.PlayerRocket;
+import io.github.ocelot.beyond.common.space.satellite.Satellite;
 import io.github.ocelot.beyond.common.space.simulation.CelestialBodySimulation;
 import io.github.ocelot.beyond.common.space.simulation.PlayerRocketBody;
 import net.minecraft.client.Minecraft;
@@ -179,7 +179,7 @@ public class SpaceTravelScreen extends Screen
         CelestialBodySimulation simulation = this.solarSystemWidget.getSimulation();
         for (ResourceLocation removed : msg.getRemoved())
             simulation.remove(removed);
-        for (PlayerRocket rocket : msg.getAddedPlayers())
-            simulation.add(new PlayerRocketBody(simulation, rocket));
+        for (Satellite satellite : msg.getAddedSatellites())
+            simulation.add(satellite.createBody(simulation));
     }
 }
