@@ -2,9 +2,11 @@ package io.github.ocelot.beyond.common.space.simulation;
 
 import io.github.ocelot.beyond.common.space.planet.Planet;
 import io.github.ocelot.beyond.common.util.CelestialBodyRayTraceResult;
-import net.minecraft.client.Minecraft;
+import io.github.ocelot.beyond.common.util.Listenable;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.math.vector.Vector3d;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
 
 import javax.annotation.Nullable;
 import java.util.*;
@@ -16,16 +18,20 @@ import java.util.stream.Stream;
  *
  * @author Ocelot
  */
-public class CelestialBodySimulation
+public class CelestialBodySimulation implements Listenable<CelestialBodySimulation.PlayerUpdateListener>
 {
     private final Map<ResourceLocation, SimulatedBody> bodies;
+    private final Map<ResourceLocation, SimulatedBody> addedBodies;
     private final Set<ResourceLocation> removedBodies;
+    private final Set<PlayerUpdateListener> listeners;
     private final Random random;
 
     public CelestialBodySimulation(Map<ResourceLocation, Planet> bodies)
     {
         this.bodies = new HashMap<>();
+        this.addedBodies = new ConcurrentHashMap<>();
         this.removedBodies = ConcurrentHashMap.newKeySet();
+        this.listeners = new HashSet<>();
         this.random = new Random();
 
         for (Map.Entry<ResourceLocation, Planet> entry : bodies.entrySet())
@@ -62,8 +68,29 @@ public class CelestialBodySimulation
      */
     public void tick()
     {
-        this.removedBodies.forEach(this.bodies::remove);
-        this.removedBodies.clear();
+        if (!this.addedBodies.isEmpty())
+        {
+            if (!this.listeners.isEmpty())
+            {
+                PlayerRocketBody[] addedPlayers = this.addedBodies.values().stream().filter(b -> b instanceof PlayerRocketBody).map(b -> (PlayerRocketBody) b).toArray(PlayerRocketBody[]::new);
+                this.listeners.forEach(listener -> listener.onPlayersJoin(addedPlayers));
+            }
+
+            this.bodies.putAll(this.addedBodies);
+            this.addedBodies.clear();
+        }
+
+        if (!this.removedBodies.isEmpty())
+        {
+            PlayerRocketBody[] addedPlayers = this.removedBodies.stream().filter(b -> this.bodies.get(b) instanceof PlayerRocketBody).map(b -> (PlayerRocketBody) this.bodies.get(b)).toArray(PlayerRocketBody[]::new);
+            this.removedBodies.forEach(this.bodies::remove);
+
+            if (!this.listeners.isEmpty())
+                this.listeners.forEach(listener -> listener.onPlayersLeave(addedPlayers));
+
+            this.removedBodies.clear();
+        }
+
         this.bodies.values().forEach(SimulatedBody::tick);
     }
 
@@ -72,12 +99,11 @@ public class CelestialBodySimulation
      *
      * @param body The body to add
      */
-    public boolean add(SimulatedBody body)
+    public void add(SimulatedBody body)
     {
         if (this.bodies.containsKey(body.getId()))
-            return false;
-        Minecraft.getInstance().execute(() -> this.bodies.put(body.getId(), body));
-        return true;
+            return;
+        this.addedBodies.put(body.getId(), body);
     }
 
     /**
@@ -111,7 +137,7 @@ public class CelestialBodySimulation
     @Nullable
     public PlayerRocketBody getPlayer(UUID id)
     {
-        return (PlayerRocketBody) this.bodies.values().stream().filter(body -> body instanceof PlayerRocketBody && ((PlayerRocketBody) body).getPlayer().getId().equals(id)).findFirst().orElse(null);
+        return this.getPlayers().filter(body -> body.getRocket().getProfile().getId().equals(id)).findFirst().orElse(null);
     }
 
     /**
@@ -122,9 +148,26 @@ public class CelestialBodySimulation
         return this.bodies.values().stream();
     }
 
+    /**
+     * @return All player bodies in the simulation
+     */
+    public Stream<PlayerRocketBody> getPlayers()
+    {
+        return this.bodies.values().stream().filter(body -> body instanceof PlayerRocketBody).map(body -> (PlayerRocketBody) body);
+    }
+
+    /**
+     * @return The randomized value generator
+     */
     public Random getRandom()
     {
         return random;
+    }
+
+    @Override
+    public Set<PlayerUpdateListener> getListeners()
+    {
+        return listeners;
     }
 
     /**
@@ -135,6 +178,7 @@ public class CelestialBodySimulation
      * @param partialTicks The percentage from last update and this update
      * @return The optional result of the ray trace
      */
+    @OnlyIn(Dist.CLIENT)
     public Optional<CelestialBodyRayTraceResult> clip(Vector3d start, Vector3d end, float partialTicks)
     {
         SimulatedBody resultBody = null;
@@ -155,5 +199,12 @@ public class CelestialBodySimulation
             }
         }
         return resultBody != null ? Optional.of(new CelestialBodyRayTraceResult(resultBody, result)) : Optional.empty();
+    }
+
+    public interface PlayerUpdateListener
+    {
+        void onPlayersJoin(PlayerRocketBody... bodies);
+
+        void onPlayersLeave(PlayerRocketBody... bodies);
     }
 }

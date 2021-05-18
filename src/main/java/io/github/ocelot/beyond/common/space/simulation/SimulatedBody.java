@@ -8,6 +8,8 @@ import net.minecraft.util.math.vector.Matrix4f;
 import net.minecraft.util.math.vector.Vector3d;
 import net.minecraft.util.math.vector.Vector3f;
 import net.minecraft.util.text.ITextComponent;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
 
 import java.util.Optional;
 
@@ -46,6 +48,7 @@ public interface SimulatedBody
      * @param partialTicks The percentage from last update and this update
      * @return The optional result of the ray trace
      */
+    @OnlyIn(Dist.CLIENT)
     default Optional<Vector3d> clip(Vector3d start, Vector3d end, float partialTicks)
     {
         float size = Math.max(this.getSize(), 1.0F) / 2F;

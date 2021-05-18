@@ -5,7 +5,11 @@ import io.github.ocelot.beyond.Beyond;
 import io.github.ocelot.beyond.client.screen.component.SolarSystemWidget;
 import io.github.ocelot.beyond.common.MagicMath;
 import io.github.ocelot.beyond.common.network.play.message.SOpenSpaceTravelScreenMessage;
+import io.github.ocelot.beyond.common.network.play.message.SPlayerTravelMessage;
+import io.github.ocelot.beyond.common.network.play.message.SUpdateSimulationBodiesMessage;
 import io.github.ocelot.beyond.common.space.PlayerRocket;
+import io.github.ocelot.beyond.common.space.simulation.CelestialBodySimulation;
+import io.github.ocelot.beyond.common.space.simulation.PlayerRocketBody;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.IGuiEventListener;
 import net.minecraft.client.gui.screen.IScreen;
@@ -129,6 +133,12 @@ public class SpaceTravelScreen extends Screen
         return !this.solarSystemWidget.isTravelling();
     }
 
+    @Override
+    public boolean isPauseScreen()
+    {
+        return false;
+    }
+
     /**
      * Transitions from the gui to the physical world.
      */
@@ -143,5 +153,33 @@ public class SpaceTravelScreen extends Screen
     public void notifyFailure(ResourceLocation body)
     {
         this.solarSystemWidget.notifyFailure(body);
+    }
+
+    /**
+     * Receives updates about the server sided player travel.
+     *
+     * @param msg The update message
+     */
+    public void receivePlayerTravel(SPlayerTravelMessage msg)
+    {
+        PlayerRocketBody body = this.solarSystemWidget.getSimulation().getPlayer(msg.getPlayer());
+        if (body != null)
+        {
+            body.travelTo(msg.getBody());
+        }
+    }
+
+    /**
+     * Receives updates about the server sided simulation.
+     *
+     * @param msg The update message
+     */
+    public void receiveSimulationUpdate(SUpdateSimulationBodiesMessage msg)
+    {
+        CelestialBodySimulation simulation = this.solarSystemWidget.getSimulation();
+        for (ResourceLocation removed : msg.getRemoved())
+            simulation.remove(removed);
+        for (PlayerRocket rocket : msg.getAddedPlayers())
+            simulation.add(new PlayerRocketBody(simulation, rocket));
     }
 }

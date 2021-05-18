@@ -109,15 +109,27 @@ public class SolarSystemWidget extends Widget implements INestedGuiEventHandler,
             throw new IllegalStateException("Local player was not located in simulation.");
 
         this.localRocket = p;
-        this.localRocket.addListener((rocket, body) ->
+        this.localRocket.addListener(new PlayerRocketBody.PlayerTravelListener()
         {
-            SimulatedBody simulatedBody = this.simulation.getBody(body);
-            if (simulatedBody == null || !simulatedBody.canTeleportTo())
-                return;
-            simulatedBody.getDimension().ifPresent(dimension ->
+            private void sendTravelPacket(ResourceLocation body, boolean arrive)
             {
-                BeyondMessages.PLAY.sendToServer(new CPlanetTravelMessage(dimension));
-            });
+                SimulatedBody simulatedBody = SolarSystemWidget.this.simulation.getBody(body);
+                if (simulatedBody == null || !simulatedBody.canTeleportTo())
+                    return;
+                simulatedBody.getDimension().ifPresent(dimension -> BeyondMessages.PLAY.sendToServer(new CPlanetTravelMessage(body, arrive)));
+            }
+
+            @Override
+            public void onDepart(PlayerRocketBody rocket, ResourceLocation body)
+            {
+                this.sendTravelPacket(body, false);
+            }
+
+            @Override
+            public void onArrive(PlayerRocketBody rocket, ResourceLocation body)
+            {
+                this.sendTravelPacket(body, true);
+            }
         });
         this.camera.setFocused(this.localRocket);
 
@@ -530,7 +542,7 @@ public class SolarSystemWidget extends Widget implements INestedGuiEventHandler,
             if (listener instanceof NativeResource)
                 ((NativeResource) listener).free();
         if (!this.travelling)
-            BeyondMessages.PLAY.sendToServer(new CPlanetTravelMessage(null));
+            BeyondMessages.PLAY.sendToServer(new CPlanetTravelMessage(null, false));
     }
 
     /**

@@ -1,17 +1,15 @@
 package io.github.ocelot.beyond.common.space.simulation;
 
-import com.mojang.authlib.GameProfile;
-import io.github.ocelot.beyond.Beyond;
 import io.github.ocelot.beyond.common.MagicMath;
 import io.github.ocelot.beyond.common.space.PlayerRocket;
+import io.github.ocelot.beyond.common.util.Listenable;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.math.MathHelper;
 import net.minecraft.util.math.vector.Vector3f;
 import net.minecraft.util.text.ITextComponent;
-import net.minecraft.util.text.StringTextComponent;
-import org.apache.commons.codec.digest.DigestUtils;
 
 import java.util.HashSet;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 
@@ -20,11 +18,11 @@ import java.util.Set;
  *
  * @author Ocelot
  */
-public class PlayerRocketBody extends AbstractSimulatedBody
+public class PlayerRocketBody extends AbstractSimulatedBody implements Listenable<PlayerRocketBody.PlayerTravelListener>
 {
     private static final float TRANSITION_SPEED = 0.0125F;
 
-    private final Set<Listener> listeners;
+    private final Set<PlayerTravelListener> listeners;
     private final PlayerRocket rocket;
     private final ITextComponent displayName;
     private ResourceLocation parent;
@@ -48,26 +46,6 @@ public class PlayerRocketBody extends AbstractSimulatedBody
     private float getTransition(float partialTicks)
     {
         return MagicMath.ease(MathHelper.lerp(partialTicks, this.lastTransition, this.transition));
-    }
-
-    /**
-     * Adds the specified listener to the listening list
-     *
-     * @param listener The listener to add
-     */
-    public void addListener(Listener listener)
-    {
-        this.listeners.add(listener);
-    }
-
-    /**
-     * Removes the specified listener from the listening list
-     *
-     * @param listener The listener to remove
-     */
-    public void removeListener(Listener listener)
-    {
-        this.listeners.remove(listener);
     }
 
     @Override
@@ -167,12 +145,18 @@ public class PlayerRocketBody extends AbstractSimulatedBody
         return RenderType.PLAYER;
     }
 
-    /**
-     * @return The player represented by this rocket
-     */
-    public GameProfile getPlayer()
+    @Override
+    public Set<PlayerTravelListener> getListeners()
     {
-        return this.rocket.getProfile();
+        return listeners;
+    }
+
+    /**
+     * @return The rocket this body is simulating
+     */
+    public PlayerRocket getRocket()
+    {
+        return this.rocket;
     }
 
     /**
@@ -182,12 +166,13 @@ public class PlayerRocketBody extends AbstractSimulatedBody
      */
     public void travelTo(ResourceLocation body)
     {
-        SimulatedBody simulatedBody = this.simulation.getBody(body);
+        SimulatedBody simulatedBody = Objects.requireNonNull(this.simulation.getBody(body));
         this.transitionStart.set(this.getX(1.0F), this.getY(1.0F), this.getZ(1.0F));
         this.lastTransition = 0.0F;
         this.transition = 0.0F;
         this.newParent = body;
         this.newDistanceFromParent = Math.max(simulatedBody.getSize() * 1.25F, 1.0F);
+        this.listeners.forEach(listener -> listener.onDepart(this, this.newParent));
     }
 
     /**
@@ -197,7 +182,7 @@ public class PlayerRocketBody extends AbstractSimulatedBody
      */
     public void setParent(ResourceLocation parent)
     {
-        SimulatedBody simulatedBody = this.simulation.getBody(parent);
+        SimulatedBody simulatedBody = Objects.requireNonNull(this.simulation.getBody(parent));
         this.parent = parent;
         this.setDistanceFromParent(Math.max(simulatedBody.getSize() * 1.25F, 1.0F));
     }
@@ -207,8 +192,16 @@ public class PlayerRocketBody extends AbstractSimulatedBody
      *
      * @author Ocelot
      */
-    public interface Listener
+    public interface PlayerTravelListener
     {
+        /**
+         * Called when the specified player rocket travels to the specified body.
+         *
+         * @param rocket The rocket travelling
+         * @param body   The body the rocket is travelling to
+         */
+        void onDepart(PlayerRocketBody rocket, ResourceLocation body);
+
         /**
          * Called when the specified player rocket arrives at the specified body.
          *

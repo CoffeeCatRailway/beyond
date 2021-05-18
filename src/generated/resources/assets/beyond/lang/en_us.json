@@ -1,9 +1,10 @@
 {
-  "biome.beyond.moon": "Moon",
+  "biome.minecraft.worldgen/biome": "Moon",
   "block.beyond.moon_rock": "Moon Rock",
   "gui.beyond.already_there": "Already There",
   "gui.beyond.cannot_launch": "Cannot Launch",
   "gui.beyond.launch": "Launch!",
   "itemGroup.beyond": "Beyond",
+  "multiplayer.beyond.disconnect.invalid_space_travel": "Invalid Space Travel",
   "screen.beyond.space_travel": "Space Travel"
 }

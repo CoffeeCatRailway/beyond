@@ -2,6 +2,7 @@ package io.github.ocelot.beyond.common.space.planet;
 
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
+import io.github.ocelot.beyond.Beyond;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.text.ITextComponent;
 import org.apache.commons.lang3.Validate;
@@ -16,6 +17,7 @@ import java.util.Optional;
  */
 public class Planet
 {
+    public static final ResourceLocation EARTH = new ResourceLocation(Beyond.MOD_ID, "earth");
     public static final Codec<Planet> CODEC = RecordCodecBuilder.create(instance -> instance.group(
             ResourceLocation.CODEC.optionalFieldOf("parent").forGetter(Planet::getParent),
             ResourceLocation.CODEC.fieldOf("texture").forGetter(Planet::getTexture),
