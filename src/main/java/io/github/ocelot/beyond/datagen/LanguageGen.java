@@ -19,7 +19,7 @@ public class LanguageGen extends LanguageProvider
     @Override
     protected void addTranslations()
     {
-        this.addBiome(BeyondBiomes.MOON_LOCATION.getRegistryName(), "Moon");
+        this.addBiome(BeyondBiomes.MOON_LOCATION.location(), "Moon");
         this.addBlock(BeyondBlocks.MOON_ROCK, "Moon Rock");
         this.add("multiplayer." + Beyond.MOD_ID + ".disconnect.invalid_space_travel", "Invalid Space Travel");
         this.add("screen." + Beyond.MOD_ID + ".space_travel", "Space Travel");
