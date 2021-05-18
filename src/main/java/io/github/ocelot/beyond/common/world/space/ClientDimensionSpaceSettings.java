@@ -2,7 +2,7 @@ package io.github.ocelot.beyond.common.world.space;
 
 import io.github.ocelot.beyond.common.network.common.message.SSyncDimensionSettingsMessage;
 import it.unimi.dsi.fastutil.objects.Object2ObjectArrayMap;
-import net.minecraft.util.ResourceLocation;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraftforge.client.event.ClientPlayerNetworkEvent;
 import net.minecraftforge.common.MinecraftForge;
 import org.apache.logging.log4j.LogManager;

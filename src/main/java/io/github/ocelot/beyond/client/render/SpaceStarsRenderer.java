@@ -1,11 +1,7 @@
 package io.github.ocelot.beyond.client.render;
 
-import com.mojang.blaze3d.matrix.MatrixStack;
 import com.mojang.blaze3d.systems.RenderSystem;
-import net.minecraft.client.renderer.BufferBuilder;
-import net.minecraft.client.renderer.Tessellator;
-import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
-import net.minecraft.client.renderer.vertex.VertexBuffer;
+import com.mojang.blaze3d.vertex.*;
 import org.lwjgl.system.NativeResource;
 
 import java.util.Random;
@@ -21,14 +17,14 @@ public class SpaceStarsRenderer implements NativeResource
 
     private void generateSky()
     {
-        Tessellator tessellator = Tessellator.getInstance();
+        Tesselator tessellator = Tesselator.getInstance();
         BufferBuilder bufferbuilder = tessellator.getBuilder();
         if (this.starsVBO != null)
             this.starsVBO.close();
 
-        this.starsVBO = new VertexBuffer(DefaultVertexFormats.POSITION_COLOR);
+        this.starsVBO = new VertexBuffer(DefaultVertexFormat.POSITION_COLOR);
         Random random = new Random(10842L);
-        bufferbuilder.begin(7, DefaultVertexFormats.POSITION_COLOR);
+        bufferbuilder.begin(7, DefaultVertexFormat.POSITION_COLOR);
 
         for (int i = 0; i < 3000; ++i)
         {
@@ -80,16 +76,16 @@ public class SpaceStarsRenderer implements NativeResource
      *
      * @param poseStack The pose stack to get the transformation from
      */
-    public void render(MatrixStack poseStack)
+    public void render(PoseStack poseStack)
     {
         RenderSystem.disableTexture();
         if (this.starsVBO == null)
             this.generateSky();
         this.starsVBO.bind();
-        DefaultVertexFormats.POSITION_COLOR.setupBufferState(0L);
+        DefaultVertexFormat.POSITION_COLOR.setupBufferState(0L);
         this.starsVBO.draw(poseStack.last().pose(), 7);
         VertexBuffer.unbind();
-        DefaultVertexFormats.POSITION_COLOR.clearBufferState();
+        DefaultVertexFormat.POSITION_COLOR.clearBufferState();
         RenderSystem.enableTexture();
     }
 

@@ -1,7 +1,7 @@
 package io.github.ocelot.beyond.common.network.login.message;
 
 import io.github.ocelot.sonar.common.network.message.SimpleSonarLoginMessage;
-import net.minecraft.network.PacketBuffer;
+import net.minecraft.network.FriendlyByteBuf;
 import net.minecraftforge.fml.network.NetworkEvent;
 
 /**
@@ -10,12 +10,12 @@ import net.minecraftforge.fml.network.NetworkEvent;
 public class CAcknowledgeServerMessage extends SimpleSonarLoginMessage<Object>
 {
     @Override
-    public void readPacketData(PacketBuffer buf)
+    public void readPacketData(FriendlyByteBuf buf)
     {
     }
 
     @Override
-    public void writePacketData(PacketBuffer buf)
+    public void writePacketData(FriendlyByteBuf buf)
     {
     }
 

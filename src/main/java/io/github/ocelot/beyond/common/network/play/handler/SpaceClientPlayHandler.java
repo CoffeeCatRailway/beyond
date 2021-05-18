@@ -8,7 +8,7 @@ import io.github.ocelot.beyond.common.network.play.message.SPlayerTravelMessage;
 import io.github.ocelot.beyond.common.network.play.message.SUpdateSimulationBodiesMessage;
 import io.github.ocelot.beyond.common.world.space.ClientDimensionSpaceSettings;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.entity.player.ClientPlayerEntity;
+import net.minecraft.client.player.LocalPlayer;
 import net.minecraftforge.fml.network.NetworkEvent;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -27,7 +27,7 @@ public class SpaceClientPlayHandler implements ISpaceClientPlayHandler
     @Override
     public void handleOpenSpaceTravelScreenMessage(SOpenSpaceTravelScreenMessage msg, NetworkEvent.Context ctx)
     {
-        ClientPlayerEntity player = Minecraft.getInstance().player;
+        LocalPlayer player = Minecraft.getInstance().player;
         if (player == null || player.level == null)
             return;
 
@@ -44,7 +44,7 @@ public class SpaceClientPlayHandler implements ISpaceClientPlayHandler
     @Override
     public void handlePlanetTravelResponseMessage(SPlanetTravelResponseMessage msg, NetworkEvent.Context ctx)
     {
-        ClientPlayerEntity player = Minecraft.getInstance().player;
+        LocalPlayer player = Minecraft.getInstance().player;
         if (player == null)
             return;
 

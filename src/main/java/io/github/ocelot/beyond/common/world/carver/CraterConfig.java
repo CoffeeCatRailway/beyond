@@ -3,15 +3,15 @@ package io.github.ocelot.beyond.common.world.carver;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import io.github.ocelot.beyond.common.util.WeightedRange;
-import net.minecraft.block.BlockState;
-import net.minecraft.world.gen.feature.ProbabilityConfig;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.levelgen.feature.configurations.ProbabilityFeatureConfiguration;
 
 /**
  * <p>Config for {@link CraterCarver}.</p>
  *
  * @author Ocelot
  */
-public class CraterConfig extends ProbabilityConfig
+public class CraterConfig extends ProbabilityFeatureConfiguration
 {
     public static final Codec<CraterConfig> CODEC = RecordCodecBuilder.create(instance -> instance.group(
             BlockState.CODEC.fieldOf("surfaceBlock").forGetter(CraterConfig::getSurfaceBlock),

@@ -1,7 +1,7 @@
 package io.github.ocelot.beyond.common.init;
 
 import io.github.ocelot.beyond.Beyond;
-import net.minecraft.world.gen.feature.Feature;
+import net.minecraft.world.level.levelgen.feature.Feature;
 import net.minecraftforge.registries.DeferredRegister;
 import net.minecraftforge.registries.ForgeRegistries;
 

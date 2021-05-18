@@ -4,15 +4,14 @@ import com.google.common.collect.ImmutableList;
 import com.mojang.datafixers.util.Pair;
 import io.github.ocelot.beyond.Beyond;
 import io.github.ocelot.beyond.common.init.BeyondBlocks;
-import net.minecraft.block.Block;
 import net.minecraft.data.DataGenerator;
 import net.minecraft.data.loot.*;
-import net.minecraft.entity.EntityType;
-import net.minecraft.loot.LootParameterSet;
-import net.minecraft.loot.LootParameterSets;
-import net.minecraft.loot.LootTable;
-import net.minecraft.loot.PiglinBarteringAddition;
-import net.minecraft.util.ResourceLocation;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.storage.loot.LootTable;
+import net.minecraft.world.level.storage.loot.parameters.LootContextParamSet;
+import net.minecraft.world.level.storage.loot.parameters.LootContextParamSets;
 import net.minecraftforge.common.data.ForgeLootTableProvider;
 import net.minecraftforge.registries.ForgeRegistries;
 
@@ -24,7 +23,7 @@ import java.util.stream.Collectors;
 
 public class LootTableGen extends ForgeLootTableProvider
 {
-    private final List<Pair<Supplier<Consumer<BiConsumer<ResourceLocation, LootTable.Builder>>>, LootParameterSet>> tables = ImmutableList.of(Pair.of(FishingProvider::new, LootParameterSets.FISHING), Pair.of(ChestProvider::new, LootParameterSets.CHEST), Pair.of(EntityProvider::new, LootParameterSets.ENTITY), Pair.of(BlockProvider::new, LootParameterSets.BLOCK), Pair.of(PiglinBarteringProvider::new, LootParameterSets.PIGLIN_BARTER), Pair.of(GiftProvider::new, LootParameterSets.GIFT));
+    private final List<Pair<Supplier<Consumer<BiConsumer<ResourceLocation, LootTable.Builder>>>, LootContextParamSet>> tables = ImmutableList.of(Pair.of(FishingProvider::new, LootContextParamSets.FISHING), Pair.of(ChestProvider::new, LootContextParamSets.CHEST), Pair.of(EntityProvider::new, LootContextParamSets.ENTITY), Pair.of(BlockProvider::new, LootContextParamSets.BLOCK), Pair.of(PiglinBarteringProvider::new, LootContextParamSets.PIGLIN_BARTER), Pair.of(GiftProvider::new, LootContextParamSets.GIFT));
 
     public LootTableGen(DataGenerator generator)
     {
@@ -32,12 +31,12 @@ public class LootTableGen extends ForgeLootTableProvider
     }
 
     @Override
-    protected List<Pair<Supplier<Consumer<BiConsumer<ResourceLocation, LootTable.Builder>>>, LootParameterSet>> getTables()
+    protected List<Pair<Supplier<Consumer<BiConsumer<ResourceLocation, LootTable.Builder>>>, LootContextParamSet>> getTables()
     {
         return tables;
     }
 
-    private static class FishingProvider extends FishingLootTables
+    private static class FishingProvider extends FishingLoot
     {
         @Override
         public void accept(BiConsumer<ResourceLocation, LootTable.Builder> registry)
@@ -45,7 +44,7 @@ public class LootTableGen extends ForgeLootTableProvider
         }
     }
 
-    private static class ChestProvider extends ChestLootTables
+    private static class ChestProvider extends ChestLoot
     {
         @Override
         public void accept(BiConsumer<ResourceLocation, LootTable.Builder> registry)
@@ -53,7 +52,7 @@ public class LootTableGen extends ForgeLootTableProvider
         }
     }
 
-    private static class EntityProvider extends EntityLootTables
+    private static class EntityProvider extends EntityLoot
     {
         @Override
         protected void addTables()
@@ -67,7 +66,7 @@ public class LootTableGen extends ForgeLootTableProvider
         }
     }
 
-    private static class BlockProvider extends BlockLootTables
+    private static class BlockProvider extends BlockLoot
     {
         @Override
         protected void addTables()
@@ -82,7 +81,7 @@ public class LootTableGen extends ForgeLootTableProvider
         }
     }
 
-    private static class PiglinBarteringProvider extends PiglinBarteringAddition
+    private static class PiglinBarteringProvider extends PiglinBarterLoot
     {
         @Override
         public void accept(BiConsumer<ResourceLocation, LootTable.Builder> registry)
@@ -90,7 +89,7 @@ public class LootTableGen extends ForgeLootTableProvider
         }
     }
 
-    private static class GiftProvider extends GiftLootTables
+    private static class GiftProvider extends GiftLoot
     {
         @Override
         public void accept(BiConsumer<ResourceLocation, LootTable.Builder> registry)

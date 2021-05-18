@@ -1,5 +1,6 @@
 package io.github.ocelot.beyond.common.network.play.handler;
 
+import com.mojang.math.Vector3d;
 import io.github.ocelot.beyond.Beyond;
 import io.github.ocelot.beyond.common.init.BeyondMessages;
 import io.github.ocelot.beyond.common.network.play.message.CPlanetTravelMessage;
@@ -10,15 +11,15 @@ import io.github.ocelot.beyond.common.space.SpaceManager;
 import io.github.ocelot.beyond.common.space.planet.Planet;
 import io.github.ocelot.beyond.common.space.simulation.PlayerRocketBody;
 import io.github.ocelot.beyond.common.space.simulation.SimulatedBody;
-import net.minecraft.block.PortalInfo;
-import net.minecraft.entity.Entity;
-import net.minecraft.entity.player.ServerPlayerEntity;
-import net.minecraft.util.RegistryKey;
-import net.minecraft.util.ResourceLocation;
-import net.minecraft.util.math.vector.Vector3d;
-import net.minecraft.util.registry.Registry;
-import net.minecraft.util.text.TranslationTextComponent;
-import net.minecraft.world.server.ServerWorld;
+import net.minecraft.core.Registry;
+import net.minecraft.network.chat.TranslatableComponent;
+import net.minecraft.resources.ResourceKey;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.level.portal.PortalInfo;
+import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.common.util.ITeleporter;
 import net.minecraftforge.fml.network.NetworkEvent;
 import org.apache.logging.log4j.LogManager;
@@ -36,7 +37,7 @@ public class SpaceServerPlayHandler implements ISpaceServerPlayHandler
     @Override
     public void handlePlanetTravelMessage(CPlanetTravelMessage msg, NetworkEvent.Context ctx)
     {
-        ServerPlayerEntity player = ctx.getSender();
+        ServerPlayer player = ctx.getSender();
         if (player == null)
             return;
 
@@ -47,7 +48,7 @@ public class SpaceServerPlayHandler implements ISpaceServerPlayHandler
             if (spaceManager == null)
             {
                 LOGGER.error("No Overworld for the space manager exists.");
-                player.connection.disconnect(new TranslationTextComponent("multiplayer." + Beyond.MOD_ID + ".disconnect.invalid_space_travel"));
+                player.connection.disconnect(new TranslatableComponent("multiplayer." + Beyond.MOD_ID + ".disconnect.invalid_space_travel"));
                 return;
             }
 
@@ -65,26 +66,26 @@ public class SpaceServerPlayHandler implements ISpaceServerPlayHandler
             {
                 if (msg.isArrive())
                 {
-                    ServerWorld level = player.server.getLevel(RegistryKey.create(Registry.DIMENSION_REGISTRY, destinationBody.getDimension().get()));
+                    ServerLevel level = player.server.getLevel(ResourceKey.create(Registry.DIMENSION_REGISTRY, destinationBody.getDimension().get()));
                     if (level != null)
                     {
                         player.changeDimension(level, new ITeleporter()
                         {
                             @Override
-                            public boolean playTeleportSound(ServerPlayerEntity player, ServerWorld sourceWorld, ServerWorld destWorld)
+                            public boolean playTeleportSound(ServerPlayer player, ServerLevel sourceWorld, ServerLevel destWorld)
                             {
                                 return false;
                             }
 
                             @Override
-                            public PortalInfo getPortalInfo(Entity entity, ServerWorld destWorld, Function<ServerWorld, PortalInfo> defaultPortalInfo)
+                            public PortalInfo getPortalInfo(Entity entity, ServerLevel destWorld, Function<ServerLevel, PortalInfo> defaultPortalInfo)
                             {
                                 // TODO drop at probe location
-                                return new PortalInfo(new Vector3d(entity.position().x(), destWorld.getMaxBuildHeight(), entity.position().z()), Vector3d.ZERO, entity.yRot, entity.xRot);
+                                return new PortalInfo(new Vec3(entity.position().x(), destWorld.getMaxBuildHeight(), entity.position().z()), Vec3.ZERO, entity.yRot, entity.xRot);
                             }
 
                             @Override
-                            public Entity placeEntity(Entity entity, ServerWorld currentWorld, ServerWorld destWorld, float yaw, Function<Boolean, Entity> repositionEntity)
+                            public Entity placeEntity(Entity entity, ServerLevel currentWorld, ServerLevel destWorld, float yaw, Function<Boolean, Entity> repositionEntity)
                             {
                                 return repositionEntity.apply(false);
                             }
@@ -108,7 +109,7 @@ public class SpaceServerPlayHandler implements ISpaceServerPlayHandler
     @Override
     public void handleTemporaryOpenSpaceTravel(CTemporaryOpenSpaceTravelMessage msg, NetworkEvent.Context ctx)
     {
-        ServerPlayerEntity player = ctx.getSender();
+        ServerPlayer player = ctx.getSender();
         if (player == null)
             return;
 

@@ -2,9 +2,9 @@ package io.github.ocelot.beyond.mixin.client;
 
 import io.github.ocelot.beyond.client.screen.SpaceTravelScreen;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.screen.Screen;
-import net.minecraft.client.network.play.ClientPlayNetHandler;
-import net.minecraft.network.play.server.SPlayerPositionLookPacket;
+import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.client.multiplayer.ClientPacketListener;
+import net.minecraft.network.protocol.game.ClientboundPlayerPositionPacket;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.Unique;
@@ -13,7 +13,7 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.Redirect;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
-@Mixin(ClientPlayNetHandler.class)
+@Mixin(ClientPacketListener.class)
 public class ClientPlayNetHandlerMixin
 {
     @Shadow
@@ -23,7 +23,7 @@ public class ClientPlayNetHandlerMixin
     private boolean zooming;
 
     @Inject(method = "handleMovePlayer", at = @At("TAIL"))
-    public void handleMovePlayer(SPlayerPositionLookPacket packet, CallbackInfo ci)
+    public void handleMovePlayer(ClientboundPlayerPositionPacket packet, CallbackInfo ci)
     {
         if (this.zooming)
         {
@@ -33,7 +33,7 @@ public class ClientPlayNetHandlerMixin
         }
     }
 
-    @Redirect(method = "handleRespawn", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/Minecraft;setScreen(Lnet/minecraft/client/gui/screen/Screen;)V", ordinal = 0))
+    @Redirect(method = "handleRespawn", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/Minecraft;setScreen(Lnet/minecraft/client/gui/screens/Screen;)V", ordinal = 0))
     public void updateScreenAndTick(Minecraft minecraft, Screen screen)
     {
         if (!(minecraft.screen instanceof SpaceTravelScreen))

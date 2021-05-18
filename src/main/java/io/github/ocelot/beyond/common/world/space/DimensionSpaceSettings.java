@@ -2,7 +2,7 @@ package io.github.ocelot.beyond.common.world.space;
 
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
-import net.minecraft.entity.LivingEntity;
+import net.minecraft.world.entity.LivingEntity;
 
 /**
  * <p>Additional parameters for space dimensions. All dimensions without custom properties will be defined by {@link #DEFAULT}.</p>

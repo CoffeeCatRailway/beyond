@@ -2,7 +2,7 @@ package io.github.ocelot.beyond.datagen;
 
 import io.github.ocelot.beyond.Beyond;
 import net.minecraft.data.DataGenerator;
-import net.minecraft.data.FluidTagsProvider;
+import net.minecraft.data.tags.FluidTagsProvider;
 import net.minecraftforge.common.data.ExistingFileHelper;
 
 public class FluidTagGen extends FluidTagsProvider

@@ -4,14 +4,14 @@ import com.google.common.collect.ImmutableSet;
 import com.mojang.serialization.Codec;
 import io.github.ocelot.beyond.common.MagicMath;
 import io.github.ocelot.beyond.common.init.BeyondBlocks;
-import net.minecraft.block.BlockState;
-import net.minecraft.block.Blocks;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.MathHelper;
-import net.minecraft.world.biome.Biome;
-import net.minecraft.world.chunk.IChunk;
-import net.minecraft.world.gen.Heightmap;
-import net.minecraft.world.gen.carver.WorldCarver;
+import net.minecraft.core.BlockPos;
+import net.minecraft.util.Mth;
+import net.minecraft.world.level.biome.Biome;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.chunk.ChunkAccess;
+import net.minecraft.world.level.levelgen.Heightmap;
+import net.minecraft.world.level.levelgen.carver.WorldCarver;
 
 import java.util.BitSet;
 import java.util.Random;
@@ -32,7 +32,7 @@ public class CraterCarver extends WorldCarver<CraterConfig>
     }
 
     @Override
-    public boolean carve(IChunk chunk, Function<BlockPos, Biome> posToBiome, Random random, int seaLevel, int chunkX, int chunkZ, int mainChunkX, int mainChunkZ, BitSet carvingMask, CraterConfig config)
+    public boolean carve(ChunkAccess chunk, Function<BlockPos, Biome> posToBiome, Random random, int seaLevel, int chunkX, int chunkZ, int mainChunkX, int mainChunkZ, BitSet carvingMask, CraterConfig config)
     {
         float radius = config.getRadius().getRandomValue(random);
         float rimWidth = config.getRimWidth().getRandomValue(random);
@@ -41,7 +41,7 @@ public class CraterCarver extends WorldCarver<CraterConfig>
         float smoothness = config.getSmoothness();
 
         BlockPos centerPos = new BlockPos(mainChunkX * 16 + random.nextInt(16), 0, mainChunkZ * 16 + random.nextInt(16)); // TODO make this randomized in the chunk
-        BlockPos.Mutable pos = new BlockPos.Mutable();
+        BlockPos.MutableBlockPos pos = new BlockPos.MutableBlockPos();
 
         for (int xp = 0; xp < 16; xp++)
         {
@@ -51,7 +51,7 @@ public class CraterCarver extends WorldCarver<CraterConfig>
 
                 float xd = (chunkX * 16 + 15 - xp) - centerPos.getX();
                 float zd = (chunkZ * 16 + 15 - zp) - centerPos.getZ();
-                float x = MathHelper.sqrt(xd * xd + zd * zd) / radius;
+                float x = Mth.sqrt(xd * xd + zd * zd) / radius;
 
                 float cavity = x * x - 1;
                 float rimX = Math.min(x - 1 - rimWidth, 0);
@@ -60,12 +60,12 @@ public class CraterCarver extends WorldCarver<CraterConfig>
                 float craterShape = MagicMath.smoothMin(cavity, floorHeight, -smoothness);
                 craterShape = MagicMath.smoothMin(craterShape, rim, smoothness);
                 float y = craterShape * radius;
-                int blockY = chunk.getHeight(Heightmap.Type.WORLD_SURFACE_WG, xp, zp) + 1;
+                int blockY = chunk.getHeight(Heightmap.Types.WORLD_SURFACE_WG, xp, zp) + 1;
 
                 if ((int) y == 0 && x > rimWidth)
                     continue;
 
-                int startY = MathHelper.floor(blockY + y);
+                int startY = Mth.floor(blockY + y);
                 if (startY < blockY)
                 {
                     for (int i = startY; i <= blockY + 4; i++)

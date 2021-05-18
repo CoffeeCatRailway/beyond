@@ -8,7 +8,7 @@ import io.github.ocelot.sonar.Sonar;
 import io.github.ocelot.sonar.SonarModule;
 import io.github.ocelot.sonar.common.util.SortedItemGroup;
 import net.minecraft.data.DataGenerator;
-import net.minecraft.item.ItemStack;
+import net.minecraft.world.item.ItemStack;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.common.data.ExistingFileHelper;

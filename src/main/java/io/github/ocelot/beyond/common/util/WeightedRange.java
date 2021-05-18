@@ -3,7 +3,7 @@ package io.github.ocelot.beyond.common.util;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import io.github.ocelot.beyond.common.MagicMath;
-import net.minecraft.util.math.MathHelper;
+import net.minecraft.util.Mth;
 import org.apache.commons.lang3.Validate;
 
 import java.util.Random;
@@ -61,8 +61,8 @@ public class WeightedRange
         if ((this.flags & CONSTANT_FLAG) != 0)
             return this.min;
         if ((this.flags & LINEAR_FLAG) != 0)
-            return MathHelper.lerp(input, this.min, this.max);
-        return MathHelper.lerp(MagicMath.bias(input, this.bias), this.min, this.max);
+            return Mth.lerp(input, this.min, this.max);
+        return Mth.lerp(MagicMath.bias(input, this.bias), this.min, this.max);
     }
 
     /**

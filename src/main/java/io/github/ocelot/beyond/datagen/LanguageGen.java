@@ -4,10 +4,8 @@ import io.github.ocelot.beyond.Beyond;
 import io.github.ocelot.beyond.common.init.BeyondBiomes;
 import io.github.ocelot.beyond.common.init.BeyondBlocks;
 import net.minecraft.data.DataGenerator;
-import net.minecraft.util.ResourceLocation;
-import net.minecraft.world.biome.Biome;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraftforge.common.data.LanguageProvider;
-import net.minecraftforge.fml.RegistryObject;
 
 public class LanguageGen extends LanguageProvider
 {

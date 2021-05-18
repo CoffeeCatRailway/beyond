@@ -3,23 +3,23 @@ loaderVersion = "[36,)"
 license = "MIT"
 issueTrackerURL = "https://github.com/Ocelot5836/beyond/issues"
 [[mods]]
-modId = "${modId}"
-version = "${modVersion}"
-displayName = "${modName}"
+modId = "beyond"
+version = "${version}"
+displayName = "Beyond"
 #updateJSONURL="https://change.me.example.invalid/updates.json"
 #displayURL="https://change.me.to.your.mods.homepage.example.invalid/"
 #logoFile = "examplemod.png"
 #credits = ""
 authors = "Ocelot"
 description = "Pretty cool space exploration mod broh."
-[[dependencies.${modId}]]
+[[dependencies.beyond]]
 modId = "forge"
 mandatory = true
 versionRange = "[36,)"
 ordering = "NONE"
 side = "BOTH"
 
-[[dependencies.${modId}]]
+[[dependencies.beyond]]
 modId = "minecraft"
 mandatory = true
 versionRange = "[1.16.5,1.17)"

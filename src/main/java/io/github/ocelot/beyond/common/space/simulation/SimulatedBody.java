@@ -1,13 +1,14 @@
 package io.github.ocelot.beyond.common.space.simulation;
 
-import com.mojang.blaze3d.matrix.MatrixStack;
+import com.mojang.blaze3d.vertex.PoseStack;
+import com.mojang.math.Matrix4f;
+import com.mojang.math.Vector3f;
 import io.github.ocelot.beyond.common.MagicMath;
-import net.minecraft.util.ResourceLocation;
-import net.minecraft.util.math.AxisAlignedBB;
-import net.minecraft.util.math.vector.Matrix4f;
-import net.minecraft.util.math.vector.Vector3d;
-import net.minecraft.util.math.vector.Vector3f;
-import net.minecraft.util.text.ITextComponent;
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.TextComponent;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.phys.AABB;
+import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 
@@ -38,7 +39,7 @@ public interface SimulatedBody
     /**
      * @return The name of this body in the simulation
      */
-    ITextComponent getDisplayName();
+    Component getDisplayName();
 
     /**
      * Casts a ray through this body to check for an intersection.
@@ -49,7 +50,7 @@ public interface SimulatedBody
      * @return The optional result of the ray trace
      */
     @OnlyIn(Dist.CLIENT)
-    default Optional<Vector3d> clip(Vector3d start, Vector3d end, float partialTicks)
+    default Optional<Vec3> clip(Vec3 start, Vec3 end, float partialTicks)
     {
         float size = Math.max(this.getSize(), 1.0F) / 2F;
         float x = this.getX(partialTicks);
@@ -58,9 +59,9 @@ public interface SimulatedBody
         float rotationX = this.getRotationX(partialTicks);
         float rotationY = this.getRotationY(partialTicks);
         float rotationZ = this.getRotationZ(partialTicks);
-        AxisAlignedBB box = new AxisAlignedBB(x - size, y - size, z - size, x + size, y + size, z + size);
+        AABB box = new AABB(x - size, y - size, z - size, x + size, y + size, z + size);
 
-        MatrixStack stack = new MatrixStack();
+        PoseStack stack = new PoseStack();
         stack.translate(x, y, z);
         stack.mulPose(Vector3f.XN.rotation(rotationX));
         stack.mulPose(Vector3f.YN.rotation(rotationY));

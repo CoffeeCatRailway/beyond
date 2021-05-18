@@ -3,8 +3,8 @@ package io.github.ocelot.beyond.datagen;
 import io.github.ocelot.beyond.Beyond;
 import io.github.ocelot.beyond.common.init.BeyondBlocks;
 import io.github.ocelot.beyond.common.init.BeyondTags;
-import net.minecraft.data.BlockTagsProvider;
 import net.minecraft.data.DataGenerator;
+import net.minecraft.data.tags.BlockTagsProvider;
 import net.minecraft.tags.BlockTags;
 import net.minecraftforge.common.data.ExistingFileHelper;
 

@@ -1,11 +1,11 @@
 package io.github.ocelot.beyond.common.space.simulation;
 
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.renderer.model.IBakedModel;
-import net.minecraft.client.renderer.model.ModelManager;
-import net.minecraft.util.ResourceLocation;
-import net.minecraft.util.text.ITextComponent;
-import net.minecraft.util.text.StringTextComponent;
+import net.minecraft.client.resources.model.BakedModel;
+import net.minecraft.client.resources.model.ModelManager;
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.TextComponent;
+import net.minecraft.resources.ResourceLocation;
 
 import javax.annotation.Nullable;
 import java.util.Optional;
@@ -19,7 +19,7 @@ public class ArtificialSatellite extends AbstractSimulatedBody implements ModelS
 {
     private ResourceLocation model;
     private ResourceLocation parent;
-    private ITextComponent displayName;
+    private Component displayName;
     private float size;
 
     public ArtificialSatellite(CelestialBodySimulation simulation, ResourceLocation id)
@@ -27,12 +27,12 @@ public class ArtificialSatellite extends AbstractSimulatedBody implements ModelS
         super(simulation, id);
         this.model = null;
         this.parent = null;
-        this.displayName = new StringTextComponent(id.toString());
+        this.displayName = new TextComponent(id.toString());
         this.size = 1.0F;
     }
 
     @Override
-    public IBakedModel getModel()
+    public BakedModel getModel()
     {
         ModelManager modelManager = Minecraft.getInstance().getModelManager();
         if (this.model == null)
@@ -47,7 +47,7 @@ public class ArtificialSatellite extends AbstractSimulatedBody implements ModelS
     }
 
     @Override
-    public ITextComponent getDisplayName()
+    public Component getDisplayName()
     {
         return displayName;
     }
@@ -101,7 +101,7 @@ public class ArtificialSatellite extends AbstractSimulatedBody implements ModelS
      *
      * @param displayName The new display name
      */
-    public void setDisplayName(ITextComponent displayName)
+    public void setDisplayName(Component displayName)
     {
         this.displayName = displayName;
     }

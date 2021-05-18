@@ -2,8 +2,8 @@ package io.github.ocelot.beyond.common.network.play.message;
 
 import io.github.ocelot.beyond.common.network.play.handler.ISpaceServerPlayHandler;
 import io.github.ocelot.sonar.common.network.message.SonarMessage;
-import net.minecraft.network.PacketBuffer;
-import net.minecraft.util.ResourceLocation;
+import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraftforge.fml.network.NetworkEvent;
 
 import javax.annotation.Nullable;
@@ -27,7 +27,7 @@ public class CPlanetTravelMessage implements SonarMessage<ISpaceServerPlayHandle
     }
 
     @Override
-    public void readPacketData(PacketBuffer buf)
+    public void readPacketData(FriendlyByteBuf buf)
     {
         if (buf.readBoolean())
         {
@@ -37,7 +37,7 @@ public class CPlanetTravelMessage implements SonarMessage<ISpaceServerPlayHandle
     }
 
     @Override
-    public void writePacketData(PacketBuffer buf)
+    public void writePacketData(FriendlyByteBuf buf)
     {
         buf.writeBoolean(this.bodyId != null);
         if (this.bodyId != null)

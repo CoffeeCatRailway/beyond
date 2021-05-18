@@ -1,10 +1,9 @@
 package io.github.ocelot.beyond.common.network.play.message;
 
 import io.github.ocelot.beyond.common.network.play.handler.ISpaceClientPlayHandler;
-import io.github.ocelot.beyond.common.space.PlayerRocket;
 import io.github.ocelot.sonar.common.network.message.SonarMessage;
-import net.minecraft.network.PacketBuffer;
-import net.minecraft.util.ResourceLocation;
+import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.fml.network.NetworkEvent;
@@ -30,14 +29,14 @@ public class SPlayerTravelMessage implements SonarMessage<ISpaceClientPlayHandle
     }
 
     @Override
-    public void readPacketData(PacketBuffer buf)
+    public void readPacketData(FriendlyByteBuf buf)
     {
         this.player = buf.readUUID();
         this.body = buf.readResourceLocation();
     }
 
     @Override
-    public void writePacketData(PacketBuffer buf)
+    public void writePacketData(FriendlyByteBuf buf)
     {
         buf.writeUUID(this.player);
         buf.writeResourceLocation(this.body);

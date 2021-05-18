@@ -10,14 +10,14 @@ import io.github.ocelot.beyond.common.space.planet.StaticSolarSystemDefinitions;
 import io.github.ocelot.beyond.common.space.simulation.CelestialBodySimulation;
 import io.github.ocelot.beyond.common.space.simulation.PlayerRocketBody;
 import io.github.ocelot.beyond.common.space.simulation.SimulatedBody;
-import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.entity.player.ServerPlayerEntity;
-import net.minecraft.nbt.CompoundNBT;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.MinecraftServer;
-import net.minecraft.util.ResourceLocation;
-import net.minecraft.world.World;
-import net.minecraft.world.server.ServerWorld;
-import net.minecraft.world.storage.WorldSavedData;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.level.saveddata.SavedData;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.event.entity.player.PlayerEvent;
@@ -34,7 +34,7 @@ import java.util.stream.Stream;
  *
  * @author Ocelot
  */
-public class SpaceManager extends WorldSavedData
+public class SpaceManager extends SavedData
 {
     private static final String DATA_NAME = Beyond.MOD_ID + "_SpaceManager";
 
@@ -71,7 +71,7 @@ public class SpaceManager extends WorldSavedData
             MinecraftServer server = ServerLifecycleHooks.getCurrentServer();
             if (server == null)
                 return;
-            ServerPlayerEntity player = server.getPlayerList().getPlayer(b.getRocket().getProfile().getId());
+            ServerPlayer player = server.getPlayerList().getPlayer(b.getRocket().getProfile().getId());
             if (player == null)
                 return;
             BeyondMessages.PLAY.send(PacketDistributor.PLAYER.with(() -> player), msg);
@@ -103,7 +103,7 @@ public class SpaceManager extends WorldSavedData
      * @param player The player to insert
      * @return A new packet to sync the player with the simulation
      */
-    public SOpenSpaceTravelScreenMessage insertPlayer(PlayerEntity player)
+    public SOpenSpaceTravelScreenMessage insertPlayer(Player player)
     {
         PlayerRocketBody body = this.simulation.getPlayer(player.getUUID());
         if (body != null)
@@ -132,14 +132,14 @@ public class SpaceManager extends WorldSavedData
      * @param sender The person sending the message or <code>null</code> to send the message to all players
      * @param msg    The message to relay
      */
-    public void relay(@Nullable ServerPlayerEntity sender, SPlayerTravelMessage msg)
+    public void relay(@Nullable ServerPlayer sender, SPlayerTravelMessage msg)
     {
         this.simulation.getPlayers().forEach(b ->
         {
             MinecraftServer server = ServerLifecycleHooks.getCurrentServer();
             if (server == null)
                 return;
-            ServerPlayerEntity player = server.getPlayerList().getPlayer(b.getRocket().getProfile().getId());
+            ServerPlayer player = server.getPlayerList().getPlayer(b.getRocket().getProfile().getId());
             if (player == null || (sender != null && player.getUUID().equals(sender.getUUID())))
                 return;
             BeyondMessages.PLAY.send(PacketDistributor.PLAYER.with(() -> player), msg);
@@ -155,12 +155,12 @@ public class SpaceManager extends WorldSavedData
     }
 
     @Override
-    public void load(CompoundNBT nbt)
+    public void load(CompoundTag nbt)
     {
     }
 
     @Override
-    public CompoundNBT save(CompoundNBT nbt)
+    public CompoundTag save(CompoundTag nbt)
     {
         return nbt;
     }
@@ -174,7 +174,7 @@ public class SpaceManager extends WorldSavedData
     @Nullable
     public static SpaceManager get(MinecraftServer server)
     {
-        ServerWorld world = server.getLevel(World.OVERWORLD);
+        ServerLevel world = server.getLevel(Level.OVERWORLD);
         return world != null ? world.getDataStorage().computeIfAbsent(SpaceManager::new, DATA_NAME) : null;
     }
 }

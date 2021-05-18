@@ -1,12 +1,12 @@
 package io.github.ocelot.beyond.client;
 
-import io.github.ocelot.sonar.client.util.SonarSpriteUploader;
 import io.github.ocelot.beyond.Beyond;
+import io.github.ocelot.sonar.client.util.SonarSpriteUploader;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
-import net.minecraft.resources.IReloadableResourceManager;
-import net.minecraft.resources.IResourceManager;
-import net.minecraft.util.ResourceLocation;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.packs.resources.ReloadableResourceManager;
+import net.minecraft.server.packs.resources.ResourceManager;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.client.event.ColorHandlerEvent;
@@ -27,7 +27,7 @@ public class SpaceGuiSpriteManager
     {
     }
 
-    private static void registerSprites(IResourceManager resourceManager, SonarSpriteUploader uploader)
+    private static void registerSprites(ResourceManager resourceManager, SonarSpriteUploader uploader)
     {
     }
 
@@ -37,11 +37,11 @@ public class SpaceGuiSpriteManager
         {
             Minecraft minecraft = Minecraft.getInstance();
             SonarSpriteUploader spriteUploader = new SonarSpriteUploader(minecraft.textureManager, ATLAS_LOCATION, "gui");
-            IResourceManager resourceManager = minecraft.getResourceManager();
+            ResourceManager resourceManager = minecraft.getResourceManager();
             registerSprites(resourceManager, spriteUploader);
-            if (resourceManager instanceof IReloadableResourceManager)
+            if (resourceManager instanceof ReloadableResourceManager)
             {
-                ((IReloadableResourceManager) resourceManager).registerReloadListener(spriteUploader);
+                ((ReloadableResourceManager) resourceManager).registerReloadListener(spriteUploader);
             }
             SpaceGuiSpriteManager.spriteUploader = spriteUploader;
         });

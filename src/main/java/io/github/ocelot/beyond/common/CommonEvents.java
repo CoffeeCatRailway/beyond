@@ -3,10 +3,10 @@ package io.github.ocelot.beyond.common;
 import io.github.ocelot.beyond.Beyond;
 import io.github.ocelot.beyond.common.world.space.DimensionSpaceSettings;
 import io.github.ocelot.beyond.common.world.space.DimensionSpaceSettingsManager;
-import net.minecraft.entity.LivingEntity;
-import net.minecraft.entity.ai.attributes.AttributeModifier;
-import net.minecraft.entity.ai.attributes.ModifiableAttributeInstance;
-import net.minecraft.world.World;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.ai.attributes.AttributeInstance;
+import net.minecraft.world.entity.ai.attributes.AttributeModifier;
+import net.minecraft.world.level.Level;
 import net.minecraftforge.common.ForgeMod;
 import net.minecraftforge.event.entity.living.LivingEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
@@ -24,9 +24,9 @@ public class CommonEvents
     public static void onEvent(LivingEvent.LivingUpdateEvent event)
     {
         LivingEntity entity = event.getEntityLiving();
-        World level = entity.level;
+        Level level = entity.level;
 
-        ModifiableAttributeInstance attribute = entity.getAttribute(ForgeMod.ENTITY_GRAVITY.get());
+        AttributeInstance attribute = entity.getAttribute(ForgeMod.ENTITY_GRAVITY.get());
         if (!entity.isNoGravity() && attribute != null)
         {
             DimensionSpaceSettings settings = DimensionSpaceSettingsManager.get(level.isClientSide() ? LogicalSide.CLIENT : LogicalSide.SERVER).getSettings(level.dimension().location());

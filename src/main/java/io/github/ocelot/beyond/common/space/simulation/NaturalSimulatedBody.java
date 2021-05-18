@@ -2,8 +2,8 @@ package io.github.ocelot.beyond.common.space.simulation;
 
 import io.github.ocelot.beyond.common.space.planet.Planet;
 import io.github.ocelot.beyond.common.space.planet.PlanetAtmosphere;
-import net.minecraft.util.ResourceLocation;
-import net.minecraft.util.text.ITextComponent;
+import net.minecraft.network.chat.Component;
+import net.minecraft.resources.ResourceLocation;
 
 import java.util.Optional;
 
@@ -65,7 +65,7 @@ public class NaturalSimulatedBody extends AbstractSimulatedBody
     }
 
     @Override
-    public ITextComponent getDisplayName()
+    public Component getDisplayName()
     {
         return this.body.getDisplayName();
     }

@@ -3,8 +3,8 @@ package io.github.ocelot.beyond.common.network.common.message;
 import io.github.ocelot.beyond.common.network.common.handler.ISpaceClientCommonHandler;
 import io.github.ocelot.beyond.common.world.space.DimensionSpaceSettings;
 import io.github.ocelot.sonar.common.network.message.SimpleSonarLoginMessage;
-import net.minecraft.network.PacketBuffer;
-import net.minecraft.util.ResourceLocation;
+import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.fml.network.NetworkEvent;
@@ -30,7 +30,7 @@ public class SSyncDimensionSettingsMessage extends SimpleSonarLoginMessage<ISpac
     }
 
     @Override
-    public void readPacketData(PacketBuffer buf)
+    public void readPacketData(FriendlyByteBuf buf)
     {
         try
         {
@@ -46,7 +46,7 @@ public class SSyncDimensionSettingsMessage extends SimpleSonarLoginMessage<ISpac
     }
 
     @Override
-    public void writePacketData(PacketBuffer buf)
+    public void writePacketData(FriendlyByteBuf buf)
     {
         buf.writeVarInt(this.settings.size());
         this.settings.forEach((dimensionId, settings) ->

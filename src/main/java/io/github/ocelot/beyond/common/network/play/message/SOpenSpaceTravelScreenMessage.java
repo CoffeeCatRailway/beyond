@@ -3,7 +3,7 @@ package io.github.ocelot.beyond.common.network.play.message;
 import io.github.ocelot.beyond.common.network.play.handler.ISpaceClientPlayHandler;
 import io.github.ocelot.beyond.common.space.PlayerRocket;
 import io.github.ocelot.sonar.common.network.message.SonarMessage;
-import net.minecraft.network.PacketBuffer;
+import net.minecraft.network.FriendlyByteBuf;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.fml.network.NetworkEvent;
@@ -25,7 +25,7 @@ public class SOpenSpaceTravelScreenMessage implements SonarMessage<ISpaceClientP
     }
 
     @Override
-    public void readPacketData(PacketBuffer buf)
+    public void readPacketData(FriendlyByteBuf buf)
     {
         this.players = new PlayerRocket[buf.readVarInt()];
         for (int i = 0; i < this.players.length; i++)
@@ -33,7 +33,7 @@ public class SOpenSpaceTravelScreenMessage implements SonarMessage<ISpaceClientP
     }
 
     @Override
-    public void writePacketData(PacketBuffer buf)
+    public void writePacketData(FriendlyByteBuf buf)
     {
         buf.writeVarInt(this.players.length);
         for (PlayerRocket rocket : this.players)

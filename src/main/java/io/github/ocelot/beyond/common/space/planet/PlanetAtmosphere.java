@@ -2,7 +2,7 @@ package io.github.ocelot.beyond.common.space.planet;
 
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
-import net.minecraft.util.ResourceLocation;
+import net.minecraft.resources.ResourceLocation;
 import org.apache.commons.lang3.Validate;
 
 /**

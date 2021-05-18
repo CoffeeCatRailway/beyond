@@ -2,8 +2,8 @@ package io.github.ocelot.beyond.common.network.play.message;
 
 import io.github.ocelot.sonar.common.network.message.SonarMessage;
 import io.github.ocelot.beyond.common.network.play.handler.ISpaceClientPlayHandler;
-import net.minecraft.network.PacketBuffer;
-import net.minecraft.util.ResourceLocation;
+import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraftforge.fml.network.NetworkEvent;
 
 import javax.annotation.Nullable;
@@ -33,14 +33,14 @@ public class SPlanetTravelResponseMessage implements SonarMessage<ISpaceClientPl
     }
 
     @Override
-    public void readPacketData(PacketBuffer buf)
+    public void readPacketData(FriendlyByteBuf buf)
     {
         this.status = buf.readEnum(Status.class);
         this.status.read(this, buf);
     }
 
     @Override
-    public void writePacketData(PacketBuffer buf)
+    public void writePacketData(FriendlyByteBuf buf)
     {
         buf.writeEnum(this.status);
         this.status.write(this, buf);
@@ -89,10 +89,10 @@ public class SPlanetTravelResponseMessage implements SonarMessage<ISpaceClientPl
             msg.body = buf.readResourceLocation();
         });
 
-        private final BiConsumer<SPlanetTravelResponseMessage, PacketBuffer> writer;
-        private final BiConsumer<SPlanetTravelResponseMessage, PacketBuffer> reader;
+        private final BiConsumer<SPlanetTravelResponseMessage, FriendlyByteBuf> writer;
+        private final BiConsumer<SPlanetTravelResponseMessage, FriendlyByteBuf> reader;
 
-        Status(BiConsumer<SPlanetTravelResponseMessage, PacketBuffer> writer, BiConsumer<SPlanetTravelResponseMessage, PacketBuffer> reader)
+        Status(BiConsumer<SPlanetTravelResponseMessage, FriendlyByteBuf> writer, BiConsumer<SPlanetTravelResponseMessage, FriendlyByteBuf> reader)
         {
             this.writer = writer;
             this.reader = reader;
@@ -104,7 +104,7 @@ public class SPlanetTravelResponseMessage implements SonarMessage<ISpaceClientPl
          * @param msg The message to write
          * @param buf The buffer to write into
          */
-        public void write(SPlanetTravelResponseMessage msg, PacketBuffer buf)
+        public void write(SPlanetTravelResponseMessage msg, FriendlyByteBuf buf)
         {
             this.writer.accept(msg, buf);
         }
@@ -115,7 +115,7 @@ public class SPlanetTravelResponseMessage implements SonarMessage<ISpaceClientPl
          * @param msg The message
          * @param buf The buffer to read from
          */
-        public void read(SPlanetTravelResponseMessage msg, PacketBuffer buf)
+        public void read(SPlanetTravelResponseMessage msg, FriendlyByteBuf buf)
         {
             this.reader.accept(msg, buf);
         }

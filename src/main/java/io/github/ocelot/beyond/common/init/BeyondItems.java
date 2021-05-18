@@ -1,7 +1,7 @@
 package io.github.ocelot.beyond.common.init;
 
 import io.github.ocelot.beyond.Beyond;
-import net.minecraft.item.Item;
+import net.minecraft.world.item.Item;
 import net.minecraftforge.fml.RegistryObject;
 import net.minecraftforge.registries.DeferredRegister;
 import net.minecraftforge.registries.ForgeRegistries;

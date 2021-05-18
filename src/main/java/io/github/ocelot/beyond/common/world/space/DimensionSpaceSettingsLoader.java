@@ -1,20 +1,20 @@
 package io.github.ocelot.beyond.common.world.space;
 
 import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
 import com.google.gson.JsonElement;
 import com.mojang.serialization.JsonOps;
 import io.github.ocelot.beyond.common.init.BeyondMessages;
 import io.github.ocelot.beyond.common.network.common.message.SSyncDimensionSettingsMessage;
 import it.unimi.dsi.fastutil.objects.Object2ObjectArrayMap;
-import net.minecraft.client.resources.JsonReloadListener;
-import net.minecraft.profiler.IProfiler;
-import net.minecraft.resources.IResourceManager;
-import net.minecraft.util.ResourceLocation;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.packs.resources.ResourceManager;
+import net.minecraft.server.packs.resources.SimpleJsonResourceReloadListener;
+import net.minecraft.util.profiling.ProfilerFiller;
 import net.minecraftforge.fml.network.PacketDistributor;
 import net.minecraftforge.fml.server.ServerLifecycleHooks;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.spongepowered.asm.util.perf.Profiler;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -24,7 +24,7 @@ import java.util.Map;
  *
  * @author Ocelot
  */
-public class DimensionSpaceSettingsLoader extends JsonReloadListener implements DimensionSpaceSettingsManager
+public class DimensionSpaceSettingsLoader extends SimpleJsonResourceReloadListener implements DimensionSpaceSettingsManager
 {
     public static final DimensionSpaceSettingsLoader INSTANCE = new DimensionSpaceSettingsLoader();
     private static final Logger LOGGER = LogManager.getLogger();
@@ -39,7 +39,7 @@ public class DimensionSpaceSettingsLoader extends JsonReloadListener implements 
     }
 
     @Override
-    protected void apply(Map<ResourceLocation, JsonElement> data, IResourceManager resourceManager, IProfiler profiler)
+    protected void apply(Map<ResourceLocation, JsonElement> data, ResourceManager resourceManager, ProfilerFiller profiler)
     {
         Map<ResourceLocation, DimensionSpaceSettings> settings = new HashMap<>();
         for (Map.Entry<ResourceLocation, JsonElement> entry : data.entrySet())

@@ -2,10 +2,10 @@ package io.github.ocelot.beyond.common.space.planet;
 
 import io.github.ocelot.beyond.Beyond;
 import io.github.ocelot.beyond.common.init.BeyondDimensions;
-import net.minecraft.util.ResourceLocation;
-import net.minecraft.util.Util;
-import net.minecraft.util.text.StringTextComponent;
-import net.minecraft.world.DimensionType;
+import net.minecraft.Util;
+import net.minecraft.network.chat.TextComponent;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.level.dimension.DimensionType;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -117,7 +117,7 @@ public class StaticSolarSystemDefinitions
         ResourceLocation id = new ResourceLocation(Beyond.MOD_ID, name);
         Planet.Builder builder = Planet.builder();
         builder.setTexture(new ResourceLocation(Beyond.MOD_ID, texture));
-        builder.setDisplayName(new StringTextComponent(displayName));
+        builder.setDisplayName(new TextComponent(displayName));
         consumer.accept(builder);
         bodies.put(id, builder.build());
         return id;

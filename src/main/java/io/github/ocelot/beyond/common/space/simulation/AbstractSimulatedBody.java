@@ -1,8 +1,8 @@
 package io.github.ocelot.beyond.common.space.simulation;
 
-import net.minecraft.util.ResourceLocation;
-import net.minecraft.util.math.MathHelper;
-import net.minecraft.util.math.vector.Vector3f;
+import com.mojang.math.Vector3f;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.util.Mth;
 
 /**
  * <p>An abstract implementation of {@link SimulatedBody} that handles orbits and parenting.</p>
@@ -49,7 +49,7 @@ public abstract class AbstractSimulatedBody implements SimulatedBody
      */
     protected float getHorizontalDistance(float partialTicks)
     {
-        return this.distanceFromParent * MathHelper.cos(MathHelper.lerp(partialTicks, this.lastYaw, this.yaw));
+        return this.distanceFromParent * Mth.cos(Mth.lerp(partialTicks, this.lastYaw, this.yaw));
     }
 
     /**
@@ -60,7 +60,7 @@ public abstract class AbstractSimulatedBody implements SimulatedBody
      */
     protected float getVerticalDistance(float partialTicks)
     {
-        return this.distanceFromParent * MathHelper.sin(MathHelper.lerp(partialTicks, this.lastYaw, this.yaw));
+        return this.distanceFromParent * Mth.sin(Mth.lerp(partialTicks, this.lastYaw, this.yaw));
     }
 
     @Override
@@ -96,19 +96,19 @@ public abstract class AbstractSimulatedBody implements SimulatedBody
     @Override
     public float getRotationX(float partialTicks)
     {
-        return MathHelper.lerp(partialTicks, this.lastRotation.x(), this.rotation.x());
+        return Mth.lerp(partialTicks, this.lastRotation.x(), this.rotation.x());
     }
 
     @Override
     public float getRotationY(float partialTicks)
     {
-        return MathHelper.lerp(partialTicks, this.lastRotation.y(), this.rotation.y());
+        return Mth.lerp(partialTicks, this.lastRotation.y(), this.rotation.y());
     }
 
     @Override
     public float getRotationZ(float partialTicks)
     {
-        return MathHelper.lerp(partialTicks, this.lastRotation.z(), this.rotation.z());
+        return Mth.lerp(partialTicks, this.lastRotation.z(), this.rotation.z());
     }
 
     /**
@@ -119,7 +119,7 @@ public abstract class AbstractSimulatedBody implements SimulatedBody
     public void setDistanceFromParent(float distanceFromParent)
     {
         this.distanceFromParent = distanceFromParent;
-        this.distanceFromParentSqrt = MathHelper.sqrt(distanceFromParent);
+        this.distanceFromParentSqrt = Mth.sqrt(distanceFromParent);
     }
 
     @Override

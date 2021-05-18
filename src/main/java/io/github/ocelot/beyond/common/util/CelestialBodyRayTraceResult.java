@@ -1,7 +1,7 @@
 package io.github.ocelot.beyond.common.util;
 
 import io.github.ocelot.beyond.common.space.simulation.SimulatedBody;
-import net.minecraft.util.math.vector.Vector3d;
+import net.minecraft.world.phys.Vec3;
 
 /**
  * <p>Holds the result of a ray trace in a simulation.</p>
@@ -11,9 +11,9 @@ import net.minecraft.util.math.vector.Vector3d;
 public class CelestialBodyRayTraceResult
 {
     private final SimulatedBody body;
-    private final Vector3d pos;
+    private final Vec3 pos;
 
-    public CelestialBodyRayTraceResult(SimulatedBody body, Vector3d pos)
+    public CelestialBodyRayTraceResult(SimulatedBody body, Vec3 pos)
     {
         this.body = body;
         this.pos = pos;
@@ -30,7 +30,7 @@ public class CelestialBodyRayTraceResult
     /**
      * @return The specific position the hit was at
      */
-    public Vector3d getPos()
+    public Vec3 getPos()
     {
         return pos;
     }

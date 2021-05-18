@@ -1,10 +1,10 @@
 package io.github.ocelot.beyond.client.screen;
 
+import com.mojang.math.Vector3f;
 import io.github.ocelot.beyond.common.space.simulation.SimulatedBody;
-import net.minecraft.client.gui.IGuiEventListener;
-import net.minecraft.client.gui.screen.IScreen;
-import net.minecraft.util.math.MathHelper;
-import net.minecraft.util.math.vector.Vector3f;
+import net.minecraft.client.gui.components.TickableWidget;
+import net.minecraft.client.gui.components.events.GuiEventListener;
+import net.minecraft.util.Mth;
 
 import javax.annotation.Nullable;
 
@@ -13,7 +13,7 @@ import javax.annotation.Nullable;
  *
  * @author Ocelot
  */
-public class SpaceTravelCamera implements IScreen, IGuiEventListener
+public class SpaceTravelCamera implements TickableWidget, GuiEventListener
 {
     private final Vector3f lastAnchorPos;
     private final Vector3f anchorPos;
@@ -51,12 +51,12 @@ public class SpaceTravelCamera implements IScreen, IGuiEventListener
 
     private float getHorizontalDistance(float partialTicks)
     {
-        return MathHelper.lerp(partialTicks, this.lastZoom, this.zoom) * MathHelper.cos(MathHelper.lerp(partialTicks, this.lastPitch, this.pitch));
+        return Mth.lerp(partialTicks, this.lastZoom, this.zoom) * Mth.cos(Mth.lerp(partialTicks, this.lastPitch, this.pitch));
     }
 
     private float getVerticalDistance(float partialTicks)
     {
-        return MathHelper.lerp(partialTicks, this.lastZoom, this.zoom) * MathHelper.sin(MathHelper.lerp(partialTicks, this.lastPitch, this.pitch));
+        return Mth.lerp(partialTicks, this.lastZoom, this.zoom) * Mth.sin(Mth.lerp(partialTicks, this.lastPitch, this.pitch));
     }
 
     @Override
@@ -68,7 +68,7 @@ public class SpaceTravelCamera implements IScreen, IGuiEventListener
         {
             this.yaw -= dx / 180F;
             this.pitch -= dy / 180F;
-            this.pitch = MathHelper.clamp(this.pitch, -(float) Math.PI / 2F, (float) Math.PI / 2F);
+            this.pitch = Mth.clamp(this.pitch, -(float) Math.PI / 2F, (float) Math.PI / 2F);
             return true;
         }
         return false;
@@ -93,35 +93,35 @@ public class SpaceTravelCamera implements IScreen, IGuiEventListener
 
     public float getX(float partialTicks)
     {
-        float anchorX = this.focused != null ? this.focused.getX(partialTicks) : MathHelper.lerp(partialTicks, this.lastAnchorPos.x(), this.anchorPos.x());
-        return anchorX - this.getHorizontalDistance(partialTicks) * MathHelper.sin(MathHelper.lerp(partialTicks, this.lastYaw, this.yaw));
+        float anchorX = this.focused != null ? this.focused.getX(partialTicks) : Mth.lerp(partialTicks, this.lastAnchorPos.x(), this.anchorPos.x());
+        return anchorX - this.getHorizontalDistance(partialTicks) * Mth.sin(Mth.lerp(partialTicks, this.lastYaw, this.yaw));
     }
 
     public float getY(float partialTicks)
     {
-        float anchorY = this.focused != null ? this.focused.getY(partialTicks) : MathHelper.lerp(partialTicks, this.lastAnchorPos.y(), this.anchorPos.y());
+        float anchorY = this.focused != null ? this.focused.getY(partialTicks) : Mth.lerp(partialTicks, this.lastAnchorPos.y(), this.anchorPos.y());
         return anchorY + this.getVerticalDistance(partialTicks);
     }
 
     public float getZ(float partialTicks)
     {
-        float anchorZ = this.focused != null ? this.focused.getZ(partialTicks) : MathHelper.lerp(partialTicks, this.lastAnchorPos.z(), this.anchorPos.z());
-        return anchorZ - this.getHorizontalDistance(partialTicks) * MathHelper.cos(MathHelper.lerp(partialTicks, this.lastYaw, this.yaw));
+        float anchorZ = this.focused != null ? this.focused.getZ(partialTicks) : Mth.lerp(partialTicks, this.lastAnchorPos.z(), this.anchorPos.z());
+        return anchorZ - this.getHorizontalDistance(partialTicks) * Mth.cos(Mth.lerp(partialTicks, this.lastYaw, this.yaw));
     }
 
     public float getRotationX(float partialTicks)
     {
-        return MathHelper.lerp(partialTicks, this.lastPitch, this.pitch);
+        return Mth.lerp(partialTicks, this.lastPitch, this.pitch);
     }
 
     public float getRotationY(float partialTicks)
     {
-        return MathHelper.lerp(partialTicks, this.lastYaw, this.yaw);
+        return Mth.lerp(partialTicks, this.lastYaw, this.yaw);
     }
 
     public float getZoom(float partialTicks)
     {
-        return MathHelper.lerp(partialTicks, this.lastZoom, this.zoom);
+        return Mth.lerp(partialTicks, this.lastZoom, this.zoom);
     }
 
     public void setPosition(float x, float y, float z)

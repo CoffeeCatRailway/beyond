@@ -10,7 +10,7 @@ import io.github.ocelot.beyond.common.network.play.handler.SpaceServerPlayHandle
 import io.github.ocelot.beyond.common.network.play.message.*;
 import io.github.ocelot.beyond.common.world.space.DimensionSpaceSettingsLoader;
 import io.github.ocelot.sonar.common.network.SonarNetworkManager;
-import net.minecraft.util.ResourceLocation;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraftforge.fml.network.NetworkDirection;
 import net.minecraftforge.fml.network.NetworkRegistry;
 import net.minecraftforge.fml.network.simple.SimpleChannel;

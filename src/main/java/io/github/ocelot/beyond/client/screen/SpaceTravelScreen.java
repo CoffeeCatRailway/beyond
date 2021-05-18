@@ -1,6 +1,6 @@
 package io.github.ocelot.beyond.client.screen;
 
-import com.mojang.blaze3d.matrix.MatrixStack;
+import com.mojang.blaze3d.vertex.PoseStack;
 import io.github.ocelot.beyond.Beyond;
 import io.github.ocelot.beyond.client.screen.component.SolarSystemWidget;
 import io.github.ocelot.beyond.common.MagicMath;
@@ -11,12 +11,12 @@ import io.github.ocelot.beyond.common.space.PlayerRocket;
 import io.github.ocelot.beyond.common.space.simulation.CelestialBodySimulation;
 import io.github.ocelot.beyond.common.space.simulation.PlayerRocketBody;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.IGuiEventListener;
-import net.minecraft.client.gui.screen.IScreen;
-import net.minecraft.client.gui.screen.Screen;
-import net.minecraft.util.ResourceLocation;
-import net.minecraft.util.math.MathHelper;
-import net.minecraft.util.text.TranslationTextComponent;
+import net.minecraft.client.gui.components.TickableWidget;
+import net.minecraft.client.gui.components.events.GuiEventListener;
+import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.network.chat.TranslatableComponent;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.util.Mth;
 import org.lwjgl.system.NativeResource;
 
 /**
@@ -35,7 +35,7 @@ public class SpaceTravelScreen extends Screen
 
     public SpaceTravelScreen(SOpenSpaceTravelScreenMessage msg)
     {
-        super(new TranslationTextComponent("screen." + Beyond.MOD_ID + ".space_travel"));
+        super(new TranslatableComponent("screen." + Beyond.MOD_ID + ".space_travel"));
         this.addButton(this.solarSystemWidget = new SolarSystemWidget(this, 0, 0, this.width, this.height, msg));
         this.zoom(false);
     }
@@ -82,25 +82,25 @@ public class SpaceTravelScreen extends Screen
                 this.zooming = 0;
             }
         }
-        for (IGuiEventListener listener : this.children)
-            if (listener instanceof IScreen)
-                ((IScreen) listener).tick();
+        for (GuiEventListener listener : this.children)
+            if (listener instanceof TickableWidget)
+                ((TickableWidget) listener).tick();
     }
 
     @Override
-    public void render(MatrixStack poseStack, int mouseX, int mouseY, float partialTicks)
+    public void render(PoseStack poseStack, int mouseX, int mouseY, float partialTicks)
     {
         partialTicks = Minecraft.getInstance().getFrameTime();
         this.renderBackground(poseStack);
         if (this.zooming != 0)
-            this.solarSystemWidget.getCamera().setZoom(MathHelper.lerp(MagicMath.ease(MathHelper.lerp(partialTicks, this.lastZoom, this.zoom)), this.zoomStart, this.zoomEnd));
+            this.solarSystemWidget.getCamera().setZoom(Mth.lerp(MagicMath.ease(Mth.lerp(partialTicks, this.lastZoom, this.zoom)), this.zoomStart, this.zoomEnd));
         super.render(poseStack, mouseX, mouseY, partialTicks);
     }
 
     @Override
     public void removed()
     {
-        for (IGuiEventListener listener : this.children)
+        for (GuiEventListener listener : this.children)
             if (listener instanceof NativeResource)
                 ((NativeResource) listener).free();
     }
@@ -108,7 +108,7 @@ public class SpaceTravelScreen extends Screen
     @Override
     public boolean mouseClicked(double mouseX, double mouseY, int mouseButton)
     {
-        for (IGuiEventListener iguieventlistener : this.children())
+        for (GuiEventListener iguieventlistener : this.children())
         {
             if (iguieventlistener.mouseClicked(mouseX, mouseY, mouseButton))
             {

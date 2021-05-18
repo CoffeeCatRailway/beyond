@@ -1,10 +1,11 @@
 package io.github.ocelot.beyond.common.space.simulation;
 
+import com.mojang.math.Vector3d;
 import io.github.ocelot.beyond.common.space.planet.Planet;
 import io.github.ocelot.beyond.common.util.CelestialBodyRayTraceResult;
 import io.github.ocelot.beyond.common.util.Listenable;
-import net.minecraft.util.ResourceLocation;
-import net.minecraft.util.math.vector.Vector3d;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 
@@ -179,14 +180,14 @@ public class CelestialBodySimulation implements Listenable<CelestialBodySimulati
      * @return The optional result of the ray trace
      */
     @OnlyIn(Dist.CLIENT)
-    public Optional<CelestialBodyRayTraceResult> clip(Vector3d start, Vector3d end, float partialTicks)
+    public Optional<CelestialBodyRayTraceResult> clip(Vec3 start, Vec3 end, float partialTicks)
     {
         SimulatedBody resultBody = null;
-        Vector3d result = null;
+        Vec3 result = null;
         double resultDistanceSq = Double.MAX_VALUE;
         for (SimulatedBody body : this.bodies.values())
         {
-            Optional<Vector3d> bodyResult = body.clip(start, end, partialTicks);
+            Optional<Vec3> bodyResult = body.clip(start, end, partialTicks);
             if (!bodyResult.isPresent())
                 continue;
 

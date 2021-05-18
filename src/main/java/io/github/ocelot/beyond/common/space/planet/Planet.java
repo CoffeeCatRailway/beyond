@@ -3,8 +3,8 @@ package io.github.ocelot.beyond.common.space.planet;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import io.github.ocelot.beyond.Beyond;
-import net.minecraft.util.ResourceLocation;
-import net.minecraft.util.text.ITextComponent;
+import net.minecraft.network.chat.Component;
+import net.minecraft.resources.ResourceLocation;
 import org.apache.commons.lang3.Validate;
 
 import javax.annotation.Nullable;
@@ -22,7 +22,7 @@ public class Planet
             ResourceLocation.CODEC.optionalFieldOf("parent").forGetter(Planet::getParent),
             ResourceLocation.CODEC.fieldOf("texture").forGetter(Planet::getTexture),
             ResourceLocation.CODEC.optionalFieldOf("dimension").forGetter(Planet::getDimension),
-            Codec.STRING.fieldOf("displayName").<ITextComponent>xmap(ITextComponent.Serializer::fromJson, ITextComponent.Serializer::toJson).forGetter(Planet::getDisplayName),
+            Codec.STRING.fieldOf("displayName").<Component>xmap(Component.Serializer::fromJson, Component.Serializer::toJson).forGetter(Planet::getDisplayName),
             Codec.BOOL.optionalFieldOf("shade", true).forGetter(Planet::isShade),
             Codec.FLOAT.optionalFieldOf("size", 1.0F).forGetter(Planet::getSize),
             Codec.FLOAT.optionalFieldOf("distanceFactor", 1.0F).forGetter(Planet::getDistanceFactor),
@@ -32,13 +32,13 @@ public class Planet
     private final ResourceLocation parent;
     private final ResourceLocation texture;
     private final ResourceLocation dimension;
-    private final ITextComponent displayName;
+    private final Component displayName;
     private final boolean shade;
     private final float size;
     private final float distanceFactor;
     private final PlanetAtmosphere atmosphere;
 
-    public Planet(@Nullable ResourceLocation parent, ResourceLocation texture, @Nullable ResourceLocation dimension, ITextComponent displayName, boolean shade, float size, float distanceFactor, PlanetAtmosphere atmosphere)
+    public Planet(@Nullable ResourceLocation parent, ResourceLocation texture, @Nullable ResourceLocation dimension, Component displayName, boolean shade, float size, float distanceFactor, PlanetAtmosphere atmosphere)
     {
         this.parent = parent;
         this.texture = texture;
@@ -77,7 +77,7 @@ public class Planet
     /**
      * @return The display name of this body
      */
-    public ITextComponent getDisplayName()
+    public Component getDisplayName()
     {
         return displayName;
     }
@@ -132,7 +132,7 @@ public class Planet
         private ResourceLocation parent;
         private ResourceLocation texture;
         private ResourceLocation dimension;
-        private ITextComponent displayName;
+        private Component displayName;
         private boolean shade;
         private float scale;
         private float distanceFactor;
@@ -188,7 +188,7 @@ public class Planet
          *
          * @param displayName The name to use
          */
-        public Builder setDisplayName(ITextComponent displayName)
+        public Builder setDisplayName(Component displayName)
         {
             this.displayName = displayName;
             return this;

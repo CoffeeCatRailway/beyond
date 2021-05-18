@@ -1,15 +1,11 @@
 package io.github.ocelot.beyond.common.init;
 
 import io.github.ocelot.beyond.Beyond;
-import net.minecraft.block.AbstractBlock;
-import net.minecraft.block.Block;
-import net.minecraft.block.Blocks;
-import net.minecraft.item.BlockItem;
-import net.minecraft.item.Item;
-import net.minecraft.item.ItemGroup;
-import net.minecraft.util.RegistryKey;
-import net.minecraft.util.registry.Registry;
-import net.minecraft.world.biome.Biome;
+import net.minecraft.world.item.BlockItem;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.minecraftforge.fml.RegistryObject;
 import net.minecraftforge.registries.DeferredRegister;
 import net.minecraftforge.registries.ForgeRegistries;
@@ -24,7 +20,7 @@ public class BeyondBlocks
 {
     public static final DeferredRegister<Block> BLOCKS = DeferredRegister.create(ForgeRegistries.BLOCKS, Beyond.MOD_ID);
 
-    public static final RegistryObject<Block> MOON_ROCK = register("moon_rock", () -> new Block(AbstractBlock.Properties.copy(Blocks.END_STONE)));
+    public static final RegistryObject<Block> MOON_ROCK = register("moon_rock", () -> new Block(BlockBehaviour.Properties.copy(Blocks.END_STONE)));
 
     /* Registry Methods */
 

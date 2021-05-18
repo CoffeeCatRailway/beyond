@@ -1,12 +1,12 @@
 package io.github.ocelot.beyond.common.space.simulation;
 
+import com.mojang.math.Vector3f;
 import io.github.ocelot.beyond.common.MagicMath;
 import io.github.ocelot.beyond.common.space.PlayerRocket;
 import io.github.ocelot.beyond.common.util.Listenable;
-import net.minecraft.util.ResourceLocation;
-import net.minecraft.util.math.MathHelper;
-import net.minecraft.util.math.vector.Vector3f;
-import net.minecraft.util.text.ITextComponent;
+import net.minecraft.network.chat.Component;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.util.Mth;
 
 import java.util.HashSet;
 import java.util.Objects;
@@ -24,7 +24,7 @@ public class PlayerRocketBody extends AbstractSimulatedBody implements Listenabl
 
     private final Set<PlayerTravelListener> listeners;
     private final PlayerRocket rocket;
-    private final ITextComponent displayName;
+    private final Component displayName;
     private ResourceLocation parent;
     private ResourceLocation newParent;
     private final Vector3f transitionStart;
@@ -45,7 +45,7 @@ public class PlayerRocketBody extends AbstractSimulatedBody implements Listenabl
 
     private float getTransition(float partialTicks)
     {
-        return MagicMath.ease(MathHelper.lerp(partialTicks, this.lastTransition, this.transition));
+        return MagicMath.ease(Mth.lerp(partialTicks, this.lastTransition, this.transition));
     }
 
     @Override
@@ -69,12 +69,12 @@ public class PlayerRocketBody extends AbstractSimulatedBody implements Listenabl
 
     private float getNewHorizontalDistance(float partialTicks)
     {
-        return this.newDistanceFromParent * MathHelper.cos(MathHelper.lerp(partialTicks, this.lastYaw, this.yaw));
+        return this.newDistanceFromParent * Mth.cos(Mth.lerp(partialTicks, this.lastYaw, this.yaw));
     }
 
     private float getNewVerticalDistance(float partialTicks)
     {
-        return this.newDistanceFromParent * MathHelper.sin(MathHelper.lerp(partialTicks, this.lastYaw, this.yaw));
+        return this.newDistanceFromParent * Mth.sin(Mth.lerp(partialTicks, this.lastYaw, this.yaw));
     }
 
     @Override
@@ -83,7 +83,7 @@ public class PlayerRocketBody extends AbstractSimulatedBody implements Listenabl
         if (this.newParent == null)
             return super.getX(partialTicks);
         float newX = this.getNewParent().map(this.simulation::getBody).map(simulatedBody -> simulatedBody.getX(partialTicks) + this.getNewHorizontalDistance(partialTicks)).orElse(0F);
-        return MathHelper.lerp(this.getTransition(partialTicks), this.transitionStart.x(), newX);
+        return Mth.lerp(this.getTransition(partialTicks), this.transitionStart.x(), newX);
     }
 
     @Override
@@ -92,7 +92,7 @@ public class PlayerRocketBody extends AbstractSimulatedBody implements Listenabl
         if (this.newParent == null)
             return super.getY(partialTicks);
         float newY = 0;
-        return MathHelper.lerp(this.getTransition(partialTicks), this.transitionStart.y(), newY);
+        return Mth.lerp(this.getTransition(partialTicks), this.transitionStart.y(), newY);
     }
 
     @Override
@@ -101,7 +101,7 @@ public class PlayerRocketBody extends AbstractSimulatedBody implements Listenabl
         if (this.newParent == null)
             return super.getZ(partialTicks);
         float newZ = this.getNewParent().map(this.simulation::getBody).map(simulatedBody -> simulatedBody.getZ(partialTicks) + this.getNewVerticalDistance(partialTicks)).orElse(0F);
-        return MathHelper.lerp(this.getTransition(partialTicks), this.transitionStart.z(), newZ);
+        return Mth.lerp(this.getTransition(partialTicks), this.transitionStart.z(), newZ);
     }
 
     @Override
@@ -116,7 +116,7 @@ public class PlayerRocketBody extends AbstractSimulatedBody implements Listenabl
     }
 
     @Override
-    public ITextComponent getDisplayName()
+    public Component getDisplayName()
     {
         return displayName;
     }

@@ -2,10 +2,10 @@ package io.github.ocelot.beyond.common.space;
 
 import com.mojang.authlib.GameProfile;
 import io.github.ocelot.beyond.Beyond;
-import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.network.PacketBuffer;
-import net.minecraft.util.ResourceLocation;
-import net.minecraft.util.text.ITextComponent;
+import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.network.chat.Component;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.entity.player.Player;
 import org.apache.commons.codec.digest.DigestUtils;
 
 /**
@@ -17,10 +17,10 @@ public class PlayerRocket
 {
     private final ResourceLocation id;
     private final GameProfile profile;
-    private final ITextComponent displayName;
+    private final Component displayName;
     private ResourceLocation orbitingBody;
 
-    private PlayerRocket(GameProfile profile, ITextComponent displayName, ResourceLocation orbitingBody)
+    private PlayerRocket(GameProfile profile, Component displayName, ResourceLocation orbitingBody)
     {
         this.id = new ResourceLocation(Beyond.MOD_ID, DigestUtils.md5Hex(profile.getName()));
         this.profile = profile;
@@ -28,12 +28,12 @@ public class PlayerRocket
         this.orbitingBody = orbitingBody;
     }
 
-    public PlayerRocket(PlayerEntity player, ResourceLocation orbitingBody)
+    public PlayerRocket(Player player, ResourceLocation orbitingBody)
     {
         this(player.getGameProfile(), player.getDisplayName(), orbitingBody);
     }
 
-    public PlayerRocket(PacketBuffer buf)
+    public PlayerRocket(FriendlyByteBuf buf)
     {
         this(new GameProfile(buf.readUUID(), buf.readUtf(16)), buf.readComponent(), buf.readResourceLocation());
     }
@@ -43,7 +43,7 @@ public class PlayerRocket
      *
      * @param buf The buffer to write data into
      */
-    public void write(PacketBuffer buf)
+    public void write(FriendlyByteBuf buf)
     {
         buf.writeUUID(this.profile.getId());
         buf.writeUtf(this.profile.getName());
@@ -70,7 +70,7 @@ public class PlayerRocket
     /**
      * @return The display name of the player
      */
-    public ITextComponent getDisplayName()
+    public Component getDisplayName()
     {
         return displayName;
     }

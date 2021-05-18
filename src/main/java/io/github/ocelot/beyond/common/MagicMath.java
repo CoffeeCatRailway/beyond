@@ -1,9 +1,9 @@
 package io.github.ocelot.beyond.common;
 
+import com.mojang.math.Matrix4f;
 import io.github.ocelot.beyond.mixin.client.Matrix4fAccessor;
-import net.minecraft.util.math.MathHelper;
-import net.minecraft.util.math.vector.Matrix4f;
-import net.minecraft.util.math.vector.Vector3d;
+import net.minecraft.util.Mth;
+import net.minecraft.world.phys.Vec3;
 
 /**
  * <p>Contains math I barely understand but it just works so cool bro.</p>
@@ -26,7 +26,7 @@ public class MagicMath
      */
     public static float smoothMin(float a, float b, float k)
     {
-        float h = MathHelper.clamp((b - a + k) / (2.0F * k), 0.0F, 1.0F);
+        float h = Mth.clamp((b - a + k) / (2.0F * k), 0.0F, 1.0F);
         return a * h + b * (1.0F - h) - k * h * (1.0F - h);
     }
 
@@ -38,7 +38,7 @@ public class MagicMath
      */
     public static float ease(float x)
     {
-        return -(MathHelper.cos((float) (Math.PI * x)) - 1F) / 2F;
+        return -(Mth.cos((float) (Math.PI * x)) - 1F) / 2F;
     }
 
     /**
@@ -48,7 +48,7 @@ public class MagicMath
      * @param input The input matrix
      * @return A transformed matrix
      */
-    public static Vector3d transform(Vector3d pos, Matrix4f input)
+    public static Vec3 transform(Vec3 pos, Matrix4f input)
     {
         Matrix4fAccessor inputAccessor = (Matrix4fAccessor) (Object) input;
         double f = pos.x;
@@ -57,7 +57,7 @@ public class MagicMath
         double x = inputAccessor.getm00() * f + inputAccessor.getm01() * f1 + inputAccessor.getm02() * f2 + inputAccessor.getm03();
         double y = inputAccessor.getm10() * f + inputAccessor.getm11() * f1 + inputAccessor.getm12() * f2 + inputAccessor.getm13();
         double z = inputAccessor.getm20() * f + inputAccessor.getm21() * f1 + inputAccessor.getm22() * f2 + inputAccessor.getm23();
-        return new Vector3d(x, y, z);
+        return new Vec3(x, y, z);
     }
 
     /**

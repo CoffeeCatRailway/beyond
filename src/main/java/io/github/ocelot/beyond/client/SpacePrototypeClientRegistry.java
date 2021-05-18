@@ -5,14 +5,14 @@ import io.github.ocelot.beyond.client.render.SpaceHelmetLayer;
 import io.github.ocelot.beyond.client.world.MoonRenderInfo;
 import it.unimi.dsi.fastutil.objects.Object2ObjectMap;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.renderer.entity.EntityRendererManager;
-import net.minecraft.client.renderer.entity.LivingRenderer;
+import net.minecraft.client.model.EntityModel;
+import net.minecraft.client.renderer.DimensionSpecialEffects;
+import net.minecraft.client.renderer.entity.EntityRenderDispatcher;
+import net.minecraft.client.renderer.entity.LivingEntityRenderer;
 import net.minecraft.client.renderer.entity.VillagerRenderer;
-import net.minecraft.client.renderer.entity.model.EntityModel;
-import net.minecraft.client.world.DimensionRenderInfo;
-import net.minecraft.entity.EntityType;
-import net.minecraft.entity.LivingEntity;
-import net.minecraft.util.ResourceLocation;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.LivingEntity;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.event.ColorHandlerEvent;
 import net.minecraftforge.client.event.ModelRegistryEvent;
@@ -38,7 +38,7 @@ import java.util.Optional;
 @Mod.EventBusSubscriber(value = Dist.CLIENT, modid = Beyond.MOD_ID, bus = Mod.EventBusSubscriber.Bus.MOD)
 public class SpacePrototypeClientRegistry
 {
-    private static final Object2ObjectMap<ResourceLocation, DimensionRenderInfo> EFFECTS = Objects.requireNonNull(ObfuscationReflectionHelper.getPrivateValue(DimensionRenderInfo.class, null, "field_239208_a_"));
+    private static final Object2ObjectMap<ResourceLocation, DimensionSpecialEffects> EFFECTS = Objects.requireNonNull(ObfuscationReflectionHelper.getPrivateValue(DimensionSpecialEffects.class, null, "field_239208_a_"));
     private static final String MOD_VERSION;
 
     static
@@ -81,7 +81,7 @@ public class SpacePrototypeClientRegistry
 
         event.enqueueWork(() ->
         {
-            EntityRendererManager rendererManager = Minecraft.getInstance().getEntityRenderDispatcher();
+            EntityRenderDispatcher rendererManager = Minecraft.getInstance().getEntityRenderDispatcher();
             addSpaceHelmet((VillagerRenderer) rendererManager.renderers.get(EntityType.VILLAGER));
         });
     }
@@ -103,7 +103,7 @@ public class SpacePrototypeClientRegistry
             ModelLoader.addSpecialModel(new ResourceLocation(location.getNamespace(), location.getPath().substring(7, location.getPath().length() - 5)));
     }
 
-    private static <T extends LivingEntity, M extends EntityModel<T>> void addSpaceHelmet(LivingRenderer<T, M> renderer)
+    private static <T extends LivingEntity, M extends EntityModel<T>> void addSpaceHelmet(LivingEntityRenderer<T, M> renderer)
     {
         renderer.addLayer(new SpaceHelmetLayer<>(renderer));
     }

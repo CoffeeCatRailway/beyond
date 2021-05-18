@@ -5,9 +5,14 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonElement;
 import io.github.ocelot.beyond.Beyond;
-import net.minecraft.data.*;
-import net.minecraft.item.Item;
-import net.minecraft.util.ResourceLocation;
+import net.minecraft.data.DataGenerator;
+import net.minecraft.data.DataProvider;
+import net.minecraft.data.HashCache;
+import net.minecraft.data.models.model.ModelLocationUtils;
+import net.minecraft.data.models.model.ModelTemplate;
+import net.minecraft.data.models.model.TextureMapping;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.item.Item;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -17,7 +22,7 @@ import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 import java.util.function.Supplier;
 
-public class ItemModelGen implements IDataProvider
+public class ItemModelGen implements DataProvider
 {
     private static final Logger LOGGER = LogManager.getLogger();
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().disableHtmlEscaping().create();
@@ -30,7 +35,7 @@ public class ItemModelGen implements IDataProvider
     }
 
     @Override
-    public void run(DirectoryCache cache)
+    public void run(HashCache cache)
     {
         Path path = this.dataGenerator.getOutputFolder();
         Map<ResourceLocation, Supplier<JsonElement>> map1 = Maps.newHashMap();
@@ -50,22 +55,22 @@ public class ItemModelGen implements IDataProvider
     {
     }
 
-    private void generateFlatItem(Item item, ModelsUtil p_240076_2_)
+    private void generateFlatItem(Item item, ModelTemplate p_240076_2_)
     {
-        p_240076_2_.create(ModelsResourceUtil.getModelLocation(item), ModelTextures.layer0(item), this.consumer);
+        p_240076_2_.create(ModelLocationUtils.getModelLocation(item), TextureMapping.layer0(item), this.consumer);
     }
 
-    private void generateFlatItem(Item item, String p_240077_2_, ModelsUtil p_240077_3_)
+    private void generateFlatItem(Item item, String p_240077_2_, ModelTemplate p_240077_3_)
     {
-        p_240077_3_.create(ModelsResourceUtil.getModelLocation(item, p_240077_2_), ModelTextures.layer0(ModelTextures.getItemTexture(item, p_240077_2_)), this.consumer);
+        p_240077_3_.create(ModelLocationUtils.getModelLocation(item, p_240077_2_), TextureMapping.layer0(TextureMapping.getItemTexture(item, p_240077_2_)), this.consumer);
     }
 
-    private void generateFlatItem(Item item, Item p_240075_2_, ModelsUtil p_240075_3_)
+    private void generateFlatItem(Item item, Item p_240075_2_, ModelTemplate p_240075_3_)
     {
-        p_240075_3_.create(ModelsResourceUtil.getModelLocation(item), ModelTextures.layer0(p_240075_2_), this.consumer);
+        p_240075_3_.create(ModelLocationUtils.getModelLocation(item), TextureMapping.layer0(p_240075_2_), this.consumer);
     }
 
-    private <T> void saveCollection(DirectoryCache cache, Path dataFolder, Map<T, ? extends Supplier<JsonElement>> models, BiFunction<Path, T, Path> resolver)
+    private <T> void saveCollection(HashCache cache, Path dataFolder, Map<T, ? extends Supplier<JsonElement>> models, BiFunction<Path, T, Path> resolver)
     {
         models.forEach((p_240088_3_, p_240088_4_) ->
         {
@@ -73,7 +78,7 @@ public class ItemModelGen implements IDataProvider
 
             try
             {
-                IDataProvider.save(GSON, cache, p_240088_4_.get(), path);
+                DataProvider.save(GSON, cache, p_240088_4_.get(), path);
             }
             catch (Exception exception)
             {
