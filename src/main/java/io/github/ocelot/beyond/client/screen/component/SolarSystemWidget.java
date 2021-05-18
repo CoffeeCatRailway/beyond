@@ -123,7 +123,7 @@ public class SolarSystemWidget extends Widget implements INestedGuiEventHandler,
 
         this.children = new ArrayList<>();
         this.children.add(this.camera);
-        this.launchButton = new Button(0, 0, 50, 20, new TranslationTextComponent("gui." + Beyond.MOD_ID + ".launch"), p_onPress_1_ ->
+        this.launchButton = new Button(0, 0, 50, 20, new TranslationTextComponent("gui." + Beyond.MOD_ID + ".launch"), button ->
         {
             if (this.selectedBody == null || !this.selectedBody.canTeleportTo())
                 return;
