@@ -1,7 +1,7 @@
 plugins {
-    id 'forgified-fabric-loom' version '0.6-SNAPSHOT'
+    id 'dev.architectury.loom' version '0.7.2-SNAPSHOT'
     id "com.github.fudge.forgedflowerloom" version '2.0.0'
-    id 'com.github.johnrengelman.shadow' version '4.0.4'
+    id 'com.github.johnrengelman.shadow' version '7.0.0'
     id 'maven-publish'
 }
 
