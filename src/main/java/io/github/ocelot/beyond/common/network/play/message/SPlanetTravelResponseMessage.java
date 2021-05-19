@@ -1,7 +1,7 @@
 package io.github.ocelot.beyond.common.network.play.message;
 
-import io.github.ocelot.sonar.common.network.message.SonarMessage;
 import io.github.ocelot.beyond.common.network.play.handler.ISpaceClientPlayHandler;
+import io.github.ocelot.sonar.common.network.message.SonarMessage;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraftforge.fml.network.NetworkEvent;

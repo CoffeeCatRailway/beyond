@@ -1,6 +1,5 @@
 package io.github.ocelot.beyond.common.space.simulation;
 
-import com.mojang.math.Vector3d;
 import io.github.ocelot.beyond.common.space.planet.Planet;
 import io.github.ocelot.beyond.common.util.CelestialBodyRayTraceResult;
 import io.github.ocelot.beyond.common.util.Listenable;

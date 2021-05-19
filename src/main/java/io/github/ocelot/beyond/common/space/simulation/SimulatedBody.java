@@ -5,14 +5,12 @@ import com.mojang.math.Matrix4f;
 import com.mojang.math.Vector3f;
 import io.github.ocelot.beyond.common.MagicMath;
 import net.minecraft.network.chat.Component;
-import net.minecraft.network.chat.TextComponent;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 
-import javax.annotation.Nullable;
 import java.util.Optional;
 
 /**

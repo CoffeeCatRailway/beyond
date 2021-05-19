@@ -2,8 +2,8 @@ package io.github.ocelot.beyond.common.init;
 
 import io.github.ocelot.beyond.Beyond;
 import io.github.ocelot.beyond.common.world.carver.CraterCarver;
-import io.github.ocelot.beyond.common.world.carver.MoonCaveCarver;
 import io.github.ocelot.beyond.common.world.carver.CraterConfig;
+import io.github.ocelot.beyond.common.world.carver.MoonCaveCarver;
 import net.minecraft.world.level.levelgen.carver.WorldCarver;
 import net.minecraft.world.level.levelgen.feature.configurations.ProbabilityFeatureConfiguration;
 import net.minecraftforge.fml.RegistryObject;

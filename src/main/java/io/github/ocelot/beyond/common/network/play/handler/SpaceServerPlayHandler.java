@@ -1,6 +1,5 @@
 package io.github.ocelot.beyond.common.network.play.handler;
 
-import com.mojang.math.Vector3d;
 import io.github.ocelot.beyond.Beyond;
 import io.github.ocelot.beyond.common.init.BeyondMessages;
 import io.github.ocelot.beyond.common.network.play.message.CPlanetTravelMessage;

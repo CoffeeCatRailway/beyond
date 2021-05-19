@@ -22,7 +22,6 @@ import io.github.ocelot.beyond.common.init.BeyondMessages;
 import io.github.ocelot.beyond.common.network.play.message.CPlanetTravelMessage;
 import io.github.ocelot.beyond.common.network.play.message.SOpenSpaceTravelScreenMessage;
 import io.github.ocelot.beyond.common.space.planet.StaticSolarSystemDefinitions;
-import io.github.ocelot.beyond.common.space.satellite.ArtificialSatellite;
 import io.github.ocelot.beyond.common.space.satellite.PlayerRocket;
 import io.github.ocelot.beyond.common.space.satellite.Satellite;
 import io.github.ocelot.beyond.common.space.simulation.*;

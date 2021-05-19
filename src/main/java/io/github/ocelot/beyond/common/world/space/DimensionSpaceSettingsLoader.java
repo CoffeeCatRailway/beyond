@@ -14,7 +14,6 @@ import net.minecraftforge.fml.network.PacketDistributor;
 import net.minecraftforge.fml.server.ServerLifecycleHooks;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.spongepowered.asm.util.perf.Profiler;
 
 import java.util.HashMap;
 import java.util.Map;

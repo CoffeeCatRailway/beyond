@@ -15,7 +15,6 @@ import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.client.ISkyRenderHandler;
 
 import javax.annotation.Nullable;
-
 import java.util.Objects;
 
 import static org.lwjgl.opengl.GL11C.GL_QUADS;
