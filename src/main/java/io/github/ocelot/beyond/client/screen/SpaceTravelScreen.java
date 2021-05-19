@@ -177,8 +177,8 @@ public class SpaceTravelScreen extends Screen
     public void receiveSimulationUpdate(SUpdateSimulationBodiesMessage msg)
     {
         CelestialBodySimulation simulation = this.solarSystemWidget.getSimulation();
-        for (ResourceLocation removed : msg.getRemoved())
-            simulation.remove(removed);
+        for (int removed : msg.getRemoved())
+            simulation.removeSatellite(removed);
         for (Satellite satellite : msg.getAddedSatellites())
             simulation.add(satellite.createBody(simulation));
     }

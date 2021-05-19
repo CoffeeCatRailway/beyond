@@ -1,8 +1,10 @@
 package io.github.ocelot.beyond.common.space.simulation;
 
 import com.mojang.math.Vector3f;
+import io.github.ocelot.beyond.Beyond;
 import io.github.ocelot.beyond.common.MagicMath;
 import io.github.ocelot.beyond.common.space.satellite.PlayerRocket;
+import io.github.ocelot.beyond.common.space.satellite.Satellite;
 import io.github.ocelot.beyond.common.util.Listenable;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
@@ -33,7 +35,7 @@ public class PlayerRocketBody extends AbstractSimulatedBody implements Satellite
 
     public PlayerRocketBody(CelestialBodySimulation simulation, PlayerRocket rocket)
     {
-        super(simulation, rocket.getId());
+        super(simulation, new ResourceLocation(Beyond.MOD_ID, "satellite_" + rocket.getId()));
         this.setDistanceFromParent(Math.max(rocket.getOrbitingBody().map(simulation::getBody).map(SimulatedBody::getSize).orElse(1.0F) * 1.25F, 1.0F));
         this.listeners = new HashSet<>();
         this.rocket = rocket;

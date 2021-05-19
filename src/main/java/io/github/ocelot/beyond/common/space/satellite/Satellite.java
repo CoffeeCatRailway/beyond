@@ -3,7 +3,10 @@ package io.github.ocelot.beyond.common.space.satellite;
 import io.github.ocelot.beyond.common.space.simulation.CelestialBodySimulation;
 import io.github.ocelot.beyond.common.space.simulation.SimulatedBody;
 import net.minecraft.network.FriendlyByteBuf;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
 
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
 
 /**
@@ -13,6 +16,8 @@ import java.util.function.Function;
  */
 public interface Satellite
 {
+    AtomicInteger SATELLITE_COUNTER = new AtomicInteger();
+
     /**
      * Writes this rocket into the specified buffer.
      *
@@ -26,7 +31,13 @@ public interface Satellite
      * @param simulation The simulation instance
      * @return A new body for that simulation
      */
+    @OnlyIn(Dist.CLIENT)
     SimulatedBody createBody(CelestialBodySimulation simulation);
+
+    /**
+     * @return The integer id of the satellite
+     */
+    int getId();
 
     /**
      * @return The type of satellite this is

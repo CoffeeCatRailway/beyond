@@ -1,6 +1,5 @@
 package io.github.ocelot.beyond.common.network.play.handler;
 
-import io.github.ocelot.beyond.Beyond;
 import io.github.ocelot.beyond.common.init.BeyondMessages;
 import io.github.ocelot.beyond.common.network.play.message.CPlanetTravelMessage;
 import io.github.ocelot.beyond.common.network.play.message.CTemporaryOpenSpaceTravelMessage;
@@ -8,10 +7,9 @@ import io.github.ocelot.beyond.common.network.play.message.SPlanetTravelResponse
 import io.github.ocelot.beyond.common.network.play.message.SPlayerTravelMessage;
 import io.github.ocelot.beyond.common.space.SpaceManager;
 import io.github.ocelot.beyond.common.space.planet.Planet;
-import io.github.ocelot.beyond.common.space.simulation.PlayerRocketBody;
+import io.github.ocelot.beyond.common.space.satellite.PlayerRocket;
 import io.github.ocelot.beyond.common.space.simulation.SimulatedBody;
 import net.minecraft.core.Registry;
-import net.minecraft.network.chat.TranslatableComponent;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
@@ -24,6 +22,7 @@ import net.minecraftforge.fml.network.NetworkEvent;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import java.util.Optional;
 import java.util.function.Function;
 
 /**
@@ -53,12 +52,12 @@ public class SpaceServerPlayHandler implements ISpaceServerPlayHandler
                 return; // TODO expect player to be in level again
             }
 
-            SimulatedBody destinationBody = spaceManager.getSimulation().getBody(msg.getBodyId());
-            if (destinationBody != null && destinationBody.canTeleportTo() && destinationBody.getDimension().isPresent())
+            Optional<ResourceLocation> destinationDimension = spaceManager.getDimension(msg.getBodyId());
+            if (destinationDimension.isPresent())
             {
                 if (msg.isArrive())
                 {
-                    ServerLevel level = player.server.getLevel(ResourceKey.create(Registry.DIMENSION_REGISTRY, destinationBody.getDimension().get()));
+                    ServerLevel level = player.server.getLevel(ResourceKey.create(Registry.DIMENSION_REGISTRY, destinationDimension.get()));
                     if (level != null)
                     {
                         player.changeDimension(level, new ITeleporter()
@@ -92,8 +91,8 @@ public class SpaceServerPlayHandler implements ISpaceServerPlayHandler
                     return;
                 }
             }
-            PlayerRocketBody rocket = spaceManager.getSimulation().getPlayer(player.getUUID());
-            ResourceLocation body = rocket != null ? rocket.getParent().orElse(Planet.EARTH) : Planet.EARTH;
+
+            ResourceLocation body = spaceManager.getPlayer(player.getUUID()).map(PlayerRocket::getOrbitingBody).map(planet -> planet.orElse(Planet.EARTH)).orElse(Planet.EARTH);
             BeyondMessages.PLAY.reply(new SPlanetTravelResponseMessage(body), ctx);
         });
     }

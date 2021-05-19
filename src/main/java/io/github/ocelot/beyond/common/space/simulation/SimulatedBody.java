@@ -18,6 +18,7 @@ import java.util.Optional;
  *
  * @author Ocelot
  */
+@OnlyIn(Dist.CLIENT)
 public interface SimulatedBody
 {
     /**
@@ -53,7 +54,6 @@ public interface SimulatedBody
      * @param partialTicks The percentage from last update and this update
      * @return The optional result of the ray trace
      */
-    @OnlyIn(Dist.CLIENT)
     default Optional<Vec3> clip(Vec3 start, Vec3 end, float partialTicks)
     {
         float size = Math.max(this.getSize(), 1.0F) / 2F;

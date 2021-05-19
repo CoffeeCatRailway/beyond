@@ -15,13 +15,13 @@ import net.minecraftforge.fml.network.NetworkEvent;
 public class SUpdateSimulationBodiesMessage implements SonarMessage<ISpaceClientPlayHandler>
 {
     private Satellite[] added;
-    private ResourceLocation[] removed;
+    private int[] removed;
 
     public SUpdateSimulationBodiesMessage()
     {
     }
 
-    public SUpdateSimulationBodiesMessage(Satellite[] added, ResourceLocation[] removed)
+    public SUpdateSimulationBodiesMessage(Satellite[] added, int[] removed)
     {
         this.added = added;
         this.removed = removed;
@@ -33,9 +33,9 @@ public class SUpdateSimulationBodiesMessage implements SonarMessage<ISpaceClient
         this.added = new Satellite[buf.readVarInt()];
         for (int i = 0; i < this.added.length; i++)
             this.added[i] = Satellite.read(buf);
-        this.removed = new ResourceLocation[buf.readVarInt()];
+        this.removed = new int[buf.readVarInt()];
         for (int i = 0; i < this.removed.length; i++)
-            this.removed[i] = buf.readResourceLocation();
+            this.removed[i] = buf.readVarInt();
     }
 
     @Override
@@ -45,8 +45,8 @@ public class SUpdateSimulationBodiesMessage implements SonarMessage<ISpaceClient
         for (Satellite satellite : this.added)
             Satellite.write(satellite, buf);
         buf.writeVarInt(this.removed.length);
-        for (ResourceLocation remove : this.removed)
-            buf.writeResourceLocation(remove);
+        for (int remove : this.removed)
+            buf.writeVarInt(remove);
     }
 
     @Override
@@ -68,7 +68,7 @@ public class SUpdateSimulationBodiesMessage implements SonarMessage<ISpaceClient
      * @return The list of bodies to remove from the simulation
      */
     @OnlyIn(Dist.CLIENT)
-    public ResourceLocation[] getRemoved()
+    public int[] getRemoved()
     {
         return removed;
     }

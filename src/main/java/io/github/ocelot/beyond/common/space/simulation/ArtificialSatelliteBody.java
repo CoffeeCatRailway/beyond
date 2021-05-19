@@ -1,6 +1,8 @@
 package io.github.ocelot.beyond.common.space.simulation;
 
+import io.github.ocelot.beyond.Beyond;
 import io.github.ocelot.beyond.common.space.satellite.ArtificialSatellite;
+import io.github.ocelot.beyond.common.space.satellite.Satellite;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.resources.model.BakedModel;
 import net.minecraft.client.resources.model.ModelManager;
@@ -20,7 +22,7 @@ public class ArtificialSatelliteBody extends AbstractSimulatedBody implements Sa
 
     public ArtificialSatelliteBody(CelestialBodySimulation simulation, ArtificialSatellite satellite)
     {
-        super(simulation, satellite.getId());
+        super(simulation, new ResourceLocation(Beyond.MOD_ID, "satellite_" + satellite.getId()));
         this.satellite = satellite;
         this.setDistanceFromParent(5.0F);
     }
@@ -43,7 +45,7 @@ public class ArtificialSatelliteBody extends AbstractSimulatedBody implements Sa
     @Override
     public Optional<ResourceLocation> getParent()
     {
-        return Optional.ofNullable(this.satellite.getOrbitingBody());
+        return this.satellite.getOrbitingBody();
     }
 
     @Override

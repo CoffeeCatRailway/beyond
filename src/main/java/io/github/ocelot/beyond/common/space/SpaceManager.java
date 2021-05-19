@@ -10,21 +10,22 @@ import io.github.ocelot.beyond.common.space.planet.StaticSolarSystemDefinitions;
 import io.github.ocelot.beyond.common.space.satellite.ArtificialSatellite;
 import io.github.ocelot.beyond.common.space.satellite.PlayerRocket;
 import io.github.ocelot.beyond.common.space.satellite.Satellite;
-import io.github.ocelot.beyond.common.space.simulation.*;
 import net.minecraft.network.chat.TextComponent;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Player;
 import net.minecraftforge.common.MinecraftForge;
-import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.event.entity.player.PlayerEvent;
 import net.minecraftforge.fml.network.PacketDistributor;
-import net.minecraftforge.fml.server.ServerLifecycleHooks;
 
 import javax.annotation.Nullable;
-import java.util.Arrays;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
@@ -36,69 +37,59 @@ public class SpaceManager
 {
     private static SpaceManager spaceManager;
     private final MinecraftServer server;
-    private final CelestialBodySimulation simulation;
+    // TODO store solar system id and update dimension cache
+    private final Map<ResourceLocation, ResourceLocation> validDestinations;
+    private final Set<Satellite> satellites;
 
     // TODO remove player from simulation if they aren't in a rocket entity
     private SpaceManager(MinecraftServer server)
     {
         this.server = server;
 
-        // TODO use custom server side implementation of simulation
         // TODO Load simulation from datapack
-        this.simulation = new CelestialBodySimulation(StaticSolarSystemDefinitions.SOLAR_SYSTEM.get());
-        this.simulation.addListener(new CelestialBodySimulation.PlayerUpdateListener()
-        {
-            @Override
-            public void onPlayersJoin(PlayerRocketBody... bodies)
-            {
-                SpaceManager.this.notifyAllPlayers(new SUpdateSimulationBodiesMessage(Arrays.stream(bodies).map(PlayerRocketBody::getSatellite).toArray(Satellite[]::new), new ResourceLocation[0]));
-            }
 
-            @Override
-            public void onPlayersLeave(PlayerRocketBody... bodies)
-            {
-                SpaceManager.this.notifyAllPlayers(new SUpdateSimulationBodiesMessage(new Satellite[0], Arrays.stream(bodies).map(SimulatedBody::getId).toArray(ResourceLocation[]::new)));
-            }
-        });
+        this.validDestinations = StaticSolarSystemDefinitions.SOLAR_SYSTEM.get().entrySet().stream().filter(entry -> entry.getValue().getDimension().isPresent()).collect(Collectors.toMap(Map.Entry::getKey, entry -> entry.getValue().getDimension().get()));
+        this.satellites = ConcurrentHashMap.newKeySet();
 
-        ArtificialSatelliteBody earthSatellite = new ArtificialSatelliteBody(this.simulation, new ArtificialSatellite(new ResourceLocation(Beyond.MOD_ID, "earth_satellite_test"), new ResourceLocation(Beyond.MOD_ID, "body/satellite"), new TextComponent("Earth Satellite Test"), new ResourceLocation(Beyond.MOD_ID, "earth")));
-        this.simulation.add(earthSatellite);
+        this.add(new ArtificialSatellite(new TextComponent("Earth Satellite Test"), new ResourceLocation(Beyond.MOD_ID, "earth"), new ResourceLocation(Beyond.MOD_ID, "body/satellite")));
+        this.add(new ArtificialSatellite(new TextComponent("Mars Satellite Test"), new ResourceLocation(Beyond.MOD_ID, "mars"), new ResourceLocation(Beyond.MOD_ID, "body/satellite")));
 
-        ArtificialSatelliteBody marsSatellite = new ArtificialSatelliteBody(this.simulation, new ArtificialSatellite(new ResourceLocation(Beyond.MOD_ID, "mars_satellite_test"), new ResourceLocation(Beyond.MOD_ID, "body/satellite"), new TextComponent("Mars Satellite Test"), new ResourceLocation(Beyond.MOD_ID, "mars")));
-        this.simulation.add(marsSatellite);
-
-        MinecraftForge.EVENT_BUS.addListener(this::onTick);
         MinecraftForge.EVENT_BUS.addListener(this::onPlayerLeave);
     }
 
-    private <MSG> void notifyAllPlayers(MSG msg)
+    private void add(Satellite satellite)
     {
-        this.simulation.getPlayers().forEach(b ->
+        this.satellites.add(satellite);
+        if (satellite instanceof PlayerRocket)
+            this.notifyAllPlayers(((PlayerRocket) satellite).getProfile().getId(), new SUpdateSimulationBodiesMessage(this.satellites.toArray(new Satellite[0]), new int[0]));
+    }
+
+    private void remove(Satellite satellite)
+    {
+        this.satellites.remove(satellite);
+        if (satellite instanceof PlayerRocket)
+            this.notifyAllPlayers(((PlayerRocket) satellite).getProfile().getId(), new SUpdateSimulationBodiesMessage(new Satellite[0], new int[]{satellite.getId()}));
+    }
+
+    private Stream<PlayerRocket> getPlayers()
+    {
+        return this.satellites.stream().filter(satellite -> satellite instanceof PlayerRocket).map(satellite -> (PlayerRocket) satellite);
+    }
+
+    private <MSG> void notifyAllPlayers(@Nullable UUID id, MSG msg)
+    {
+        this.getPlayers().forEach(b ->
         {
-            ServerPlayer player = this.server.getPlayerList().getPlayer(b.getSatellite().getProfile().getId());
-            if (player == null)
+            ServerPlayer player = this.server.getPlayerList().getPlayer(b.getProfile().getId());
+            if (player == null || (id != null && player.getUUID().equals(id)))
                 return;
             BeyondMessages.PLAY.send(PacketDistributor.PLAYER.with(() -> player), msg);
         });
     }
 
-    private void onTick(TickEvent.ServerTickEvent event)
-    {
-        if (event.phase == TickEvent.Phase.END)
-            return;
-        this.simulation.tick();
-    }
-
     private void onPlayerLeave(PlayerEvent.PlayerLoggedOutEvent event)
     {
-        PlayerRocketBody body = this.simulation.getPlayer(event.getPlayer().getUUID());
-        if (body != null)
-            this.simulation.remove(body.getId());
-    }
-
-    private SOpenSpaceTravelScreenMessage createPacket(Stream<SatelliteBody<?>> bodies)
-    {
-        return new SOpenSpaceTravelScreenMessage(Stream.concat(this.simulation.getSatellites(), bodies).map(SatelliteBody::getSatellite).toArray(Satellite[]::new));
+        this.getPlayer(event.getPlayer().getUUID()).ifPresent(this::remove);
     }
 
     /**
@@ -109,15 +100,13 @@ public class SpaceManager
      */
     public SOpenSpaceTravelScreenMessage insertPlayer(Player player)
     {
-        PlayerRocketBody body = this.simulation.getPlayer(player.getUUID());
-        if (body != null)
-            return this.createPacket(Stream.empty());
-
-        ResourceLocation playerDimension = player.level.dimension().location();
-        ResourceLocation playerPlanet = this.simulation.getBodies().filter(b -> b.canTeleportTo() && b.getDimension().isPresent() && b.getDimension().get().equals(playerDimension)).map(SimulatedBody::getId).findAny().orElse(Planet.EARTH);
-        body = new PlayerRocketBody(this.simulation, new PlayerRocket(player, playerPlanet));
-        this.simulation.add(body);
-        return this.createPacket(Stream.of(body));
+        if (!this.getPlayer(player.getUUID()).isPresent())
+        {
+            ResourceLocation playerDimension = player.level.dimension().location();
+            ResourceLocation playerPlanet = this.validDestinations.entrySet().stream().filter(entry -> entry.getValue().equals(playerDimension)).map(Map.Entry::getKey).findAny().orElse(Planet.EARTH);//this.simulation.getBodies().filter(b -> b.canTeleportTo() && b.getDimension().isPresent() && b.getDimension().get().equals(playerDimension)).map(SimulatedBody::getId).findAny().orElse(Planet.EARTH);
+            this.add(new PlayerRocket(player, playerPlanet));
+        }
+        return new SOpenSpaceTravelScreenMessage(this.satellites.toArray(new Satellite[0]));
     }
 
     /**
@@ -127,7 +116,12 @@ public class SpaceManager
      */
     public void removePlayer(UUID id)
     {
-        this.simulation.getPlayers().filter(body -> body.getSatellite().getProfile().getId().equals(id)).map(SimulatedBody::getId).forEach(this.simulation::remove);
+        PlayerRocket[] players = this.getPlayers().toArray(PlayerRocket[]::new);
+        for (PlayerRocket rocket : players)
+        {
+            if (rocket.getProfile().getId().equals(id))
+                this.remove(rocket);
+        }
     }
 
     /**
@@ -138,9 +132,9 @@ public class SpaceManager
      */
     public void relay(@Nullable ServerPlayer sender, SPlayerTravelMessage msg)
     {
-        this.simulation.getPlayers().forEach(b ->
+        this.getPlayers().forEach(rocket ->
         {
-            ServerPlayer player = this.server.getPlayerList().getPlayer(b.getSatellite().getProfile().getId());
+            ServerPlayer player = this.server.getPlayerList().getPlayer(rocket.getProfile().getId());
             if (player == null || (sender != null && player.getUUID().equals(sender.getUUID())))
                 return;
             BeyondMessages.PLAY.send(PacketDistributor.PLAYER.with(() -> player), msg);
@@ -148,11 +142,25 @@ public class SpaceManager
     }
 
     /**
-     * @return The server sided simulation
+     * Fetches a player with the specified id from the simulation.
+     *
+     * @param playerId The player to fetch
+     * @return The player in space or nothing if there is no player in space with that id
      */
-    public CelestialBodySimulation getSimulation()
+    public Optional<PlayerRocket> getPlayer(UUID playerId)
     {
-        return simulation;
+        return this.getPlayers().filter(rocket -> rocket.getProfile().getId().equals(playerId)).findFirst();
+    }
+
+    /**
+     * Retrieves a dimension from the body id.
+     *
+     * @param bodyId The id of the body to get the dimension for
+     * @return The dimension for that body
+     */
+    public Optional<ResourceLocation> getDimension(ResourceLocation bodyId)
+    {
+        return Optional.ofNullable(this.validDestinations.get(bodyId));
     }
 
     /**
