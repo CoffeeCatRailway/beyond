@@ -30,4 +30,6 @@ bin/
 
 # fabric
 
+logs/
 run/
+src/generated/resources/.cache/
