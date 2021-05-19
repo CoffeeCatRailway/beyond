@@ -11,15 +11,11 @@ import io.github.ocelot.beyond.common.space.satellite.ArtificialSatellite;
 import io.github.ocelot.beyond.common.space.satellite.PlayerRocket;
 import io.github.ocelot.beyond.common.space.satellite.Satellite;
 import io.github.ocelot.beyond.common.space.simulation.*;
-import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.TextComponent;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.MinecraftServer;
-import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.level.Level;
-import net.minecraft.world.level.saveddata.SavedData;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.event.entity.player.PlayerEvent;
@@ -36,16 +32,16 @@ import java.util.stream.Stream;
  *
  * @author Ocelot
  */
-public class SpaceManager extends SavedData
+public class SpaceManager
 {
-    private static final String DATA_NAME = Beyond.MOD_ID + "_SpaceManager";
-
+    private static SpaceManager spaceManager;
+    private final MinecraftServer server;
     private final CelestialBodySimulation simulation;
 
     // TODO remove player from simulation if they aren't in a rocket entity
-    private SpaceManager()
+    private SpaceManager(MinecraftServer server)
     {
-        super(DATA_NAME);
+        this.server = server;
 
         // TODO use custom server side implementation of simulation
         // TODO Load simulation from datapack
@@ -79,10 +75,7 @@ public class SpaceManager extends SavedData
     {
         this.simulation.getPlayers().forEach(b ->
         {
-            MinecraftServer server = ServerLifecycleHooks.getCurrentServer();
-            if (server == null)
-                return;
-            ServerPlayer player = server.getPlayerList().getPlayer(b.getSatellite().getProfile().getId());
+            ServerPlayer player = this.server.getPlayerList().getPlayer(b.getSatellite().getProfile().getId());
             if (player == null)
                 return;
             BeyondMessages.PLAY.send(PacketDistributor.PLAYER.with(() -> player), msg);
@@ -147,10 +140,7 @@ public class SpaceManager extends SavedData
     {
         this.simulation.getPlayers().forEach(b ->
         {
-            MinecraftServer server = ServerLifecycleHooks.getCurrentServer();
-            if (server == null)
-                return;
-            ServerPlayer player = server.getPlayerList().getPlayer(b.getSatellite().getProfile().getId());
+            ServerPlayer player = this.server.getPlayerList().getPlayer(b.getSatellite().getProfile().getId());
             if (player == null || (sender != null && player.getUUID().equals(sender.getUUID())))
                 return;
             BeyondMessages.PLAY.send(PacketDistributor.PLAYER.with(() -> player), msg);
@@ -165,27 +155,29 @@ public class SpaceManager extends SavedData
         return simulation;
     }
 
-    @Override
-    public void load(CompoundTag nbt)
+    /**
+     * @return The space manager for the server
+     */
+    public static SpaceManager get()
     {
-    }
-
-    @Override
-    public CompoundTag save(CompoundTag nbt)
-    {
-        return nbt;
+        return spaceManager;
     }
 
     /**
-     * Fetches the space manager for the specified server world.
+     * Loads the space manager with the specified server.
      *
      * @param server The server instance
-     * @return The space manager for the server
      */
-    @Nullable
-    public static SpaceManager get(MinecraftServer server)
+    public static void load(MinecraftServer server)
     {
-        ServerLevel world = server.getLevel(Level.OVERWORLD);
-        return world != null ? world.getDataStorage().computeIfAbsent(SpaceManager::new, DATA_NAME) : null;
+        spaceManager = new SpaceManager(server);
+    }
+
+    /**
+     * Unloads the space manager for the server.
+     */
+    public static void unload()
+    {
+        spaceManager = null;
     }
 }

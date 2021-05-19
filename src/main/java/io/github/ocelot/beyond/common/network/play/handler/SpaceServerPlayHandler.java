@@ -43,14 +43,7 @@ public class SpaceServerPlayHandler implements ISpaceServerPlayHandler
         // TODO check if player can go to body
         ctx.enqueueWork(() ->
         {
-            SpaceManager spaceManager = SpaceManager.get(player.server);
-            if (spaceManager == null)
-            {
-                LOGGER.error("No Overworld for the space manager exists.");
-                player.connection.disconnect(new TranslatableComponent("multiplayer." + Beyond.MOD_ID + ".disconnect.invalid_space_travel"));
-                return;
-            }
-
+            SpaceManager spaceManager = SpaceManager.get();
             if (msg.getBodyId() == null || msg.isArrive())
                 spaceManager.removePlayer(player.getUUID());
 
@@ -112,13 +105,6 @@ public class SpaceServerPlayHandler implements ISpaceServerPlayHandler
         if (player == null)
             return;
 
-        SpaceManager spaceManager = SpaceManager.get(player.server);
-        if (spaceManager == null)
-        {
-            LOGGER.error("No Overworld for the space manager exists.");
-            return;
-        }
-
-        ctx.enqueueWork(() -> BeyondMessages.PLAY.reply(spaceManager.insertPlayer(player), ctx));
+        ctx.enqueueWork(() -> BeyondMessages.PLAY.reply(SpaceManager.get().insertPlayer(player), ctx));
     }
 }

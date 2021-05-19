@@ -2,6 +2,7 @@ package io.github.ocelot.beyond;
 
 import io.github.ocelot.beyond.client.SpacePrototypeClientRegistry;
 import io.github.ocelot.beyond.common.init.*;
+import io.github.ocelot.beyond.common.space.SpaceManager;
 import io.github.ocelot.beyond.common.world.space.DimensionSpaceSettingsLoader;
 import io.github.ocelot.beyond.datagen.*;
 import io.github.ocelot.sonar.Sonar;
@@ -20,6 +21,8 @@ import net.minecraftforge.fml.DistExecutor;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent;
 import net.minecraftforge.fml.event.lifecycle.GatherDataEvent;
+import net.minecraftforge.fml.event.server.FMLServerStartedEvent;
+import net.minecraftforge.fml.event.server.FMLServerStoppedEvent;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
 
 @Mod(Beyond.MOD_ID)
@@ -53,6 +56,18 @@ public class Beyond
         BeyondItems.ITEMS.register(modBus);
         BeyondWorldCarvers.CARVERS.register(modBus);
         MinecraftForge.EVENT_BUS.register(this);
+    }
+
+    @SubscribeEvent
+    public void onEvent(FMLServerStartedEvent event)
+    {
+        SpaceManager.load(event.getServer());
+    }
+
+    @SubscribeEvent
+    public void onEvent(FMLServerStoppedEvent event)
+    {
+        SpaceManager.unload();
     }
 
     private void attributeSetup(EntityAttributeCreationEvent event)
