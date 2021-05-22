@@ -5,15 +5,22 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.multiplayer.ClientLevel;
 import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
+import org.spongepowered.asm.mixin.injection.ModifyArg;
 import org.spongepowered.asm.mixin.injection.Redirect;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
+
+import javax.annotation.Nullable;
 
 @Mixin(Minecraft.class)
 public class MinecraftMixin
 {
+    @Shadow
+    @Nullable
+    public Screen screen;
     @Unique
     private boolean respawning;
 
@@ -28,5 +35,11 @@ public class MinecraftMixin
     {
         if (!this.respawning || !(minecraft.screen instanceof SpaceTravelScreen))
             minecraft.setScreen(screen);
+    }
+
+    @ModifyArg(method = "runTick", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/renderer/GameRenderer;render(FJZ)V"), index = 2)
+    public boolean render(boolean renderLevel)
+    {
+        return renderLevel && !(this.screen instanceof SpaceTravelScreen);
     }
 }
