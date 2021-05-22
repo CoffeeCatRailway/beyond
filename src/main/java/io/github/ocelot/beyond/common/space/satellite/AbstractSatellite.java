@@ -1,6 +1,5 @@
 package io.github.ocelot.beyond.common.space.satellite;
 
-import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 
@@ -14,42 +13,16 @@ import java.util.Optional;
  */
 public abstract class AbstractSatellite implements Satellite
 {
-    private final int id;
-    private final Component displayName;
+    private int id;
+    private Component displayName;
     private ResourceLocation orbitingBody;
 
-    private AbstractSatellite(int id, Component displayName, ResourceLocation orbitingBody)
+    protected AbstractSatellite(Component displayName, @Nullable ResourceLocation orbitingBody)
     {
-        this.id = id;
+        this.id = SATELLITE_COUNTER.incrementAndGet();
         this.displayName = displayName;
         this.orbitingBody = orbitingBody;
     }
-
-    protected AbstractSatellite(Component displayName, ResourceLocation orbitingBody)
-    {
-        this(SATELLITE_COUNTER.incrementAndGet(), displayName, orbitingBody);
-    }
-
-    protected AbstractSatellite(FriendlyByteBuf buf)
-    {
-        this(buf.readVarInt(), buf.readComponent(), buf.readResourceLocation());
-    }
-
-    @Override
-    public final void write(FriendlyByteBuf buf)
-    {
-        buf.writeVarInt(this.id);
-        buf.writeComponent(this.displayName);
-        buf.writeResourceLocation(this.orbitingBody);
-        this.writeAdditional(buf);
-    }
-
-    /**
-     * Writes additional data into the specified buffer.
-     *
-     * @param buf The buffer to write into
-     */
-    protected abstract void writeAdditional(FriendlyByteBuf buf);
 
     @Override
     public int getId()
@@ -71,6 +44,22 @@ public abstract class AbstractSatellite implements Satellite
     public Optional<ResourceLocation> getOrbitingBody()
     {
         return Optional.ofNullable(this.orbitingBody);
+    }
+
+    @Override
+    public void setId(int id)
+    {
+        this.id = id;
+    }
+
+    /**
+     * Sets the displaying name of this satellite.
+     *
+     * @param displayName The new name to show
+     */
+    public void setDisplayName(Component displayName)
+    {
+        this.displayName = displayName;
     }
 
     /**

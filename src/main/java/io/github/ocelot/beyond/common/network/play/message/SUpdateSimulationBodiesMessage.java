@@ -4,7 +4,6 @@ import io.github.ocelot.beyond.common.network.play.handler.ISpaceClientPlayHandl
 import io.github.ocelot.beyond.common.space.satellite.Satellite;
 import io.github.ocelot.sonar.common.network.message.SonarMessage;
 import net.minecraft.network.FriendlyByteBuf;
-import net.minecraft.resources.ResourceLocation;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.fml.network.NetworkEvent;

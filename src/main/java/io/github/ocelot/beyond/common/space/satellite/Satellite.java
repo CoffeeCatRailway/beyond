@@ -1,13 +1,15 @@
 package io.github.ocelot.beyond.common.space.satellite;
 
+import com.mojang.serialization.Codec;
 import io.github.ocelot.beyond.common.space.simulation.CelestialBodySimulation;
 import io.github.ocelot.beyond.common.space.simulation.SimulatedBody;
+import io.netty.handler.codec.DecoderException;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 
+import java.io.IOException;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.function.Function;
 
 /**
  * <p>A satellite provided by the server when the user opens the travel screen.</p>
@@ -17,13 +19,6 @@ import java.util.function.Function;
 public interface Satellite
 {
     AtomicInteger SATELLITE_COUNTER = new AtomicInteger();
-
-    /**
-     * Writes this rocket into the specified buffer.
-     *
-     * @param buf The buffer to write data into
-     */
-    void write(FriendlyByteBuf buf);
 
     /**
      * Creates a body that can be added to the simulation.
@@ -45,15 +40,36 @@ public interface Satellite
     Type getType();
 
     /**
+     * @return The serializer for this satellite
+     */
+    Codec<? extends Satellite> getCodec();
+
+    /**
+     * Sets the id of this satellite.
+     *
+     * @param id The new id to use
+     */
+    void setId(int id);
+
+    /**
      * Writes the specified satellite into the buffer.
      *
      * @param satellite The satellite to write
      * @param buf       The buffer to write data into
      */
+    @SuppressWarnings("unchecked")
     static void write(Satellite satellite, FriendlyByteBuf buf)
     {
-        buf.writeEnum(satellite.getType());
-        satellite.write(buf);
+        try
+        {
+            buf.writeEnum(satellite.getType());
+            buf.writeVarInt(satellite.getId());
+            buf.writeWithCodec((Codec<? super Satellite>) satellite.getCodec(), satellite);
+        }
+        catch (IOException e)
+        {
+            throw new DecoderException(e);
+        }
     }
 
     /**
@@ -64,8 +80,18 @@ public interface Satellite
      */
     static Satellite read(FriendlyByteBuf buf)
     {
-        Type type = buf.readEnum(Type.class);
-        return type.factory.apply(buf);
+        try
+        {
+            Satellite.Type type = buf.readEnum(Satellite.Type.class);
+            int id = buf.readVarInt();
+            Satellite satellite = buf.readWithCodec(type.getCodec());
+            satellite.setId(id);
+            return satellite;
+        }
+        catch (IOException e)
+        {
+            throw new DecoderException(e);
+        }
     }
 
     /**
@@ -75,14 +101,32 @@ public interface Satellite
      */
     enum Type
     {
-        PLAYER(PlayerRocket::new),
-        ARTIFICIAL(ArtificialSatellite::new);
+        PLAYER(false, PlayerRocket.CODEC),
+        ARTIFICIAL(true, ArtificialSatellite.CODEC);
 
-        private final Function<FriendlyByteBuf, Satellite> factory;
+        private final boolean save;
+        private final Codec<? extends Satellite> codec;
 
-        Type(Function<FriendlyByteBuf, Satellite> factory)
+        Type(boolean save, Codec<? extends Satellite> codec)
         {
-            this.factory = factory;
+            this.save = save;
+            this.codec = codec;
+        }
+
+        /**
+         * @return Whether or not this satellite should be read to/from disk
+         */
+        public boolean shouldSave()
+        {
+            return save;
+        }
+
+        /**
+         * @return The codec for this satellite type
+         */
+        public Codec<? extends Satellite> getCodec()
+        {
+            return codec;
         }
     }
 }

@@ -1,5 +1,7 @@
 package io.github.ocelot.beyond.common.space.satellite;
 
+import com.mojang.serialization.Codec;
+import com.mojang.serialization.codecs.RecordCodecBuilder;
 import io.github.ocelot.beyond.common.space.simulation.ArtificialSatelliteBody;
 import io.github.ocelot.beyond.common.space.simulation.CelestialBodySimulation;
 import net.minecraft.network.FriendlyByteBuf;
@@ -8,6 +10,8 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 
+import javax.annotation.Nullable;
+
 /**
  * <p>A representation of a science satellite in space.</p>
  *
@@ -15,24 +19,18 @@ import net.minecraftforge.api.distmarker.OnlyIn;
  */
 public class ArtificialSatellite extends AbstractSatellite
 {
+    public static final Codec<ArtificialSatellite> CODEC = RecordCodecBuilder.create(instance -> instance.group(
+            Codec.STRING.fieldOf("displayName").<Component>xmap(Component.Serializer::fromJson, Component.Serializer::toJson).forGetter(AbstractSatellite::getDisplayName),
+            ResourceLocation.CODEC.optionalFieldOf("orbitingBody").forGetter(AbstractSatellite::getOrbitingBody),
+            ResourceLocation.CODEC.fieldOf("model").forGetter(ArtificialSatellite::getModel)
+    ).apply(instance, (displayName, orbitingBody, model) -> new ArtificialSatellite(displayName, orbitingBody.orElse(null), model)));
+
     private final ResourceLocation model;
 
-    public ArtificialSatellite(Component displayName, ResourceLocation orbitingBody, ResourceLocation model)
+    public ArtificialSatellite(Component displayName, @Nullable ResourceLocation orbitingBody, ResourceLocation model)
     {
         super(displayName, orbitingBody);
         this.model = model;
-    }
-
-    public ArtificialSatellite(FriendlyByteBuf buf)
-    {
-        super(buf);
-        this.model = buf.readResourceLocation();
-    }
-
-    @Override
-    protected void writeAdditional(FriendlyByteBuf buf)
-    {
-        buf.writeResourceLocation(this.model);
     }
 
     @Override
@@ -46,6 +44,12 @@ public class ArtificialSatellite extends AbstractSatellite
     public Type getType()
     {
         return Type.ARTIFICIAL;
+    }
+
+    @Override
+    public Codec<ArtificialSatellite> getCodec()
+    {
+        return CODEC;
     }
 
     /**

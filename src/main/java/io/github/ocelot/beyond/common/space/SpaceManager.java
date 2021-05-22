@@ -1,5 +1,6 @@
 package io.github.ocelot.beyond.common.space;
 
+import com.mojang.serialization.Codec;
 import io.github.ocelot.beyond.Beyond;
 import io.github.ocelot.beyond.common.init.BeyondMessages;
 import io.github.ocelot.beyond.common.network.play.message.SOpenSpaceTravelScreenMessage;
@@ -12,6 +13,7 @@ import io.github.ocelot.beyond.common.space.satellite.PlayerRocket;
 import io.github.ocelot.beyond.common.space.satellite.Satellite;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
+import net.minecraft.nbt.NbtOps;
 import net.minecraft.network.chat.TextComponent;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.MinecraftServer;
@@ -22,6 +24,8 @@ import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.common.util.Constants;
 import net.minecraftforge.event.entity.player.PlayerEvent;
 import net.minecraftforge.fml.network.PacketDistributor;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import javax.annotation.Nullable;
 import java.util.*;
@@ -36,6 +40,8 @@ import java.util.stream.Stream;
  */
 public class SpaceManager
 {
+    private static final Logger LOGGER = LogManager.getLogger();
+
     private static SpaceManager spaceManager;
     private final MinecraftServer server;
     // TODO store solar system id and update dimension cache
@@ -52,8 +58,18 @@ public class SpaceManager
         this.validDestinations = StaticSolarSystemDefinitions.SOLAR_SYSTEM.get().entrySet().stream().filter(entry -> entry.getValue().getDimension().isPresent()).collect(Collectors.toMap(Map.Entry::getKey, entry -> entry.getValue().getDimension().get()));
         this.satellites = ConcurrentHashMap.newKeySet();
 
-        this.add(new ArtificialSatellite(new TextComponent("Earth Satellite Test"), new ResourceLocation(Beyond.MOD_ID, "earth"), new ResourceLocation(Beyond.MOD_ID, "body/satellite")));
-        this.add(new ArtificialSatellite(new TextComponent("Mars Satellite Test"), new ResourceLocation(Beyond.MOD_ID, "mars"), new ResourceLocation(Beyond.MOD_ID, "body/satellite")));
+        List<Satellite> satellites = this.getSaveData().satellites;
+        if (satellites.isEmpty())
+        {
+            // TODO don't add default satellites
+            LOGGER.debug("Adding default satellites");
+            this.add(new ArtificialSatellite(new TextComponent("Earth Satellite Test"), new ResourceLocation(Beyond.MOD_ID, "earth"), new ResourceLocation(Beyond.MOD_ID, "body/satellite")));
+            this.add(new ArtificialSatellite(new TextComponent("Mars Satellite Test"), new ResourceLocation(Beyond.MOD_ID, "mars"), new ResourceLocation(Beyond.MOD_ID, "body/satellite")));
+        }
+        else
+        {
+            this.satellites.addAll(satellites);
+        }
 
         MinecraftForge.EVENT_BUS.addListener(this::onPlayerLeave);
     }
@@ -61,6 +77,7 @@ public class SpaceManager
     private void add(Satellite satellite)
     {
         this.satellites.add(satellite);
+        this.getSaveData().update(this.satellites);
         if (satellite instanceof PlayerRocket)
             this.notifyAllPlayers(((PlayerRocket) satellite).getProfile().getId(), new SUpdateSimulationBodiesMessage(new Satellite[]{satellite}, new int[0]));
     }
@@ -68,6 +85,7 @@ public class SpaceManager
     private void remove(Satellite satellite)
     {
         this.satellites.remove(satellite);
+        this.getSaveData().update(this.satellites);
         if (satellite instanceof PlayerRocket)
             this.notifyAllPlayers(((PlayerRocket) satellite).getProfile().getId(), new SUpdateSimulationBodiesMessage(new Satellite[0], new int[]{satellite.getId()}));
     }
@@ -91,6 +109,11 @@ public class SpaceManager
     private void onPlayerLeave(PlayerEvent.PlayerLoggedOutEvent event)
     {
         this.getPlayer(event.getPlayer().getUUID()).ifPresent(this::remove);
+    }
+
+    private SpaceData getSaveData()
+    {
+        return this.server.overworld().getDataStorage().computeIfAbsent(SpaceData::new, SpaceData.DATA_NAME);
     }
 
     /**
@@ -192,34 +215,72 @@ public class SpaceManager
 
     private static class SpaceData extends SavedData
     {
-        private static final String DATA_NAME = Beyond.MOD_ID + "_Space";
+        private static final String DATA_NAME = Beyond.MOD_ID + "_space";
 
-        private final Set<Satellite> satellites;
+        private final List<Satellite> satellites;
 
         private SpaceData()
         {
             super(DATA_NAME);
-            this.satellites = new HashSet<>();
+            this.satellites = new ArrayList<>();
         }
 
         @Override
         public void load(CompoundTag nbt)
         {
-//            this.satellites.clear();
-//            ListTag satellitesNbt = nbt.getList("Satellites", Constants.NBT.TAG_COMPOUND);
-//            for (int i = 0; i < satellitesNbt.size(); i++)
-//                this.satellites.add(Satellite.load(satellitesNbt.getCompound(i)));
+            this.satellites.clear();
+            ListTag satellitesNbt = nbt.getList("Satellites", Constants.NBT.TAG_COMPOUND);
+            for (int i = 0; i < satellitesNbt.size(); i++)
+            {
+                try
+                {
+                    CompoundTag satelliteNbt = satellitesNbt.getCompound(i);
+                    Satellite.Type type = Satellite.Type.values()[satelliteNbt.getByte("Type") % Satellite.Type.values().length];
+                    if (!type.shouldSave())
+                        continue;
+                    this.satellites.add(type.getCodec().parse(NbtOps.INSTANCE, satelliteNbt.get("Data")).getOrThrow(false, LOGGER::error));
+                }
+                catch (Exception ignored)
+                {
+                }
+            }
         }
 
+        @SuppressWarnings("unchecked")
         @Override
         public CompoundTag save(CompoundTag nbt)
         {
-            return null;
+            ListTag satellitesNbt = new ListTag();
+            for (Satellite satellite : this.satellites)
+            {
+                if (!satellite.getType().shouldSave())
+                    continue;
+                try
+                {
+                    CompoundTag satelliteNbt = new CompoundTag();
+                    satelliteNbt.putByte("Type", (byte) satellite.getType().ordinal());
+                    satelliteNbt.put("Data", ((Codec<Satellite>) satellite.getCodec()).encodeStart(NbtOps.INSTANCE, satellite).getOrThrow(false, LOGGER::error));
+                    satellitesNbt.add(satelliteNbt);
+                }
+                catch (Exception ignored)
+                {
+                }
+            }
+            nbt.put("Satellites", satellitesNbt);
+            return nbt;
         }
 
+        /**
+         * Updates the satellites to be written to disk.
+         *
+         * @param satellites The satellites to write
+         */
         private void update(Set<Satellite> satellites)
         {
-
+            this.satellites.clear();
+            this.satellites.addAll(satellites);
+            this.satellites.sort(Comparator.comparingInt(Satellite::getId));
+            this.setDirty();
         }
     }
 }
