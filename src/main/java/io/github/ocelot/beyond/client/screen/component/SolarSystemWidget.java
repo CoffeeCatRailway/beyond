@@ -5,10 +5,7 @@ import com.mojang.blaze3d.platform.GlStateManager;
 import com.mojang.blaze3d.platform.Lighting;
 import com.mojang.blaze3d.platform.Window;
 import com.mojang.blaze3d.systems.RenderSystem;
-import com.mojang.blaze3d.vertex.BufferBuilder;
-import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import com.mojang.blaze3d.vertex.PoseStack;
-import com.mojang.blaze3d.vertex.Tesselator;
 import com.mojang.math.Matrix4f;
 import com.mojang.math.Vector3f;
 import com.mojang.math.Vector4f;
@@ -17,6 +14,7 @@ import io.github.ocelot.beyond.client.BeyondRenderTypes;
 import io.github.ocelot.beyond.client.MousePicker;
 import io.github.ocelot.beyond.client.SpacePlanetSpriteManager;
 import io.github.ocelot.beyond.client.render.SpaceStarsRenderer;
+import io.github.ocelot.beyond.client.render.bubble.BubbleRenderer;
 import io.github.ocelot.beyond.client.screen.SpaceTravelCamera;
 import io.github.ocelot.beyond.common.init.BeyondMessages;
 import io.github.ocelot.beyond.common.network.play.message.CPlanetTravelMessage;
@@ -243,65 +241,26 @@ public class SolarSystemWidget extends AbstractWidget implements ContainerEventH
 
         int descriptionHeight = descriptionLines.size() * fontRenderer.lineHeight;
 
-        int padding = 8;
-        int boxWidth = Math.max(fontRenderer.width(title) * 2, 300) + padding * 2;
-        int boxHeight = descriptionHeight + 2 * fontRenderer.lineHeight + (this.selectedBody.canTeleportTo() ? 20 + padding : 0) + padding * 2;
-        int length = boxHeight + 40;
-        int width = 5;
-        int sheering = 20;
-
-        float lineRed = 38F / 255F;
-        float lineGreen = 30F / 255F;
-        float lineBlue = 36F / 255F;
-        float lineAlpha = 0.8F;
-        float boxRed = 38F / 255F;
-        float boxGreen = 30F / 255F;
-        float boxBlue = 36F / 255F;
-        float boxAlpha = 0.7F;
-
-        poseStack.pushPose();
-        poseStack.translate(x, y, 0);
-        Matrix4f matrix4f = poseStack.last().pose();
-        BufferBuilder builder = Tesselator.getInstance().getBuilder();
-        builder.begin(GL_TRIANGLES, DefaultVertexFormat.POSITION_COLOR);
-
-        // Line
-        builder.vertex(matrix4f, 0, 0, 0).color(lineRed, lineGreen, lineBlue, lineAlpha).endVertex();
-        builder.vertex(matrix4f, sheering + width, -length, 0).color(lineRed, lineGreen, lineBlue, lineAlpha).endVertex();
-        builder.vertex(matrix4f, sheering, -length, 0).color(lineRed, lineGreen, lineBlue, lineAlpha).endVertex();
-        builder.vertex(matrix4f, 0, 0, 0).color(lineRed, lineGreen, lineBlue, lineAlpha).endVertex();
-        builder.vertex(matrix4f, 1, 0, 0).color(lineRed, lineGreen, lineBlue, lineAlpha).endVertex();
-        builder.vertex(matrix4f, sheering + width, -length, 0).color(lineRed, lineGreen, lineBlue, lineAlpha).endVertex();
-
-        // Box
-        builder.vertex(matrix4f, sheering + width - ((float) boxHeight / (float) length) * (sheering + width - 1), boxHeight - length, 0).color(boxRed, boxGreen, boxBlue, boxAlpha).endVertex();
-        builder.vertex(matrix4f, sheering + width + boxWidth, boxHeight - length, 0).color(boxRed, boxGreen, boxBlue, boxAlpha).endVertex();
-        builder.vertex(matrix4f, sheering + width, -length, 0).color(boxRed, boxGreen, boxBlue, boxAlpha).endVertex();
-        builder.vertex(matrix4f, sheering + width + boxWidth, boxHeight - length, 0).color(boxRed, boxGreen, boxBlue, boxAlpha).endVertex();
-        builder.vertex(matrix4f, sheering + width + boxWidth, -length, 0).color(boxRed, boxGreen, boxBlue, boxAlpha).endVertex();
-        builder.vertex(matrix4f, sheering + width, -length, 0).color(boxRed, boxGreen, boxBlue, boxAlpha).endVertex();
-
-        Tesselator.getInstance().end();
-
-        poseStack.translate(width + sheering, -length, 0.0F);
-        poseStack.pushPose();
-        poseStack.translate(padding, padding, 0);
-        poseStack.scale(2F, 2F, 2F);
-        fontRenderer.drawShadow(poseStack, title, 0, 0, -1);
-        poseStack.popPose();
-        for (int i = 0; i < descriptionLines.size(); i++)
-            fontRenderer.drawShadow(poseStack, descriptionLines.get(i), padding, padding + (i + 2) * fontRenderer.lineHeight, -1);
-        poseStack.popPose();
-
-        if (this.selectedBody.canTeleportTo())
+        BubbleRenderer.render(poseStack, x, y, Math.max(fontRenderer.width(title) * 2, 300), descriptionHeight + 2 * fontRenderer.lineHeight + (this.selectedBody.canTeleportTo() ? this.launchButton.getHeight() + BubbleRenderer.PADDING : 0), (boxX, boxY, boxWidth, boxHeight) ->
         {
-            this.launchButton.x = x + width + sheering + padding;
-            this.launchButton.y = y + descriptionHeight + 2 * fontRenderer.lineHeight + padding * 2 - length;
-            this.launchButton.visible = true;
-            this.launchButton.active = !this.travelling && this.selectedBody.getDimension().isPresent() && (Minecraft.getInstance().player == null || !Minecraft.getInstance().player.level.dimension().location().equals(this.selectedBody.getDimension().get()));
-        }
+            poseStack.pushPose();
+            poseStack.translate(BubbleRenderer.PADDING, BubbleRenderer.PADDING, 0);
+            poseStack.scale(2F, 2F, 2F);
+            fontRenderer.drawShadow(poseStack, title, 0, 0, -1);
+            poseStack.popPose();
+            for (int i = 0; i < descriptionLines.size(); i++)
+                fontRenderer.drawShadow(poseStack, descriptionLines.get(i), BubbleRenderer.PADDING, BubbleRenderer.PADDING + (i + 2) * fontRenderer.lineHeight, -1);
 
-        this.bubbleHovered = mouseX >= x + width + sheering && mouseX < x + width + sheering + boxWidth && mouseY >= y - length && mouseY < y - length + boxHeight;
+            if (this.selectedBody.canTeleportTo())
+            {
+                this.launchButton.x = boxX + BubbleRenderer.PADDING;
+                this.launchButton.y = boxY + descriptionHeight + 2 * fontRenderer.lineHeight + BubbleRenderer.PADDING * 2;
+                this.launchButton.visible = true;
+                this.launchButton.active = !this.travelling && this.selectedBody.getDimension().isPresent() && (Minecraft.getInstance().player == null || !Minecraft.getInstance().player.level.dimension().location().equals(this.selectedBody.getDimension().get()));
+            }
+
+            this.bubbleHovered = mouseX >= boxX && mouseX < boxX + boxWidth && mouseY >= boxY && mouseY < boxY + boxHeight;
+        });
     }
 
     private void invalidateFramebuffer()
