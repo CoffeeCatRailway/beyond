@@ -61,7 +61,7 @@ public class SpaceManager
     {
         this.satellites.add(satellite);
         if (satellite instanceof PlayerRocket)
-            this.notifyAllPlayers(((PlayerRocket) satellite).getProfile().getId(), new SUpdateSimulationBodiesMessage(this.satellites.toArray(new Satellite[0]), new int[0]));
+            this.notifyAllPlayers(((PlayerRocket) satellite).getProfile().getId(), new SUpdateSimulationBodiesMessage(new Satellite[]{satellite}, new int[0]));
     }
 
     private void remove(Satellite satellite)
