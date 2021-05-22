@@ -49,7 +49,7 @@ public abstract class AbstractSimulatedBody implements SimulatedBody
      */
     protected float getHorizontalDistance(float partialTicks)
     {
-        return this.distanceFromParent * Mth.cos(Mth.lerp(partialTicks, this.lastYaw, this.yaw));
+        return (float) (this.distanceFromParent * Math.cos(Mth.lerp(partialTicks, this.lastYaw, this.yaw)));
     }
 
     /**
@@ -60,7 +60,7 @@ public abstract class AbstractSimulatedBody implements SimulatedBody
      */
     protected float getVerticalDistance(float partialTicks)
     {
-        return this.distanceFromParent * Mth.sin(Mth.lerp(partialTicks, this.lastYaw, this.yaw));
+        return (float) (this.distanceFromParent * Math.sin(Mth.lerp(partialTicks, this.lastYaw, this.yaw)));
     }
 
     @Override
