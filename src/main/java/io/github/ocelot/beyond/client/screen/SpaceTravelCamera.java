@@ -15,6 +15,8 @@ import javax.annotation.Nullable;
  */
 public class SpaceTravelCamera implements TickableWidget, GuiEventListener
 {
+    private static final float ZOOM_TRANSITION_SPEED = 0.35F;
+
     private final Vector3f lastAnchorPos;
     private final Vector3f anchorPos;
     private float lastPitch;
@@ -23,6 +25,7 @@ public class SpaceTravelCamera implements TickableWidget, GuiEventListener
     private float yaw;
     private float lastZoom;
     private float zoom;
+    private float zoomSpeed;
     private SimulatedBody focused;
     private boolean inputDisabled;
 
@@ -36,6 +39,7 @@ public class SpaceTravelCamera implements TickableWidget, GuiEventListener
         this.yaw = 0;
         this.lastZoom = 0;
         this.zoom = 0;
+        this.zoomSpeed = 0;
         this.focused = null;
         this.inputDisabled = false;
     }
@@ -47,16 +51,41 @@ public class SpaceTravelCamera implements TickableWidget, GuiEventListener
         this.lastPitch = this.pitch;
         this.lastYaw = this.yaw;
         this.lastZoom = this.zoom;
+
+        this.zoom += this.zoomSpeed;
+        if (this.zoom > 0)
+        {
+            this.zoom = 0;
+            this.zoomSpeed = 0;
+        }
+
+        if (this.zoomSpeed > 0)
+        {
+            this.zoomSpeed *= ZOOM_TRANSITION_SPEED;
+            if (this.zoomSpeed < 0)
+                this.zoomSpeed = 0;
+        }
+        if (this.zoomSpeed < 0)
+        {
+            this.zoomSpeed *= ZOOM_TRANSITION_SPEED;
+            if (this.zoomSpeed > 0)
+                this.zoomSpeed = 0;
+        }
+    }
+
+    private double getDistance(float partialTicks)
+    {
+        return -Math.pow(1.02, -Mth.lerp(partialTicks, this.lastZoom, this.zoom));
     }
 
     private float getHorizontalDistance(float partialTicks)
     {
-        return Mth.lerp(partialTicks, this.lastZoom, this.zoom) * Mth.cos(Mth.lerp(partialTicks, this.lastPitch, this.pitch));
+        return (float) (this.getDistance(partialTicks) * Math.cos(Mth.lerp(partialTicks, this.lastPitch, this.pitch)));
     }
 
     private float getVerticalDistance(float partialTicks)
     {
-        return Mth.lerp(partialTicks, this.lastZoom, this.zoom) * Mth.sin(Mth.lerp(partialTicks, this.lastPitch, this.pitch));
+        return (float) (this.getDistance(partialTicks) * Math.sin(Mth.lerp(partialTicks, this.lastPitch, this.pitch)));
     }
 
     @Override
@@ -85,9 +114,7 @@ public class SpaceTravelCamera implements TickableWidget, GuiEventListener
     {
         if (this.inputDisabled)
             return false;
-        this.zoom += amount * 4.0F;
-        if (this.zoom > 0)
-            this.zoom = 0;
+        this.zoomSpeed += amount * 4.0F;
         return true;
     }
 
@@ -145,6 +172,7 @@ public class SpaceTravelCamera implements TickableWidget, GuiEventListener
     {
         this.lastZoom = -zoom;
         this.zoom = -zoom;
+        this.zoomSpeed = 0;
     }
 
     /**

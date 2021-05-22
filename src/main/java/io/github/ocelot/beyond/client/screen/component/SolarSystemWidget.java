@@ -94,7 +94,7 @@ public class SolarSystemWidget extends AbstractWidget implements ContainerEventH
         this.simulation = new CelestialBodySimulation(StaticSolarSystemDefinitions.SOLAR_SYSTEM.get()); // TODO load solar system from server
         this.starsRenderer = new SpaceStarsRenderer();
         this.camera = new SpaceTravelCamera();
-        this.camera.setZoom(30);
+        this.camera.setZoom(200);
         this.camera.setPitch((float) (24F * Math.PI / 180F));
 
         PlayerRocketBody p = null;
