@@ -10,20 +10,21 @@ import io.github.ocelot.beyond.common.space.planet.StaticSolarSystemDefinitions;
 import io.github.ocelot.beyond.common.space.satellite.ArtificialSatellite;
 import io.github.ocelot.beyond.common.space.satellite.PlayerRocket;
 import io.github.ocelot.beyond.common.space.satellite.Satellite;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.ListTag;
 import net.minecraft.network.chat.TextComponent;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.level.saveddata.SavedData;
 import net.minecraftforge.common.MinecraftForge;
+import net.minecraftforge.common.util.Constants;
 import net.minecraftforge.event.entity.player.PlayerEvent;
 import net.minecraftforge.fml.network.PacketDistributor;
 
 import javax.annotation.Nullable;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
-import java.util.UUID;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -187,5 +188,38 @@ public class SpaceManager
     public static void unload()
     {
         spaceManager = null;
+    }
+
+    private static class SpaceData extends SavedData
+    {
+        private static final String DATA_NAME = Beyond.MOD_ID + "_Space";
+
+        private final Set<Satellite> satellites;
+
+        private SpaceData()
+        {
+            super(DATA_NAME);
+            this.satellites = new HashSet<>();
+        }
+
+        @Override
+        public void load(CompoundTag nbt)
+        {
+//            this.satellites.clear();
+//            ListTag satellitesNbt = nbt.getList("Satellites", Constants.NBT.TAG_COMPOUND);
+//            for (int i = 0; i < satellitesNbt.size(); i++)
+//                this.satellites.add(Satellite.load(satellitesNbt.getCompound(i)));
+        }
+
+        @Override
+        public CompoundTag save(CompoundTag nbt)
+        {
+            return null;
+        }
+
+        private void update(Set<Satellite> satellites)
+        {
+
+        }
     }
 }
