@@ -147,7 +147,6 @@ public class SolarSystemWidget extends AbstractWidget implements ContainerEventH
                 return;
             this.selectedBody.getDimension().ifPresent(dimension ->
             {
-                System.out.println("Launched to " + dimension);
                 PlayerRocketBody rocket = this.simulation.getPlayer(Objects.requireNonNull(Minecraft.getInstance().player).getUUID());
                 if (rocket != null)
                 {
