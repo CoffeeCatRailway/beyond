@@ -40,7 +40,7 @@ public class CraterCarver extends WorldCarver<CraterConfig>
         float floorHeight = config.getFloorHeight().getRandomValue(random);
         float smoothness = config.getSmoothness();
 
-        BlockPos centerPos = new BlockPos(mainChunkX * 16 + random.nextInt(16), 0, mainChunkZ * 16 + random.nextInt(16)); // TODO make this randomized in the chunk
+        BlockPos centerPos = new BlockPos(mainChunkX * 16 + random.nextInt(16), 0, mainChunkZ * 16 + random.nextInt(16));
         BlockPos.MutableBlockPos pos = new BlockPos.MutableBlockPos();
 
         for (int xp = 0; xp < 16; xp++)
