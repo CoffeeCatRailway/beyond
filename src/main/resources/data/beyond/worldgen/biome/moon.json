@@ -15,7 +15,8 @@
   "surface_builder": "beyond:moon",
   "carvers": {
     "air": [
-      "beyond:moon_crater"
+      "beyond:moon_crater",
+      "beyond:moon_cave"
     ]
   },
   "features": [
