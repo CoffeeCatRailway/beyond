@@ -1,0 +1,38 @@
+{
+  "config": {
+    "feature": {
+      "config": {
+        "min_length": 4,
+        "max_length": 12,
+        "min_radius": 2,
+        "max_radius": 3,
+        "state": {
+          "Name": "minecraft:white_stained_glass"
+        },
+        "place_on": [
+          {
+            "Name": "beyond:moon_rock"
+          }
+        ],
+        "place_in": [
+          {
+            "Name": "minecraft:air"
+          },
+          {
+            "Name": "minecraft:cave_air"
+          }
+        ],
+        "max_y": 80
+      },
+      "type": "beyond:cave_crystal"
+    },
+    "decorator": {
+      "config": {
+        "step": "air",
+        "probability": 0.001
+      },
+      "type": "minecraft:carving_mask"
+    }
+  },
+  "type": "minecraft:decorated"
+}

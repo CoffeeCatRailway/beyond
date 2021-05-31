@@ -93,6 +93,7 @@ public class Beyond
         dataGenerator.addProvider(new EntityTypeTagGen(dataGenerator, existingFileHelper));
         dataGenerator.addProvider(new ItemModelGen(dataGenerator));
         dataGenerator.addProvider(new LanguageGen(dataGenerator));
+        dataGenerator.addProvider(new ConfiguredFeatureGen(dataGenerator));
     }
 
     @SubscribeEvent
