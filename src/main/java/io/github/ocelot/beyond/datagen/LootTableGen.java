@@ -72,6 +72,7 @@ public class LootTableGen extends ForgeLootTableProvider
         protected void addTables()
         {
             this.dropSelf(BeyondBlocks.MOON_ROCK.get());
+            this.dropSelf(BeyondBlocks.ROCKET_CONTROLLER.get());
         }
 
         @Override

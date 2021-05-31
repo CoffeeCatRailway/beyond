@@ -1,6 +1,7 @@
 {
   "biome.beyond.moon": "Moon",
   "block.beyond.moon_rock": "Moon Rock",
+  "block.beyond.rocket_controller": "Rocket Controller",
   "gui.beyond.already_there": "Already There",
   "gui.beyond.cannot_launch": "Cannot Launch",
   "gui.beyond.launch": "Launch!",

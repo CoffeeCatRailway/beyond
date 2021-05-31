@@ -1,6 +1,7 @@
 package io.github.ocelot.beyond.common.init;
 
 import io.github.ocelot.beyond.Beyond;
+import io.github.ocelot.beyond.common.block.RocketControllerBlock;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.level.block.Block;
@@ -21,6 +22,7 @@ public class BeyondBlocks
     public static final DeferredRegister<Block> BLOCKS = DeferredRegister.create(ForgeRegistries.BLOCKS, Beyond.MOD_ID);
 
     public static final RegistryObject<Block> MOON_ROCK = register("moon_rock", () -> new Block(BlockBehaviour.Properties.copy(Blocks.END_STONE)));
+public static final RegistryObject<Block> ROCKET_CONTROLLER = register("rocket_controller", ()->new RocketControllerBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).strength(6.0F, 9.0F)));
 
     /* Registry Methods */
 

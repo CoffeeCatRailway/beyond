@@ -19,6 +19,7 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.level.levelgen.structure.templatesystem.StructureTemplate;
 import net.minecraft.world.level.saveddata.SavedData;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.common.util.Constants;
@@ -128,7 +129,10 @@ public class SpaceManager
         {
             ResourceLocation playerDimension = player.level.dimension().location();
             ResourceLocation playerPlanet = this.validDestinations.entrySet().stream().filter(entry -> entry.getValue().equals(playerDimension)).map(Map.Entry::getKey).findAny().orElse(Planet.EARTH);//this.simulation.getBodies().filter(b -> b.canTeleportTo() && b.getDimension().isPresent() && b.getDimension().get().equals(playerDimension)).map(SimulatedBody::getId).findAny().orElse(Planet.EARTH);
-            this.add(new PlayerRocket(player, playerPlanet));
+            StructureTemplate rocket = this.server.getStructureManager().get(new ResourceLocation(Beyond.MOD_ID, "test_rocket"));
+            if (rocket == null)
+                rocket = new StructureTemplate();
+            this.add(new PlayerRocket(player, playerPlanet, rocket)); // TODO set to custom made structure
         }
         return new SOpenSpaceTravelScreenMessage(this.satellites.toArray(new Satellite[0]));
     }
