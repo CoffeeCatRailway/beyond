@@ -1,4 +1,4 @@
-package io.github.ocelot.beyond.client.screen;
+package io.github.ocelot.beyond.client.screen.component;
 
 import com.mojang.math.Vector3f;
 import io.github.ocelot.beyond.common.space.simulation.SimulatedBody;
@@ -47,29 +47,32 @@ public class SpaceTravelCamera implements TickableWidget, GuiEventListener
     @Override
     public void tick()
     {
-        this.lastAnchorPos.set(this.lastAnchorPos.x(), this.lastAnchorPos.y(), this.lastAnchorPos.z());
+        this.lastAnchorPos.set(this.anchorPos.x(), this.anchorPos.y(), this.anchorPos.z());
         this.lastPitch = this.pitch;
         this.lastYaw = this.yaw;
         this.lastZoom = this.zoom;
 
-        this.zoom += this.zoomSpeed;
-        if (this.zoom > 0)
+        if (!this.inputDisabled)
         {
-            this.zoom = 0;
-            this.zoomSpeed = 0;
-        }
+            this.zoom += this.zoomSpeed;
+            if (this.zoom > 0)
+            {
+                this.zoom = 0;
+                this.zoomSpeed = 0;
+            }
 
-        if (this.zoomSpeed > 0)
-        {
-            this.zoomSpeed *= ZOOM_TRANSITION_SPEED;
-            if (this.zoomSpeed < 0)
-                this.zoomSpeed = 0;
-        }
-        if (this.zoomSpeed < 0)
-        {
-            this.zoomSpeed *= ZOOM_TRANSITION_SPEED;
             if (this.zoomSpeed > 0)
-                this.zoomSpeed = 0;
+            {
+                this.zoomSpeed *= ZOOM_TRANSITION_SPEED;
+                if (this.zoomSpeed < 0)
+                    this.zoomSpeed = 0;
+            }
+            if (this.zoomSpeed < 0)
+            {
+                this.zoomSpeed *= ZOOM_TRANSITION_SPEED;
+                if (this.zoomSpeed > 0)
+                    this.zoomSpeed = 0;
+            }
         }
     }
 
