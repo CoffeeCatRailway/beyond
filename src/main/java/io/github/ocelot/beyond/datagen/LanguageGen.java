@@ -19,6 +19,7 @@ public class LanguageGen extends LanguageProvider
     {
         this.addBiome(BeyondBiomes.MOON_LOCATION.location(), "Moon");
         this.addBlock(BeyondBlocks.MOON_ROCK, "Moon Rock");
+        this.addBlock(BeyondBlocks.ROCKET_CONSTRUCTION_PLATFORM, "Rocket Construction Platform");
         this.addBlock(BeyondBlocks.ROCKET_CONTROLLER, "Rocket Controller");
         this.addBlock(BeyondBlocks.ROCKET_THRUSTER, "Rocket Thruster");
         this.add("multiplayer." + Beyond.MOD_ID + ".disconnect.invalid_space_travel", "Invalid Space Travel");

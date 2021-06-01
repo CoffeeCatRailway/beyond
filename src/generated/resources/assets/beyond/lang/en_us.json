@@ -1,6 +1,7 @@
 {
   "biome.beyond.moon": "Moon",
   "block.beyond.moon_rock": "Moon Rock",
+  "block.beyond.rocket_construction_platform": "Rocket Construction Platform",
   "block.beyond.rocket_controller": "Rocket Controller",
   "block.beyond.rocket_thruster": "Rocket Thruster",
   "gui.beyond.already_there": "Already There",
