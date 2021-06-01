@@ -27,9 +27,8 @@ public class PlayerRocketBody extends AbstractSimulatedBody implements Satellite
     private final Set<PlayerTravelListener> listeners;
     private final PlayerRocket rocket;
     private final Component displayName;
-    private final float size;
-    private ResourceLocation newParent;
     private final Vector3f transitionStart;
+    private ResourceLocation newParent;
     private float newDistanceFromParent;
     private float lastTransition;
     private float transition;
@@ -41,8 +40,6 @@ public class PlayerRocketBody extends AbstractSimulatedBody implements Satellite
         this.listeners = new HashSet<>();
         this.rocket = rocket;
         this.displayName = rocket.getDisplayName();
-        Vec3i structureSize = rocket.getRocket().getSize();
-        this.size = 1.0F / Math.min(Math.min(structureSize.getX(), structureSize.getZ()), structureSize.getY());
         this.transitionStart = new Vector3f();
     }
 
@@ -133,7 +130,7 @@ public class PlayerRocketBody extends AbstractSimulatedBody implements Satellite
     @Override
     public float getSize()
     {
-        return this.size * 0.5F;
+        return 0.025F;
     }
 
     @Override

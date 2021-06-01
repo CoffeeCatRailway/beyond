@@ -3,7 +3,6 @@
   "package": "io.github.ocelot.beyond.mixin",
   "compatibilityLevel": "JAVA_8",
   "minVersion": "0.8",
-  "refmap": "beyond.refmap.json",
   "mixins": [],
   "client": [
     "client.ClientPlayNetHandlerMixin",
