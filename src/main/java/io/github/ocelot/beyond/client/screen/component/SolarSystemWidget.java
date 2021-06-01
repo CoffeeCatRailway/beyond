@@ -42,6 +42,7 @@ import net.minecraft.client.model.geom.ModelPart;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.texture.OverlayTexture;
+import net.minecraft.core.Vec3i;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.network.chat.TextComponent;
@@ -232,7 +233,9 @@ public class SolarSystemWidget extends AbstractWidget implements ContainerEventH
                 {
                     poseStack.translate(-0.5F, -0.5F, -0.5F);
                     PlayerRocket rocket = ((PlayerRocketBody) body).getSatellite();
+                    Vec3i size = rocket.getRocket().getSize();
                     StructureTemplateRenderer renderer = this.playerRockets.computeIfAbsent(rocket.getProfile(), __ -> new StructureTemplateRenderer(CompletableFuture.completedFuture(rocket.getRocket()), (pos, resolver) -> FoliageColor.getDefaultColor()));
+                    poseStack.translate(-(float) size.getX() / 2.0F, -(float) size.getY() / 2.0F, -(float) size.getZ() / 2.0F);
                     renderer.render(poseStack, 0, 0, 0);
                 }
                 break;

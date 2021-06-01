@@ -129,7 +129,7 @@ public class SpaceManager
         {
             ResourceLocation playerDimension = player.level.dimension().location();
             ResourceLocation playerPlanet = this.validDestinations.entrySet().stream().filter(entry -> entry.getValue().equals(playerDimension)).map(Map.Entry::getKey).findAny().orElse(Planet.EARTH);//this.simulation.getBodies().filter(b -> b.canTeleportTo() && b.getDimension().isPresent() && b.getDimension().get().equals(playerDimension)).map(SimulatedBody::getId).findAny().orElse(Planet.EARTH);
-            StructureTemplate rocket = this.server.getStructureManager().get(new ResourceLocation(Beyond.MOD_ID, "test_rocket"));
+            StructureTemplate rocket = this.server.getStructureManager().get(new ResourceLocation(Beyond.MOD_ID, "stampy_rocket"));
             if (rocket == null)
                 rocket = new StructureTemplate();
             this.add(new PlayerRocket(player, playerPlanet, rocket)); // TODO set to custom made structure

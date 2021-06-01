@@ -38,7 +38,7 @@ public abstract class AbstractSimulatedBody implements SimulatedBody
         this.lastRotation.set(this.rotation.x(), this.rotation.y(), this.rotation.z());
         this.lastYaw = this.yaw;
         this.rotation.setY((float) (this.rotation.y() + (0.2F + this.distanceFromParentSqrt / 10F) / 180F * Math.PI));
-        this.yaw += 0.01F / this.getSize() / this.distanceFromParentSqrt;
+        this.yaw += 0.01F / this.distanceFromParentSqrt;
     }
 
     /**
