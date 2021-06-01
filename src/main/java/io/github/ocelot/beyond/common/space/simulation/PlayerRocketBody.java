@@ -4,7 +4,6 @@ import com.mojang.math.Vector3f;
 import io.github.ocelot.beyond.Beyond;
 import io.github.ocelot.beyond.common.MagicMath;
 import io.github.ocelot.beyond.common.space.satellite.PlayerRocket;
-import io.github.ocelot.beyond.common.space.satellite.Satellite;
 import io.github.ocelot.beyond.common.util.Listenable;
 import net.minecraft.core.Vec3i;
 import net.minecraft.network.chat.Component;

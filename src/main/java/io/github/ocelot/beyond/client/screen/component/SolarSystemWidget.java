@@ -16,7 +16,6 @@ import io.github.ocelot.beyond.client.MousePicker;
 import io.github.ocelot.beyond.client.SpacePlanetSpriteManager;
 import io.github.ocelot.beyond.client.render.SpaceStarsRenderer;
 import io.github.ocelot.beyond.client.render.bubble.BubbleRenderer;
-import io.github.ocelot.beyond.client.screen.SpaceTravelCamera;
 import io.github.ocelot.beyond.common.init.BeyondMessages;
 import io.github.ocelot.beyond.common.network.play.message.CPlanetTravelMessage;
 import io.github.ocelot.beyond.common.network.play.message.SOpenSpaceTravelScreenMessage;

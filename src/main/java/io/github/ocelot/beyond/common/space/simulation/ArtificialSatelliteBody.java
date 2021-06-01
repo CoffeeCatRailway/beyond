@@ -2,7 +2,6 @@ package io.github.ocelot.beyond.common.space.simulation;
 
 import io.github.ocelot.beyond.Beyond;
 import io.github.ocelot.beyond.common.space.satellite.ArtificialSatellite;
-import io.github.ocelot.beyond.common.space.satellite.Satellite;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.resources.model.BakedModel;
 import net.minecraft.client.resources.model.ModelManager;
