@@ -1,5 +1,6 @@
 package io.github.ocelot.beyond.client.screen.component;
 
+import com.mojang.authlib.GameProfile;
 import com.mojang.blaze3d.pipeline.RenderTarget;
 import com.mojang.blaze3d.platform.GlStateManager;
 import com.mojang.blaze3d.platform.Lighting;
@@ -26,6 +27,7 @@ import io.github.ocelot.beyond.common.space.simulation.*;
 import io.github.ocelot.beyond.common.util.CelestialBodyRayTraceResult;
 import io.github.ocelot.sonar.client.render.BakedModelRenderer;
 import io.github.ocelot.sonar.client.render.ShapeRenderer;
+import io.github.ocelot.sonar.client.render.StructureTemplateRenderer;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
@@ -47,12 +49,14 @@ import net.minecraft.network.chat.TranslatableComponent;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.FormattedCharSequence;
 import net.minecraft.world.inventory.InventoryMenu;
+import net.minecraft.world.level.FoliageColor;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.client.model.data.EmptyModelData;
 import org.lwjgl.system.NativeResource;
 
 import javax.annotation.Nullable;
 import java.util.*;
+import java.util.concurrent.CompletableFuture;
 
 import static org.lwjgl.opengl.GL11.*;
 
@@ -74,6 +78,7 @@ public class SolarSystemWidget extends AbstractWidget implements ContainerEventH
     private final CelestialBodySimulation simulation;
     private final SpaceStarsRenderer starsRenderer;
     private final SpaceTravelCamera camera;
+    private final Map<GameProfile, StructureTemplateRenderer> playerRockets;
     private final PlayerRocketBody localRocket;
     private boolean travelling;
 
@@ -96,6 +101,7 @@ public class SolarSystemWidget extends AbstractWidget implements ContainerEventH
         this.camera = new SpaceTravelCamera();
         this.camera.setZoom(200);
         this.camera.setPitch((float) (24F * Math.PI / 180F));
+        this.playerRockets = new HashMap<>();
 
         PlayerRocketBody p = null;
         for (Satellite satellite : msg.getSatellites())
@@ -225,8 +231,9 @@ public class SolarSystemWidget extends AbstractWidget implements ContainerEventH
                 if (body instanceof PlayerRocketBody)
                 {
                     poseStack.translate(-0.5F, -0.5F, -0.5F);
-                    PlayerRocketBody b = (PlayerRocketBody) body;
-                    BakedModelRenderer.renderModel(Minecraft.getInstance().getModelManager().getMissingModel(), buffer.getBuffer(RenderType.entityCutout(InventoryMenu.BLOCK_ATLAS)), poseStack, 1.0F, 1.0F, 1.0F, 15728880, OverlayTexture.NO_OVERLAY, EmptyModelData.INSTANCE);
+                    PlayerRocket rocket = ((PlayerRocketBody) body).getSatellite();
+                    StructureTemplateRenderer renderer = this.playerRockets.computeIfAbsent(rocket.getProfile(), __ -> new StructureTemplateRenderer(CompletableFuture.completedFuture(rocket.getRocket()), (pos, resolver) -> FoliageColor.getDefaultColor()));
+                    renderer.render(poseStack, 0, 0, 0);
                 }
                 break;
         }
@@ -485,6 +492,8 @@ public class SolarSystemWidget extends AbstractWidget implements ContainerEventH
     {
         this.starsRenderer.free();
         this.invalidateFramebuffer();
+        this.playerRockets.values().forEach(NativeResource::free);
+        this.playerRockets.clear();
 
         for (GuiEventListener listener : this.children)
             if (listener instanceof NativeResource)

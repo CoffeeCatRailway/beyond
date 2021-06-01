@@ -45,17 +45,13 @@ configurations {
 
 repositories {
     maven {
-        name = "Jackson"
-        url "https://maven.jaackson.me/repo/"
-    }
-    maven {
         name = "Progwml6 (Just Enough Items)"
         url = "https://dvs1.progwml6.com/files/maven/"
     }
-//    maven {
-//        name = "JitPack"
-//        url = "https://jitpack.io"
-//    }
+    maven {
+        name = "JitPack"
+        url = "https://jitpack.io"
+    }
 }
 
 dependencies {
@@ -78,8 +74,8 @@ dependencies {
     modCompileOnly "mezz.jei:jei-1.16.4:${jei_version}:api"
     modRuntime "mezz.jei:jei-1.16.4:${jei_version}"
 
-    modImplementation "io.github.ocelot:Sonar:${project.sonar_version}"
-    shade "io.github.ocelot.Sonar:${project.sonar_version}"
+    modImplementation "com.github.Ocelot5836:Sonar:${project.sonar_version}"
+    shade "com.github.Ocelot5836.Sonar:${project.sonar_version}"
 }
 
 processResources {
