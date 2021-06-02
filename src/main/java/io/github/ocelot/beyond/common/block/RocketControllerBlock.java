@@ -36,7 +36,7 @@ public class RocketControllerBlock extends BaseBlock
         if (level.isClientSide())
             return InteractionResult.SUCCESS;
         if (level.getBlockEntity(pos) instanceof RocketControllerBlockEntity)
-            Objects.requireNonNull((RocketControllerBlockEntity) level.getBlockEntity(pos)).rescan();
+            Objects.requireNonNull((RocketControllerBlockEntity) level.getBlockEntity(pos)).rescan(player);
         return InteractionResult.CONSUME;
     }
 

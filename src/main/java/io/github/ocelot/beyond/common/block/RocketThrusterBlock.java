@@ -20,7 +20,7 @@ import java.util.Objects;
 /**
  * @author Ocelot
  */
-public class RocketThrusterBlock extends BaseBlock
+public class RocketThrusterBlock extends BaseBlock implements RocketComponent
 {
     public static final DirectionProperty FACING = BlockStateProperties.FACING;
 

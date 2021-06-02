@@ -1,23 +1,31 @@
 package io.github.ocelot.beyond.common.util;
 
+import com.google.common.base.Suppliers;
+import io.github.ocelot.beyond.Beyond;
 import net.minecraft.Util;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraftforge.fml.common.Mod;
 
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Predicate;
+import java.util.function.Supplier;
+import java.util.stream.Collectors;
 
 /**
  * <p>Scans blocks in a level asynchronously.</p>
  *
  * @author Ocelot
  */
+@Mod.EventBusSubscriber(modid = Beyond.MOD_ID)
 public class BlockScanner
 {
+    private static final long MAX_SCAN_TIME = 1000; // TODO make this a config option
+
     /**
      * Runs a scan in the specified level starting at the specified position.
      *
@@ -31,6 +39,7 @@ public class BlockScanner
     {
         return CompletableFuture.supplyAsync(() ->
         {
+            long startTime = System.currentTimeMillis();
             Map<Block, Set<BlockPos>> blockCounts = new HashMap<>();
             boolean limitReached = false;
 
@@ -40,6 +49,10 @@ public class BlockScanner
 
             while (!queue.isEmpty())
             {
+                if (System.currentTimeMillis() - startTime > MAX_SCAN_TIME)
+                {
+                    return new Result(Collections.emptyMap(), false, true);
+                }
                 BlockPos offsetPos = queue.remove();
                 closedSet.add(offsetPos);
                 BlockState state = level.getBlockState(offsetPos);
@@ -62,7 +75,7 @@ public class BlockScanner
                 }
             }
 
-            return new Result(blockCounts, limitReached);
+            return new Result(blockCounts, limitReached, false);
         }, Util.backgroundExecutor());
     }
 
@@ -74,12 +87,17 @@ public class BlockScanner
     public static class Result
     {
         private final Map<Block, Set<BlockPos>> blockCounts;
+        private final Supplier<Set<BlockPos>> blockPositions;
         private final boolean limitReached;
+        private final boolean timedOut;
 
-        private Result(Map<Block, Set<BlockPos>> blockCounts, boolean limitReached)
+        private Result(Map<Block, Set<BlockPos>> blockCounts, boolean limitReached, boolean timedOut)
         {
             this.blockCounts = blockCounts;
+            this.blockPositions = Suppliers.memoize(() -> this.blockCounts.values().stream().flatMap(Collection::stream).collect(Collectors.toSet()));
+
             this.limitReached = limitReached;
+            this.timedOut = timedOut;
         }
 
         /**
@@ -102,6 +120,14 @@ public class BlockScanner
         }
 
         /**
+         * @return All positions for all blocks
+         */
+        public Set<BlockPos> getBlockPositions()
+        {
+            return this.blockPositions.get();
+        }
+
+        /**
          * Checks the amount of a single block.
          *
          * @param block The block to get the count of
@@ -118,6 +144,22 @@ public class BlockScanner
         public boolean isLimitReached()
         {
             return limitReached;
+        }
+
+        /**
+         * @return Whether or not it took too much time to scan the area
+         */
+        public boolean isTimedOut()
+        {
+            return timedOut;
+        }
+
+        /**
+         * @return Whether or not the scan was successful
+         */
+        public boolean isSuccess()
+        {
+            return !this.limitReached && !this.timedOut;
         }
     }
 }
