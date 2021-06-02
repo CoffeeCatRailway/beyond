@@ -29,6 +29,7 @@ public class RocketThrusterBlock extends BaseBlock implements RocketComponent
     public RocketThrusterBlock(Properties properties)
     {
         super(properties);
+        this.registerDefaultState(this.defaultBlockState().setValue(FACING, Direction.NORTH));
     }
 
     @Override

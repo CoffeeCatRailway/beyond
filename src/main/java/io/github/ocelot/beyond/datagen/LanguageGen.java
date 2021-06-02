@@ -28,10 +28,18 @@ public class LanguageGen extends LanguageProvider
         this.add("gui." + Beyond.MOD_ID + ".cannot_launch", "Cannot Launch");
         this.add("gui." + Beyond.MOD_ID + ".already_there", "Already There");
         this.add("itemGroup." + Beyond.MOD_ID, "Beyond");
+        this.add("block." + Beyond.MOD_ID + ".rocket_controller.scanning", "Already scanning");
+        this.add("block." + Beyond.MOD_ID + ".rocket_controller.large", "Rocket is too large");
+        this.add("block." + Beyond.MOD_ID + ".rocket_controller.too_many_controllers", "Too many Rocket Controllers. Found %s, expected 1");
     }
 
     private void addBiome(ResourceLocation id, String value)
     {
         this.add("biome." + id.getNamespace() + "." + id.getPath(), value);
+    }
+
+    private void addError(ResourceLocation id, String error, String value)
+    {
+        this.add("error." + id.getNamespace() + "." + id.getPath() + ".error", value);
     }
 }

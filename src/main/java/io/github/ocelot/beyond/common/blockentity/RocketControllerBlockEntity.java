@@ -3,6 +3,7 @@ package io.github.ocelot.beyond.common.blockentity;
 import com.google.common.base.Stopwatch;
 import io.github.ocelot.beyond.Beyond;
 import io.github.ocelot.beyond.common.block.RocketComponent;
+import io.github.ocelot.beyond.common.block.RocketControllerBlock;
 import io.github.ocelot.beyond.common.init.BeyondBlocks;
 import io.github.ocelot.beyond.common.util.BlockScanner;
 import io.github.ocelot.sonar.common.tileentity.BaseTileEntity;
@@ -11,7 +12,10 @@ import net.minecraft.Util;
 import net.minecraft.commands.CommandSource;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.network.chat.TextComponent;
+import net.minecraft.network.chat.TranslatableComponent;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
@@ -45,27 +49,26 @@ public class RocketControllerBlockEntity extends BaseTileEntity
         this.template = null;
     }
 
-    private void sendError(@Nullable CommandSource source, String error)
+    // TODO send errors using a screen block instead of chat
+    private void sendError(@Nullable CommandSource source, MutableComponent error)
     {
         LOGGER.warn(error);
         if (source != null && source.acceptsFailure())
-            source.sendMessage(new TextComponent(error).withStyle(ChatFormatting.RED), Util.NIL_UUID);
+            source.sendMessage(error.withStyle(ChatFormatting.RED), Util.NIL_UUID);
     }
 
     public void rescan(@Nullable CommandSource source)
     {
         if (this.level == null || this.level.isClientSide())
-        {
-            this.sendError(source, "Cannot scan client side or without level");
-            return;
-        }
+            throw new IllegalStateException("Cannot scan client side or without level");
 
         if (!this.runningScan.isDone())
         {
-            this.sendError(source, "Already scanning");
+            this.sendError(source, new TranslatableComponent("block." + Beyond.MOD_ID + ".rocket_controller.scanning"));
             return;
         }
 
+        this.level.setBlock(this.getBlockPos(), this.getBlockState().setValue(RocketControllerBlock.LIT, false), Constants.BlockFlags.DEFAULT);
         this.components.clear();
         this.template = null;
 
@@ -75,7 +78,13 @@ public class RocketControllerBlockEntity extends BaseTileEntity
             LOGGER.info("Completed scan in " + startTime);
             if (!result.isSuccess())
             {
-                this.sendError(source, "Rocket at " + this.getBlockPos().getX() + ", " + this.getBlockPos().getY() + ", " + this.getBlockPos().getZ() + " is too large");
+                this.sendError(source, new TranslatableComponent("block." + Beyond.MOD_ID + ".rocket_controller.large"));
+                return;
+            }
+
+            if (result.getCount(BeyondBlocks.ROCKET_CONTROLLER.get()) != 1)
+            {
+                this.sendError(source, new TranslatableComponent("block." + Beyond.MOD_ID + ".rocket_controller.too_many_controllers"));
                 return;
             }
 
@@ -120,6 +129,7 @@ public class RocketControllerBlockEntity extends BaseTileEntity
                 Objects.requireNonNull(this.level.getServer()).getStructureManager().getOrCreate(new ResourceLocation(Beyond.MOD_ID, "test")).load(this.template.save(new CompoundTag()));
 
             this.setChanged();
+            this.level.setBlock(this.getBlockPos(), this.getBlockState().setValue(RocketControllerBlock.LIT, true), Constants.BlockFlags.DEFAULT);
         }, this.level.getServer()).exceptionally(e ->
         {
             LOGGER.error("Error scanning rocket", e);
