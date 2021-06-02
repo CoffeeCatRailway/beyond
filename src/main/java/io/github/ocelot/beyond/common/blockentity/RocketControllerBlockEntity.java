@@ -12,9 +12,7 @@ import net.minecraft.Util;
 import net.minecraft.commands.CommandSource;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
-import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
-import net.minecraft.network.chat.TextComponent;
 import net.minecraft.network.chat.TranslatableComponent;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.block.Block;
@@ -52,7 +50,8 @@ public class RocketControllerBlockEntity extends BaseTileEntity
     // TODO send errors using a screen block instead of chat
     private void sendError(@Nullable CommandSource source, MutableComponent error)
     {
-        LOGGER.warn(error);
+        Objects.requireNonNull(this.level).setBlock(this.getBlockPos(), this.getBlockState().setValue(RocketControllerBlock.STATE, RocketControllerBlock.State.ERROR), Constants.BlockFlags.DEFAULT);
+        LOGGER.warn(error.getString());
         if (source != null && source.acceptsFailure())
             source.sendMessage(error.withStyle(ChatFormatting.RED), Util.NIL_UUID);
     }
@@ -68,7 +67,7 @@ public class RocketControllerBlockEntity extends BaseTileEntity
             return;
         }
 
-        this.level.setBlock(this.getBlockPos(), this.getBlockState().setValue(RocketControllerBlock.LIT, false), Constants.BlockFlags.DEFAULT);
+        this.level.setBlock(this.getBlockPos(), this.getBlockState().setValue(RocketControllerBlock.STATE, RocketControllerBlock.State.SEARCHING), Constants.BlockFlags.DEFAULT);
         this.components.clear();
         this.template = null;
 
@@ -128,8 +127,8 @@ public class RocketControllerBlockEntity extends BaseTileEntity
             if (!FMLLoader.isProduction())
                 Objects.requireNonNull(this.level.getServer()).getStructureManager().getOrCreate(new ResourceLocation(Beyond.MOD_ID, "test")).load(this.template.save(new CompoundTag()));
 
+            this.level.setBlock(this.getBlockPos(), this.getBlockState().setValue(RocketControllerBlock.STATE, RocketControllerBlock.State.SUCCESS), Constants.BlockFlags.DEFAULT);
             this.setChanged();
-            this.level.setBlock(this.getBlockPos(), this.getBlockState().setValue(RocketControllerBlock.LIT, true), Constants.BlockFlags.DEFAULT);
         }, this.level.getServer()).exceptionally(e ->
         {
             LOGGER.error("Error scanning rocket", e);
