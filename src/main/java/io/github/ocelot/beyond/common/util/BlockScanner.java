@@ -31,7 +31,7 @@ public class BlockScanner
     {
         return CompletableFuture.supplyAsync(() ->
         {
-            Map<Block, Integer> blockCounts = new HashMap<>();
+            Map<Block, Set<BlockPos>> blockCounts = new HashMap<>();
             boolean limitReached = false;
 
             Deque<BlockPos> queue = new LinkedList<>();
@@ -45,7 +45,7 @@ public class BlockScanner
                 BlockState state = level.getBlockState(offsetPos);
                 if (filter.test(state))
                 {
-                    blockCounts.put(state.getBlock(), blockCounts.getOrDefault(state.getBlock(), 0) + 1);
+                    blockCounts.computeIfAbsent(state.getBlock(), key -> new HashSet<>()).add(offsetPos);
                     for (Direction direction : Direction.values())
                     {
                         BlockPos p = offsetPos.relative(direction);
@@ -73,10 +73,10 @@ public class BlockScanner
      */
     public static class Result
     {
-        private final Map<Block, Integer> blockCounts;
+        private final Map<Block, Set<BlockPos>> blockCounts;
         private final boolean limitReached;
 
-        private Result(Map<Block, Integer> blockCounts, boolean limitReached)
+        private Result(Map<Block, Set<BlockPos>> blockCounts, boolean limitReached)
         {
             this.blockCounts = blockCounts;
             this.limitReached = limitReached;
@@ -91,6 +91,17 @@ public class BlockScanner
         }
 
         /**
+         * Fetches all block positions for the specified block.
+         *
+         * @param block The block to get positions for
+         * @return All positions the specified block is present
+         */
+        public Set<BlockPos> getBlockPositions(Block block)
+        {
+            return this.blockCounts.getOrDefault(block, Collections.emptySet());
+        }
+
+        /**
          * Checks the amount of a single block.
          *
          * @param block The block to get the count of
@@ -98,7 +109,7 @@ public class BlockScanner
          */
         public int getCount(Block block)
         {
-            return this.blockCounts.getOrDefault(block, 0);
+            return this.blockCounts.getOrDefault(block, Collections.emptySet()).size();
         }
 
         /**

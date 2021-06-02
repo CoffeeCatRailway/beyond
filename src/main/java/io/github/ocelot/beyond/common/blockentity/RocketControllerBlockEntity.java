@@ -7,6 +7,9 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import java.util.Comparator;
+import java.util.stream.Collectors;
+
 /**
  * @author Ocelot
  */
@@ -25,11 +28,12 @@ public class RocketControllerBlockEntity extends BlockEntity
             return;
 
         Stopwatch startTime = Stopwatch.createStarted();
-        BlockScanner.runScan(this.level, this.getBlockPos(), state -> !state.getBlock().is(BeyondBlocks.ROCKET_CONSTRUCTION_PLATFORM.get()) && !state.isAir(), 512).thenAcceptAsync(result ->
+        BlockScanner.runScan(this.level, this.getBlockPos(), state -> !state.getBlock().is(BeyondBlocks.ROCKET_CONSTRUCTION_PLATFORM.get()) && !state.isAir(), 48).thenAcceptAsync(result -> // TODO config for distance
         {
-            LOGGER.debug("Completed scan in " + startTime);
-            System.out.println("Rocket Controllers: " + result.getCount(BeyondBlocks.ROCKET_CONTROLLER.get()));
-            System.out.println("Thrusters: " + result.getCount(BeyondBlocks.ROCKET_THRUSTER.get()));
+            LOGGER.info("Completed scan in " + startTime);
+            if (result.isLimitReached())
+                LOGGER.warn("Rocket at {} is too large", this.getBlockPos());
+            System.out.println(result.getBlocks().stream().sorted(Comparator.comparing(result::getCount)).map(block -> result.getCount(block) + " " + block.getName().getString()).collect(Collectors.joining(", ")));
         }, this.level.getServer());
     }
 }
