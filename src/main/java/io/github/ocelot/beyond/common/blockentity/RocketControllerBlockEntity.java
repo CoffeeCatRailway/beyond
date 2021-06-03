@@ -3,6 +3,7 @@ package io.github.ocelot.beyond.common.blockentity;
 import com.google.common.base.Stopwatch;
 import io.github.ocelot.beyond.Beyond;
 import io.github.ocelot.beyond.common.block.RocketControllerBlock;
+import io.github.ocelot.beyond.common.entity.RocketEntity;
 import io.github.ocelot.beyond.common.init.BeyondBlocks;
 import io.github.ocelot.beyond.common.rocket.LaunchContext;
 import io.github.ocelot.beyond.common.rocket.RocketComponent;
@@ -20,10 +21,14 @@ import net.minecraft.nbt.LongTag;
 import net.minecraft.nbt.Tag;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.network.chat.TranslatableComponent;
+import net.minecraft.world.entity.EntitySelector;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.TickableBlockEntity;
 import net.minecraft.world.level.levelgen.structure.templatesystem.StructureTemplate;
+import net.minecraft.world.phys.AABB;
+import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.common.util.Constants;
@@ -42,6 +47,8 @@ import java.util.concurrent.TimeUnit;
  */
 public class RocketControllerBlockEntity extends BaseTileEntity implements TickableBlockEntity
 {
+    private static final long LAUNCH_TIME = 5; // TODO config in seconds
+
     private static final Logger LOGGER = LogManager.getLogger();
     private CompletableFuture<BlockScanner.Result> runningScan;
 
@@ -81,7 +88,30 @@ public class RocketControllerBlockEntity extends BaseTileEntity implements Ticka
     private void launch(LaunchContext ctx)
     {
         this.cancelLaunch();
+        if (this.level == null)
+            return;
+
         System.out.println("Launched!");
+
+        Map<UUID, Vec3> playerPositions = new HashMap<>();
+        BlockPos min = ctx.getMin();
+        BlockPos max = ctx.getMax();
+        for (Player player : this.level.getEntitiesOfClass(Player.class, new AABB(min, max.offset(1, 1, 1)).inflate(4), EntitySelector.NO_SPECTATORS))
+        {
+            // TODO check if player is above a block before launching
+            playerPositions.put(player.getUUID(), player.position().subtract(min.getX() + (max.getX() - min.getX()) / 2.0 + 0.5, min.getY(), min.getZ() + (max.getZ() - min.getZ()) / 2.0 + 0.5));
+        }
+
+        // DEBUG
+        RocketEntity rocket = new RocketEntity(this.level, ctx, playerPositions);
+        rocket.setPos(min.getX() + (max.getX() - min.getX()) / 2.0 + 0.5, min.getY(), min.getZ() + (max.getZ() - min.getZ()) / 2.0 + 0.5);
+        for (Map.Entry<UUID, Vec3> entry : playerPositions.entrySet())
+        {
+            Player player = this.level.getPlayerByUUID(entry.getKey());
+            if (player != null)
+                player.startRiding(rocket, true);
+        }
+        this.level.addFreshEntity(rocket);
     }
 
     public void attemptLaunch(@Nullable CommandSource source)
@@ -164,13 +194,13 @@ public class RocketControllerBlockEntity extends BaseTileEntity implements Ticka
             StructureTemplate structure = new StructureTemplate();
             structure.fillFromWorld(this.level, min, max.subtract(min).offset(1, 1, 1), true, null);
 
-            List<StructureTemplate.Palette> blockInfos = this.getPalettes(structure);
+            List<StructureTemplate.Palette> blockInfos = getPalettes(structure);
             for (StructureTemplate.Palette palette : blockInfos)
                 palette.blocks().removeIf(block -> !positions.contains(block.pos.offset(min)));
 
             this.cancelLaunch();
-            LaunchContext ctx = new LaunchContext(structure, thrust);
-            this.launchFuture = Scheduler.get(this.level).schedule(() -> this.launch(ctx), 30, TimeUnit.SECONDS);
+            LaunchContext ctx = new LaunchContext(structure, thrust, min.immutable(), max.immutable());
+            this.launchFuture = Scheduler.get(this.level).schedule(() -> this.launch(ctx), LAUNCH_TIME, TimeUnit.SECONDS);
 
             this.level.setBlock(this.getBlockPos(), this.getBlockState().setValue(RocketControllerBlock.STATE, RocketControllerBlock.State.SUCCESS), Constants.BlockFlags.DEFAULT);
             this.level.sendBlockUpdated(this.worldPosition, this.getBlockState(), this.getBlockState(), Constants.BlockFlags.DEFAULT);
@@ -188,7 +218,10 @@ public class RocketControllerBlockEntity extends BaseTileEntity implements Ticka
         {
             if (this.components.entrySet().removeIf(entry -> this.level.getBlockState(entry.getKey()).getBlock() != entry.getValue()) && !this.level.isClientSide())
                 this.cancelLaunch();
-            this.components.forEach((pos, component) -> component.tickLaunch(this.level, pos));
+            if (this.level.isClientSide())
+            {
+                this.components.forEach((pos, component) -> component.addParticles(this.level, this.level.getBlockState(pos), pos.getX(), pos.getY(), pos.getZ()));
+            }
         }
     }
 
@@ -265,11 +298,19 @@ public class RocketControllerBlockEntity extends BaseTileEntity implements Ticka
 //        }
 //    }
 
-    private List<StructureTemplate.Palette> getPalettes(StructureTemplate structure)
+    public static List<StructureTemplate.Palette> getPalettes(StructureTemplate structure)
     {
         List<StructureTemplate.Palette> blockInfos = ObfuscationReflectionHelper.getPrivateValue(StructureTemplate.class, structure, "field_204769_a");
         if (blockInfos == null)
             return Collections.emptyList();
         return blockInfos;
+    }
+
+    private List<StructureTemplate.StructureEntityInfo> getEntities(StructureTemplate structure)
+    {
+        List<StructureTemplate.StructureEntityInfo> entityInfos = ObfuscationReflectionHelper.getPrivateValue(StructureTemplate.class, structure, "field_186271_b");
+        if (entityInfos == null)
+            return Collections.emptyList();
+        return entityInfos;
     }
 }

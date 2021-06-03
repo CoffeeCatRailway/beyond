@@ -3,6 +3,7 @@ package io.github.ocelot.beyond.datagen;
 import io.github.ocelot.beyond.Beyond;
 import io.github.ocelot.beyond.common.init.BeyondBiomes;
 import io.github.ocelot.beyond.common.init.BeyondBlocks;
+import io.github.ocelot.beyond.common.init.BeyondEntities;
 import net.minecraft.data.DataGenerator;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraftforge.common.data.LanguageProvider;
@@ -22,6 +23,7 @@ public class LanguageGen extends LanguageProvider
         this.addBlock(BeyondBlocks.ROCKET_CONSTRUCTION_PLATFORM, "Rocket Construction Platform");
         this.addBlock(BeyondBlocks.ROCKET_CONTROLLER, "Rocket Controller");
         this.addBlock(BeyondBlocks.ROCKET_THRUSTER, "Rocket Thruster");
+        this.addEntityType(BeyondEntities.ROCKET, "Rocket");
         this.add("multiplayer." + Beyond.MOD_ID + ".disconnect.invalid_space_travel", "Invalid Space Travel");
         this.add("screen." + Beyond.MOD_ID + ".space_travel", "Space Travel");
         this.add("gui." + Beyond.MOD_ID + ".launch", "Launch!");

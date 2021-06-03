@@ -71,8 +71,8 @@ dependencies {
     // your forge dependency, this is **required** when using Forge Loom in forge mode!
     forge "net.minecraftforge:forge:${project.minecraft_version}-${project.forge_version}"
 
-    modCompileOnly "mezz.jei:jei-1.16.4:${jei_version}:api"
-    modRuntime "mezz.jei:jei-1.16.4:${jei_version}"
+    modCompileOnly "mezz.jei:jei-1.16.5:${jei_version}:api"
+    modRuntime "mezz.jei:jei-1.16.5:${jei_version}"
 
     modImplementation "com.github.Ocelot5836:Sonar:${project.sonar_version}"
     shade "com.github.Ocelot5836.Sonar:${project.sonar_version}"

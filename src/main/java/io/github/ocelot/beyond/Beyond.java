@@ -55,6 +55,7 @@ public class Beyond
         BeyondBlocks.BLOCK_ENTITIES.register(modBus);
         BeyondFeatures.FEATURES.register(modBus);
         BeyondItems.ITEMS.register(modBus);
+        BeyondEntities.ENTITIES.register(modBus);
         BeyondWorldCarvers.CARVERS.register(modBus);
         MinecraftForge.EVENT_BUS.register(this);
     }

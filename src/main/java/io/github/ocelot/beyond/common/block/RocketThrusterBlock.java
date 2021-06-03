@@ -39,22 +39,19 @@ public class RocketThrusterBlock extends BaseBlock implements RocketThruster
     }
 
     @Override
-    public void tickLaunch(Level level, BlockPos pos)
+    public void addParticles(Level level, BlockState state, double x, double y, double z)
     {
-        if (level.isClientSide())
+        Direction facing = state.getValue(RocketThrusterBlock.FACING);
+        for (int i = 0; i < 2; i++)
         {
-            Direction facing = level.getBlockState(pos).getValue(FACING);
-            for (int i = 0; i < 2; i++)
-            {
-                Random random = level.getRandom();
-                double randomX = (1.0 - Math.abs(facing.getStepX())) * random.nextGaussian() * 0.25;
-                double randomY = (1.0 - Math.abs(facing.getStepY())) * random.nextGaussian() * 0.25;
-                double randomZ = (1.0 - Math.abs(facing.getStepZ())) * random.nextGaussian() * 0.25;
-                double x = pos.getX() + 0.5 + facing.getStepX() * 0.5 + randomX;
-                double y = pos.getY() + 0.5 + facing.getStepY() * 0.5 + randomY;
-                double z = pos.getZ() + 0.5 + facing.getStepZ() * 0.5 + randomZ;
-                level.addParticle(ParticleTypes.CLOUD, true, x, y, z, facing.getStepX() * 0.5, facing.getStepY() * 0.5, facing.getStepZ() * 0.5);
-            }
+            Random random = level.getRandom();
+            double randomX = (1.0 - Math.abs(facing.getStepX())) * random.nextGaussian() * 0.25;
+            double randomY = (1.0 - Math.abs(facing.getStepY())) * random.nextGaussian() * 0.25;
+            double randomZ = (1.0 - Math.abs(facing.getStepZ())) * random.nextGaussian() * 0.25;
+            double particleX = x + 0.5 + facing.getStepX() * 0.5 + randomX;
+            double particleY = y + 0.5 + facing.getStepY() * 0.5 + randomY;
+            double particleZ = z + 0.5 + facing.getStepZ() * 0.5 + randomZ;
+            level.addParticle(ParticleTypes.CLOUD, true, particleX, particleY, particleZ, facing.getStepX() * 0.5, facing.getStepY() * 0.5, facing.getStepZ() * 0.5);
         }
     }
 
@@ -83,7 +80,7 @@ public class RocketThrusterBlock extends BaseBlock implements RocketThruster
         Direction direction = level.getBlockState(pos).getValue(FACING);
         if (direction.getAxis() != Direction.Axis.Y)
             return 0.0F;
-        return direction == Direction.UP ? this.thrust : -this.thrust;
+        return direction == Direction.UP ? -this.thrust : this.thrust;
     }
 
     private static VoxelShape[] generateShapes()

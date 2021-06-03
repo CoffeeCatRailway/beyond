@@ -24,6 +24,7 @@ import io.github.ocelot.beyond.common.space.satellite.PlayerRocket;
 import io.github.ocelot.beyond.common.space.satellite.Satellite;
 import io.github.ocelot.beyond.common.space.simulation.*;
 import io.github.ocelot.beyond.common.util.CelestialBodyRayTraceResult;
+import io.github.ocelot.beyond.event.ReloadRenderersEvent;
 import io.github.ocelot.sonar.client.render.BakedModelRenderer;
 import io.github.ocelot.sonar.client.render.ShapeRenderer;
 import io.github.ocelot.sonar.client.render.StructureTemplateRenderer;
@@ -52,6 +53,8 @@ import net.minecraft.world.inventory.InventoryMenu;
 import net.minecraft.world.level.FoliageColor;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.client.model.data.EmptyModelData;
+import net.minecraftforge.common.MinecraftForge;
+import net.minecraftforge.eventbus.api.SubscribeEvent;
 import org.lwjgl.system.NativeResource;
 
 import javax.annotation.Nullable;
@@ -178,6 +181,14 @@ public class SolarSystemWidget extends AbstractWidget implements ContainerEventH
         });
         this.launchButton.visible = false;
         this.children.add(this.launchButton);
+        MinecraftForge.EVENT_BUS.register(this);
+    }
+
+    @SubscribeEvent
+    public void onEvent(ReloadRenderersEvent event)
+    {
+        this.playerRockets.values().forEach(NativeResource::free);
+        this.playerRockets.clear();
     }
 
     private void renderBody(PoseStack poseStack, MultiBufferSource.BufferSource buffer, SimulatedBody body, float partialTicks)
@@ -502,6 +513,7 @@ public class SolarSystemWidget extends AbstractWidget implements ContainerEventH
                 ((NativeResource) listener).free();
         if (!this.travelling)
             BeyondMessages.PLAY.sendToServer(new CPlanetTravelMessage(null, false));
+        MinecraftForge.EVENT_BUS.unregister(this);
     }
 
     /**

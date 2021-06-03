@@ -8,6 +8,7 @@
   "block.beyond.rocket_controller.scanning": "Already scanning",
   "block.beyond.rocket_controller.too_many_controllers": "Too many Rocket Controllers. Found %s, expected 1",
   "block.beyond.rocket_thruster": "Rocket Thruster",
+  "entity.beyond.rocket": "Rocket",
   "gui.beyond.already_there": "Already There",
   "gui.beyond.cannot_launch": "Cannot Launch",
   "gui.beyond.launch": "Launch!",
