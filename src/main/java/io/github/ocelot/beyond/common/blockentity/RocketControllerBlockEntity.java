@@ -151,9 +151,9 @@ public class RocketControllerBlockEntity extends BaseTileEntity implements Ticka
             }
 
             float thrust = 0.0F;
-            for (RocketComponent component : this.components.values())
-                if (component instanceof RocketThruster)
-                    thrust += ((RocketThruster) component).getThrust();
+            for (Map.Entry<BlockPos, RocketComponent> entry : this.components.entrySet())
+                if (entry.getValue() instanceof RocketThruster)
+                    thrust += ((RocketThruster) entry.getValue()).getThrust(this.level, entry.getKey());
 
             if (thrust <= 0) // TODO calculate required thrust
             {

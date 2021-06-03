@@ -78,9 +78,12 @@ public class RocketThrusterBlock extends BaseBlock implements RocketThruster
     }
 
     @Override
-    public float getThrust()
+    public float getThrust(Level level, BlockPos pos)
     {
-        return thrust;
+        Direction direction = level.getBlockState(pos).getValue(FACING);
+        if (direction.getAxis() != Direction.Axis.Y)
+            return 0.0F;
+        return direction == Direction.UP ? this.thrust : -this.thrust;
     }
 
     private static VoxelShape[] generateShapes()
