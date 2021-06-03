@@ -27,8 +27,8 @@ public class BeyondBlocks
 
     public static final RegistryObject<Block> MOON_ROCK = register("moon_rock", () -> new Block(BlockBehaviour.Properties.copy(Blocks.END_STONE)));
     public static final RegistryObject<Block> ROCKET_CONSTRUCTION_PLATFORM = register("rocket_construction_platform", () -> new Block(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK)));
-    public static final RegistryObject<Block> ROCKET_CONTROLLER = register("rocket_controller", () -> new RocketControllerBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).strength(6.0F, 9.0F)));
-    public static final RegistryObject<Block> ROCKET_THRUSTER = register("rocket_thruster", () -> new RocketThrusterBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).strength(6.0F, 9.0F)));
+    public static final RegistryObject<Block> ROCKET_CONTROLLER = register("rocket_controller", () -> new RocketControllerBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).isRedstoneConductor((state, level, pos) -> true).strength(6.0F, 9.0F)));
+    public static final RegistryObject<Block> ROCKET_THRUSTER = register("rocket_thruster", () -> new RocketThrusterBlock(1.0F, BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).strength(6.0F, 9.0F)));
 
     public static final RegistryObject<BlockEntityType<RocketControllerBlockEntity>> ROCKET_CONTROLLER_BE = BLOCK_ENTITIES.register("rocket_controller", () -> BlockEntityType.Builder.of(RocketControllerBlockEntity::new, ROCKET_CONTROLLER.get()).build(null));
 

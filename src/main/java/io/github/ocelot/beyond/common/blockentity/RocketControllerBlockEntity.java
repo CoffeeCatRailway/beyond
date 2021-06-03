@@ -2,49 +2,61 @@ package io.github.ocelot.beyond.common.blockentity;
 
 import com.google.common.base.Stopwatch;
 import io.github.ocelot.beyond.Beyond;
-import io.github.ocelot.beyond.common.block.RocketComponent;
 import io.github.ocelot.beyond.common.block.RocketControllerBlock;
 import io.github.ocelot.beyond.common.init.BeyondBlocks;
+import io.github.ocelot.beyond.common.rocket.LaunchContext;
+import io.github.ocelot.beyond.common.rocket.RocketComponent;
+import io.github.ocelot.beyond.common.rocket.RocketThruster;
 import io.github.ocelot.beyond.common.util.BlockScanner;
 import io.github.ocelot.sonar.common.tileentity.BaseTileEntity;
+import io.github.ocelot.sonar.common.util.Scheduler;
 import net.minecraft.ChatFormatting;
 import net.minecraft.Util;
 import net.minecraft.commands.CommandSource;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.ListTag;
+import net.minecraft.nbt.LongTag;
+import net.minecraft.nbt.Tag;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.network.chat.TranslatableComponent;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.Block;
-import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.block.entity.TickableBlockEntity;
 import net.minecraft.world.level.levelgen.structure.templatesystem.StructureTemplate;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.common.util.Constants;
 import net.minecraftforge.fml.common.ObfuscationReflectionHelper;
-import net.minecraftforge.fml.loading.FMLLoader;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import javax.annotation.Nullable;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 
 /**
  * @author Ocelot
  */
-public class RocketControllerBlockEntity extends BaseTileEntity
+public class RocketControllerBlockEntity extends BaseTileEntity implements TickableBlockEntity
 {
     private static final Logger LOGGER = LogManager.getLogger();
-    private CompletableFuture<?> runningScan;
+    private CompletableFuture<BlockScanner.Result> runningScan;
 
     private final Map<BlockPos, RocketComponent> components;
-    private StructureTemplate template;
+
+    private Future<?> launchFuture;
+    @OnlyIn(Dist.CLIENT)
+    private boolean launching;
 
     public RocketControllerBlockEntity()
     {
         super(BeyondBlocks.ROCKET_CONTROLLER_BE.get());
         this.runningScan = CompletableFuture.completedFuture(null);
         this.components = new HashMap<>();
-        this.template = null;
+        this.launchFuture = null;
     }
 
     // TODO send errors using a screen block instead of chat
@@ -56,10 +68,32 @@ public class RocketControllerBlockEntity extends BaseTileEntity
             source.sendMessage(error.withStyle(ChatFormatting.RED), Util.NIL_UUID);
     }
 
-    public void rescan(@Nullable CommandSource source)
+    private void cancelLaunch()
+    {
+        if (this.launchFuture != null)
+        {
+            this.launchFuture.cancel(false);
+            this.launchFuture = null;
+            Objects.requireNonNull(this.level).sendBlockUpdated(this.worldPosition, this.getBlockState(), this.getBlockState(), Constants.BlockFlags.DEFAULT);
+        }
+    }
+
+    private void launch(LaunchContext ctx)
+    {
+        this.cancelLaunch();
+        System.out.println("Launched!");
+    }
+
+    public void attemptLaunch(@Nullable CommandSource source)
     {
         if (this.level == null || this.level.isClientSide())
             throw new IllegalStateException("Cannot scan client side or without level");
+
+        if (this.launchFuture != null)
+        {
+            this.cancelLaunch();
+            return;
+        }
 
         if (!this.runningScan.isDone())
         {
@@ -69,10 +103,10 @@ public class RocketControllerBlockEntity extends BaseTileEntity
 
         this.level.setBlock(this.getBlockPos(), this.getBlockState().setValue(RocketControllerBlock.STATE, RocketControllerBlock.State.SEARCHING), Constants.BlockFlags.DEFAULT);
         this.components.clear();
-        this.template = null;
 
         Stopwatch startTime = Stopwatch.createStarted();
-        this.runningScan = BlockScanner.runScan(this.level, this.getBlockPos(), state -> !state.getBlock().is(BeyondBlocks.ROCKET_CONSTRUCTION_PLATFORM.get()) && !state.isAir(), 64).thenAcceptAsync(result -> // TODO config for distance
+        this.runningScan = BlockScanner.runScan(this.level, this.getBlockPos(), state -> !state.getBlock().is(BeyondBlocks.ROCKET_CONSTRUCTION_PLATFORM.get()) && !state.isAir(), 64);
+        this.runningScan.thenAcceptAsync(result -> // TODO config for distance
         {
             LOGGER.info("Completed scan in " + startTime);
             if (!result.isSuccess())
@@ -83,7 +117,7 @@ public class RocketControllerBlockEntity extends BaseTileEntity
 
             if (result.getCount(BeyondBlocks.ROCKET_CONTROLLER.get()) != 1)
             {
-                this.sendError(source, new TranslatableComponent("block." + Beyond.MOD_ID + ".rocket_controller.too_many_controllers"));
+                this.sendError(source, new TranslatableComponent("block." + Beyond.MOD_ID + ".rocket_controller.too_many_controllers", result.getCount(BeyondBlocks.ROCKET_CONTROLLER.get())));
                 return;
             }
 
@@ -116,19 +150,30 @@ public class RocketControllerBlockEntity extends BaseTileEntity
                 }
             }
 
-            this.template = new StructureTemplate();
-            this.template.fillFromWorld(this.level, min, max.subtract(min).offset(1, 1, 1), true, null);
+            float thrust = 0.0F;
+            for (RocketComponent component : this.components.values())
+                if (component instanceof RocketThruster)
+                    thrust += ((RocketThruster) component).getThrust();
 
-            List<StructureTemplate.Palette> blockInfos = this.getPalettes();
+            if (thrust <= 0) // TODO calculate required thrust
+            {
+                this.sendError(source, new TranslatableComponent("block." + Beyond.MOD_ID + ".rocket_controller.not_enough_thrust", ItemStack.ATTRIBUTE_MODIFIER_FORMAT.format(1.0), ItemStack.ATTRIBUTE_MODIFIER_FORMAT.format(thrust)));
+                return;
+            }
+
+            StructureTemplate structure = new StructureTemplate();
+            structure.fillFromWorld(this.level, min, max.subtract(min).offset(1, 1, 1), true, null);
+
+            List<StructureTemplate.Palette> blockInfos = this.getPalettes(structure);
             for (StructureTemplate.Palette palette : blockInfos)
                 palette.blocks().removeIf(block -> !positions.contains(block.pos.offset(min)));
 
-            // DEBUG
-            if (!FMLLoader.isProduction())
-                Objects.requireNonNull(this.level.getServer()).getStructureManager().getOrCreate(new ResourceLocation(Beyond.MOD_ID, "test")).load(this.template.save(new CompoundTag()));
+            this.cancelLaunch();
+            LaunchContext ctx = new LaunchContext(structure, thrust);
+            this.launchFuture = Scheduler.get(this.level).schedule(() -> this.launch(ctx), 30, TimeUnit.SECONDS);
 
             this.level.setBlock(this.getBlockPos(), this.getBlockState().setValue(RocketControllerBlock.STATE, RocketControllerBlock.State.SUCCESS), Constants.BlockFlags.DEFAULT);
-            this.setChanged();
+            this.level.sendBlockUpdated(this.worldPosition, this.getBlockState(), this.getBlockState(), Constants.BlockFlags.DEFAULT);
         }, this.level.getServer()).exceptionally(e ->
         {
             LOGGER.error("Error scanning rocket", e);
@@ -137,43 +182,92 @@ public class RocketControllerBlockEntity extends BaseTileEntity
     }
 
     @Override
-    public CompoundTag save(CompoundTag nbt)
+    public void tick()
     {
-        super.save(nbt);
-        if (this.runningScan.isDone() && this.template != null)
-            nbt.put("Template", this.template.save(new CompoundTag()));
+        if (this.isLaunching() && this.level != null)
+        {
+            if (this.components.entrySet().removeIf(entry -> this.level.getBlockState(entry.getKey()).getBlock() != entry.getValue()) && !this.level.isClientSide())
+                this.cancelLaunch();
+            this.components.forEach((pos, component) -> component.tickLaunch(this.level, pos));
+        }
+    }
+
+    @Override
+    public CompoundTag writeSyncTag(CompoundTag nbt)
+    {
+        nbt.putBoolean("Launching", this.isLaunching());
+        if (this.isLaunching())
+        {
+            ListTag componentsNbt = new ListTag();
+            this.components.keySet().forEach(pos -> componentsNbt.add(LongTag.valueOf(pos.asLong())));
+            nbt.put("Components", componentsNbt);
+        }
         return nbt;
     }
 
     @Override
-    public void load(BlockState state, CompoundTag nbt)
+    public void readSyncTag(CompoundTag nbt)
     {
-        super.load(state, nbt);
-        if (this.runningScan.isDone())
+        this.launching = nbt.getBoolean("Launching");
+        this.components.clear();
+        if (this.launching && this.level != null)
         {
-            this.components.clear();
-            if (nbt.contains("Template", Constants.NBT.TAG_COMPOUND))
+            ListTag componentsNbt = nbt.getList("Components", Constants.NBT.TAG_LONG);
+            for (Tag tag : componentsNbt)
             {
-                if (this.template == null)
-                    this.template = new StructureTemplate();
-                this.template.load(nbt.getCompound("Template"));
-
-                List<StructureTemplate.Palette> blockInfos = this.getPalettes();
-                for (StructureTemplate.Palette palette : blockInfos)
-                {
-                    for (StructureTemplate.StructureBlockInfo info : palette.blocks())
-                    {
-                        if (info.state.getBlock() instanceof RocketComponent)
-                            this.components.put(info.pos, (RocketComponent) info.state.getBlock());
-                    }
-                }
+                BlockPos pos = BlockPos.of(((LongTag) tag).getAsLong());
+                Block block = this.level.getBlockState(pos).getBlock();
+                if (block instanceof RocketComponent)
+                    this.components.put(pos, (RocketComponent) block);
             }
         }
     }
 
-    private List<StructureTemplate.Palette> getPalettes()
+    public boolean isLaunching()
     {
-        List<StructureTemplate.Palette> blockInfos = ObfuscationReflectionHelper.getPrivateValue(StructureTemplate.class, this.template, "field_204769_a");
+        if (this.level == null)
+            return false;
+        return this.level.isClientSide() ? this.launching : this.launchFuture != null && !this.launchFuture.isDone();
+    }
+
+    //    @Override
+//    public CompoundTag save(CompoundTag nbt)
+//    {
+//        super.save(nbt);
+//        if (this.runningScan.isDone() && this.template != null)
+//            nbt.put("Template", this.template.save(new CompoundTag()));
+//        return nbt;
+//    }
+//
+//    @Override
+//    public void load(BlockState state, CompoundTag nbt)
+//    {
+//        super.load(state, nbt);
+//        if (this.runningScan.isDone())
+//        {
+//            this.components.clear();
+//            if (nbt.contains("Template", Constants.NBT.TAG_COMPOUND))
+//            {
+//                if (this.template == null)
+//                    this.template = new StructureTemplate();
+//                this.template.load(nbt.getCompound("Template"));
+//
+//                List<StructureTemplate.Palette> blockInfos = this.getPalettes();
+//                for (StructureTemplate.Palette palette : blockInfos)
+//                {
+//                    for (StructureTemplate.StructureBlockInfo info : palette.blocks())
+//                    {
+//                        if (info.state.getBlock() instanceof RocketComponent)
+//                            this.components.put(info.pos, (RocketComponent) info.state.getBlock());
+//                    }
+//                }
+//            }
+//        }
+//    }
+
+    private List<StructureTemplate.Palette> getPalettes(StructureTemplate structure)
+    {
+        List<StructureTemplate.Palette> blockInfos = ObfuscationReflectionHelper.getPrivateValue(StructureTemplate.class, structure, "field_204769_a");
         if (blockInfos == null)
             return Collections.emptyList();
         return blockInfos;

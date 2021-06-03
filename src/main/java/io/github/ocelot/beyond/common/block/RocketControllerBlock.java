@@ -4,6 +4,7 @@ import io.github.ocelot.beyond.common.blockentity.RocketControllerBlockEntity;
 import io.github.ocelot.sonar.common.block.BaseBlock;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.StringRepresentable;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
@@ -15,12 +16,14 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
+import net.minecraft.world.level.block.state.properties.BooleanProperty;
 import net.minecraft.world.level.block.state.properties.DirectionProperty;
 import net.minecraft.world.level.block.state.properties.EnumProperty;
 import net.minecraft.world.phys.BlockHitResult;
 
 import java.util.Locale;
 import java.util.Objects;
+import java.util.Random;
 
 /**
  * @author Ocelot
@@ -42,7 +45,7 @@ public class RocketControllerBlock extends BaseBlock
         if (level.isClientSide())
             return InteractionResult.SUCCESS;
         if (level.getBlockEntity(pos) instanceof RocketControllerBlockEntity)
-            Objects.requireNonNull((RocketControllerBlockEntity) level.getBlockEntity(pos)).rescan(player);
+            Objects.requireNonNull((RocketControllerBlockEntity) level.getBlockEntity(pos)).attemptLaunch(player);
         return InteractionResult.CONSUME;
     }
 

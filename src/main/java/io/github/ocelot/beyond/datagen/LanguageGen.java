@@ -31,6 +31,7 @@ public class LanguageGen extends LanguageProvider
         this.add("block." + Beyond.MOD_ID + ".rocket_controller.scanning", "Already scanning");
         this.add("block." + Beyond.MOD_ID + ".rocket_controller.large", "Rocket is too large");
         this.add("block." + Beyond.MOD_ID + ".rocket_controller.too_many_controllers", "Too many Rocket Controllers. Found %s, expected 1");
+        this.add("block." + Beyond.MOD_ID + ".rocket_controller.not_enough_thrust", "Not enough Thrust. At least %s is required, has %s");
     }
 
     private void addBiome(ResourceLocation id, String value)
