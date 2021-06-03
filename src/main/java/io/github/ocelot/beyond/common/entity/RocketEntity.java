@@ -46,16 +46,6 @@ public class RocketEntity extends Entity implements IEntityAdditionalSpawnData
     @OnlyIn(Dist.CLIENT)
     private StructureTemplateRenderer templateRenderer;
 
-    public RocketEntity(EntityType<?> entityType, Level level)
-    {
-        super(entityType, level);
-        this.components = new HashMap<>();
-        this.ctx = LaunchContext.DUMMY;
-        this.players = new HashMap<>();
-        this.noCulling = true;
-        MinecraftForge.EVENT_BUS.register(this);
-    }
-
     public RocketEntity(Level level, LaunchContext ctx, Map<UUID, Vec3> players)
     {
         super(BeyondEntities.ROCKET.get(), level);
@@ -244,20 +234,6 @@ public class RocketEntity extends Entity implements IEntityAdditionalSpawnData
     @Override
     public void readSpawnData(FriendlyByteBuf buf)
     {
-        try
-        {
-            this.ctx = buf.readWithCodec(LaunchContext.CODEC);
-        }
-        catch (Exception e)
-        {
-            throw new RuntimeException(e);
-        }
-        this.recalculateDimensions();
-        this.locateComponents();
-        this.players.clear();
-        int playersCount = buf.readVarInt();
-        for (int i = 0; i < playersCount; i++)
-            this.players.put(buf.readUUID(), new Vec3(buf.readDouble(), buf.readDouble(), buf.readDouble()));
     }
 
     @Override
