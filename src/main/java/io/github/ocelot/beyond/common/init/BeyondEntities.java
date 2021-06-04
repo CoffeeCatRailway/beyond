@@ -22,7 +22,7 @@ public class BeyondEntities
 {
     public static final DeferredRegister<EntityType<?>> ENTITIES = DeferredRegister.create(ForgeRegistries.ENTITIES, Beyond.MOD_ID);
 
-    public static final RegistryObject<EntityType<RocketEntity>> ROCKET = ENTITIES.register("rocket", () -> EntityType.Builder.<RocketEntity>createNothing(MobCategory.MISC).sized(0.0F, 0.0F).fireImmune().noSummon().clientTrackingRange(10).updateInterval(20).setCustomClientFactory((spawnEntity, level) ->
+    public static final RegistryObject<EntityType<RocketEntity>> ROCKET = ENTITIES.register("rocket", () -> EntityType.Builder.<RocketEntity>createNothing(MobCategory.MISC).sized(0.0F, 0.0F).fireImmune().noSummon().clientTrackingRange(10).updateInterval(100).setCustomClientFactory((spawnEntity, level) ->
     {
         FriendlyByteBuf buf = spawnEntity.getAdditionalData();
         LaunchContext ctx;

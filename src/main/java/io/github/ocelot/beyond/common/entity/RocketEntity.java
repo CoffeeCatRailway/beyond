@@ -112,7 +112,7 @@ public class RocketEntity extends Entity implements IEntityAdditionalSpawnData
 
         if (this.getY() < this.level.getHeight() * 2)
         {
-            this.setDeltaMovement(0, Math.min(this.ctx.getLift(), 2.0F), 0);
+            this.setDeltaMovement(0, Math.min(this.getDeltaMovement().y() + this.ctx.getLift() / 100.0F, 1.0F), 0);
         }
         else
         {
