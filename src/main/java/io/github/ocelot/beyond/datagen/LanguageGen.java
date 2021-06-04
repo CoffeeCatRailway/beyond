@@ -23,6 +23,7 @@ public class LanguageGen extends LanguageProvider
         this.addBlock(BeyondBlocks.ROCKET_CONSTRUCTION_PLATFORM, "Rocket Construction Platform");
         this.addBlock(BeyondBlocks.ROCKET_CONTROLLER, "Rocket Controller");
         this.addBlock(BeyondBlocks.ROCKET_THRUSTER, "Rocket Thruster");
+        this.addBlock(BeyondBlocks.CREATIVE_ROCKET_THRUSTER, "Creative Rocket Thruster");
         this.addEntityType(BeyondEntities.ROCKET, "Rocket");
         this.add("multiplayer." + Beyond.MOD_ID + ".disconnect.invalid_space_travel", "Invalid Space Travel");
         this.add("screen." + Beyond.MOD_ID + ".space_travel", "Space Travel");

@@ -26,6 +26,7 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.TickableBlockEntity;
+import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.levelgen.structure.templatesystem.StructureTemplate;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
@@ -172,9 +173,9 @@ public class RocketControllerBlockEntity extends BaseTileEntity implements Ticka
                     if (pos.getZ() > max.getZ())
                         max.setZ(pos.getZ());
 
-                    Block block = this.level.getBlockState(pos).getBlock();
-                    if (block instanceof RocketComponent)
-                        this.components.put(pos, (RocketComponent) block);
+                    BlockState state = this.level.getBlockState(pos);
+                    if (state.getBlock() instanceof RocketComponent)
+                        this.components.put(pos, (RocketComponent) state.getBlock());
                 }
             }
 
@@ -183,9 +184,10 @@ public class RocketControllerBlockEntity extends BaseTileEntity implements Ticka
                 if (entry.getValue() instanceof RocketThruster)
                     thrust += ((RocketThruster) entry.getValue()).getThrust(this.level, entry.getKey());
 
-            if (thrust <= 0) // TODO calculate required thrust
+            float mass = Math.round(positions.size() / 512.0);
+            if (thrust <= mass) // TODO calculate required thrust
             {
-                this.sendError(source, new TranslatableComponent("block." + Beyond.MOD_ID + ".rocket_controller.not_enough_thrust", ItemStack.ATTRIBUTE_MODIFIER_FORMAT.format(1.0), ItemStack.ATTRIBUTE_MODIFIER_FORMAT.format(thrust)));
+                this.sendError(source, new TranslatableComponent("block." + Beyond.MOD_ID + ".rocket_controller.not_enough_thrust", ItemStack.ATTRIBUTE_MODIFIER_FORMAT.format(mass + 1), ItemStack.ATTRIBUTE_MODIFIER_FORMAT.format(thrust)));
                 return;
             }
 
@@ -197,7 +199,7 @@ public class RocketControllerBlockEntity extends BaseTileEntity implements Ticka
                 palette.blocks().removeIf(block -> !positions.contains(block.pos.offset(min)));
 
             this.cancelLaunch();
-            LaunchContext ctx = new LaunchContext(structure, thrust);
+            LaunchContext ctx = new LaunchContext(structure, (thrust - mass) / 16.0F);
             this.launchFuture = Scheduler.get(this.level).schedule(() -> this.launch(ctx, min.immutable(), max.immutable()), LAUNCH_TIME, TimeUnit.SECONDS);
 
             this.level.setBlock(this.getBlockPos(), this.getBlockState().setValue(RocketControllerBlock.STATE, RocketControllerBlock.State.SUCCESS), Constants.BlockFlags.DEFAULT);

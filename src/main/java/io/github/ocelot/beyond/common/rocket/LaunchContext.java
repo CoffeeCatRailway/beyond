@@ -16,16 +16,16 @@ public class LaunchContext
 
     public static final Codec<LaunchContext> CODEC = RecordCodecBuilder.create(instance -> instance.group(
             PlayerRocket.TEMPLATE_CODEC.fieldOf("template").forGetter(LaunchContext::getTemplate),
-            Codec.FLOAT.fieldOf("thrust").forGetter(LaunchContext::getThrust)
+            Codec.FLOAT.fieldOf("lift").forGetter(LaunchContext::getLift)
     ).apply(instance, LaunchContext::new));
 
     private final StructureTemplate template;
-    private final float thrust;
+    private final float lift;
 
-    public LaunchContext(StructureTemplate template, float thrust)
+    public LaunchContext(StructureTemplate template, float lift)
     {
         this.template = template;
-        this.thrust = thrust;
+        this.lift = lift;
     }
 
     /**
@@ -39,8 +39,8 @@ public class LaunchContext
     /**
      * @return The amount of thrust the rocket has
      */
-    public float getThrust()
+    public float getLift()
     {
-        return thrust;
+        return lift;
     }
 }
