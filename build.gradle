@@ -45,6 +45,12 @@ configurations {
 
 repositories {
     maven {
+        url "https://www.cursemaven.com"
+        content {
+            includeGroup "curse.maven"
+        }
+    }
+    maven {
         name = "Progwml6 (Just Enough Items)"
         url = "https://dvs1.progwml6.com/files/maven/"
     }
@@ -73,6 +79,8 @@ dependencies {
 
     modCompileOnly "mezz.jei:jei-1.16.4:${jei_version}:api"
     modRuntime "mezz.jei:jei-1.16.4:${jei_version}"
+
+    modRuntime "curse.maven:shutupexperimentalsettings-407174:3188120"
 
     modImplementation "com.github.Ocelot5836:Sonar:${project.sonar_version}"
     shade "com.github.Ocelot5836.Sonar:${project.sonar_version}"
