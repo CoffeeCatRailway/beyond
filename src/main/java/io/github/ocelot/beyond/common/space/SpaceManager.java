@@ -6,6 +6,7 @@ import io.github.ocelot.beyond.common.init.BeyondMessages;
 import io.github.ocelot.beyond.common.network.play.message.SOpenSpaceTravelScreenMessage;
 import io.github.ocelot.beyond.common.network.play.message.SPlayerTravelMessage;
 import io.github.ocelot.beyond.common.network.play.message.SUpdateSimulationBodiesMessage;
+import io.github.ocelot.beyond.common.rocket.LaunchContext;
 import io.github.ocelot.beyond.common.space.planet.Planet;
 import io.github.ocelot.beyond.common.space.planet.StaticSolarSystemDefinitions;
 import io.github.ocelot.beyond.common.space.satellite.ArtificialSatellite;
@@ -123,16 +124,13 @@ public class SpaceManager
      * @param player The player to insert
      * @return A new packet to sync the player with the simulation
      */
-    public SOpenSpaceTravelScreenMessage insertPlayer(Player player)
+    public SOpenSpaceTravelScreenMessage insertPlayer(Player player, LaunchContext ctx)
     {
         if (!this.getPlayer(player.getUUID()).isPresent())
         {
             ResourceLocation playerDimension = player.level.dimension().location();
             ResourceLocation playerPlanet = this.validDestinations.entrySet().stream().filter(entry -> entry.getValue().equals(playerDimension)).map(Map.Entry::getKey).findAny().orElse(Planet.EARTH);//this.simulation.getBodies().filter(b -> b.canTeleportTo() && b.getDimension().isPresent() && b.getDimension().get().equals(playerDimension)).map(SimulatedBody::getId).findAny().orElse(Planet.EARTH);
-            StructureTemplate rocket = this.server.getStructureManager().get(new ResourceLocation(Beyond.MOD_ID, "rocket"));
-            if (rocket == null)
-                rocket = new StructureTemplate();
-            this.add(new PlayerRocket(player, playerPlanet, rocket)); // TODO set to custom made structure
+            this.add(new PlayerRocket(player, playerPlanet, ctx.getTemplate())); // TODO set to custom made structure
         }
         return new SOpenSpaceTravelScreenMessage(this.satellites.toArray(new Satellite[0]));
     }

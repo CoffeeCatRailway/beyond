@@ -50,11 +50,12 @@ import net.minecraft.network.chat.TranslatableComponent;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.FormattedCharSequence;
 import net.minecraft.world.inventory.InventoryMenu;
-import net.minecraft.world.level.FoliageColor;
+import net.minecraft.world.level.biome.Biomes;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.client.model.data.EmptyModelData;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
+import net.minecraftforge.registries.ForgeRegistries;
 import org.lwjgl.system.NativeResource;
 
 import javax.annotation.Nullable;
@@ -244,7 +245,7 @@ public class SolarSystemWidget extends AbstractWidget implements ContainerEventH
                     poseStack.translate(-0.5F, -0.5F, -0.5F);
                     PlayerRocket rocket = ((PlayerRocketBody) body).getSatellite();
                     Vec3i size = rocket.getRocket().getSize();
-                    StructureTemplateRenderer renderer = this.playerRockets.computeIfAbsent(rocket.getProfile(), __ -> new StructureTemplateRenderer(CompletableFuture.completedFuture(rocket.getRocket()), (pos, resolver) -> FoliageColor.getDefaultColor()));
+                    StructureTemplateRenderer renderer = this.playerRockets.computeIfAbsent(rocket.getProfile(), __ -> new StructureTemplateRenderer(CompletableFuture.completedFuture(rocket.getRocket()), (pos, resolver) -> resolver.getColor(ForgeRegistries.BIOMES.getValue(Biomes.PLAINS.location()), pos.getX(), pos.getZ())));
                     poseStack.translate(-(float) size.getX() / 2.0F, -(float) size.getY() / 2.0F, -(float) size.getZ() / 2.0F);
                     renderer.render(poseStack, 0, 0, 0);
                 }

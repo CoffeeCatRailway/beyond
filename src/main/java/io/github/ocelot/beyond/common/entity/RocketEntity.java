@@ -2,8 +2,10 @@ package io.github.ocelot.beyond.common.entity;
 
 import io.github.ocelot.beyond.common.blockentity.RocketControllerBlockEntity;
 import io.github.ocelot.beyond.common.init.BeyondEntities;
+import io.github.ocelot.beyond.common.init.BeyondMessages;
 import io.github.ocelot.beyond.common.rocket.LaunchContext;
 import io.github.ocelot.beyond.common.rocket.RocketComponent;
+import io.github.ocelot.beyond.common.space.SpaceManager;
 import io.github.ocelot.beyond.event.ReloadRenderersEvent;
 import io.github.ocelot.sonar.client.render.StructureTemplateRenderer;
 import net.minecraft.core.BlockPos;
@@ -13,7 +15,9 @@ import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.NbtOps;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.protocol.Packet;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.*;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.levelgen.structure.templatesystem.StructureTemplate;
@@ -25,6 +29,7 @@ import net.minecraftforge.common.util.Constants;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.registry.IEntityAdditionalSpawnData;
 import net.minecraftforge.fml.network.NetworkHooks;
+import net.minecraftforge.fml.network.PacketDistributor;
 
 import java.util.HashMap;
 import java.util.List;
@@ -42,6 +47,7 @@ public class RocketEntity extends Entity implements IEntityAdditionalSpawnData
     private EntityDimensions dimensions;
     private final Map<UUID, Vec3> players;
 
+    private boolean awaitingResponse;
     @OnlyIn(Dist.CLIENT)
     private StructureTemplateRenderer templateRenderer;
 
@@ -53,6 +59,7 @@ public class RocketEntity extends Entity implements IEntityAdditionalSpawnData
         this.recalculateDimensions();
         this.players = players;
         this.noCulling = true;
+        this.noPhysics = true;
         this.locateComponents();
         MinecraftForge.EVENT_BUS.register(this);
     }
@@ -103,9 +110,28 @@ public class RocketEntity extends Entity implements IEntityAdditionalSpawnData
     {
         super.tick();
 
-        this.setDeltaMovement(0, this.ctx.getThrust() / 20.0F, 0);
+        if (this.getY() < this.level.getHeight() * 2)
+        {
+            this.setDeltaMovement(0, this.ctx.getThrust() / 20.0F, 0);
+        }
+        else
+        {
+            this.setDeltaMovement(Vec3.ZERO);
+            if (!this.level.isClientSide() && !this.awaitingResponse)
+            {
+                this.awaitingResponse = true;
+                for (Entity entity : this.getPassengers())
+                {
+                    if (entity instanceof Player)
+                    {
+                        BeyondMessages.PLAY.send(PacketDistributor.PLAYER.with(() -> (ServerPlayer) entity), SpaceManager.get().insertPlayer((Player) entity, this.ctx));
+                    }
+                }
+            }
+        }
+
         this.move(MoverType.SELF, this.getDeltaMovement());
-        if (this.level.isClientSide())
+        if (this.level.isClientSide() && this.getDeltaMovement().y() > 0)
         {
             for (Map.Entry<BlockPos, BlockState> entry : this.components.entrySet())
             {
@@ -131,7 +157,7 @@ public class RocketEntity extends Entity implements IEntityAdditionalSpawnData
     public Vec3 getDismountLocationForPassenger(LivingEntity entity)
     {
         if (this.players.containsKey(entity.getUUID()))
-            return this.players.get(entity.getUUID()).add(this.getX(), this.getY() + 0.1, this.getZ());
+            return this.players.get(entity.getUUID()).add(this.position());
         return this.players.getOrDefault(entity.getUUID(), super.getDismountLocationForPassenger(entity));
     }
 

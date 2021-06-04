@@ -41,7 +41,6 @@ public class BeyondMessages
 
         // Play
         PLAY_MANAGER.register(CPlanetTravelMessage.class, CPlanetTravelMessage::new, NetworkDirection.PLAY_TO_SERVER);
-        PLAY_MANAGER.register(CTemporaryOpenSpaceTravelMessage.class, CTemporaryOpenSpaceTravelMessage::new, NetworkDirection.PLAY_TO_SERVER);
         PLAY_MANAGER.register(SOpenSpaceTravelScreenMessage.class, SOpenSpaceTravelScreenMessage::new, NetworkDirection.PLAY_TO_CLIENT);
         PLAY_MANAGER.register(SPlanetTravelResponseMessage.class, SPlanetTravelResponseMessage::new, NetworkDirection.PLAY_TO_CLIENT);
         PLAY_MANAGER.register(SPlayerTravelMessage.class, SPlayerTravelMessage::new, NetworkDirection.PLAY_TO_CLIENT);

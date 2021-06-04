@@ -85,7 +85,7 @@ public class RocketControllerBlockEntity extends BaseTileEntity implements Ticka
         }
     }
 
-    private void launch(LaunchContext ctx)
+    private void launch(LaunchContext ctx, BlockPos min, BlockPos max)
     {
         this.cancelLaunch();
         if (this.level == null)
@@ -94,8 +94,6 @@ public class RocketControllerBlockEntity extends BaseTileEntity implements Ticka
         System.out.println("Launched!");
 
         Map<UUID, Vec3> playerPositions = new HashMap<>();
-        BlockPos min = ctx.getMin();
-        BlockPos max = ctx.getMax();
         for (Player player : this.level.getEntitiesOfClass(Player.class, new AABB(min, max.offset(1, 1, 1)).inflate(4), EntitySelector.NO_SPECTATORS))
         {
             // TODO check if player is above a block before launching
@@ -199,8 +197,8 @@ public class RocketControllerBlockEntity extends BaseTileEntity implements Ticka
                 palette.blocks().removeIf(block -> !positions.contains(block.pos.offset(min)));
 
             this.cancelLaunch();
-            LaunchContext ctx = new LaunchContext(structure, thrust, min.immutable(), max.immutable());
-            this.launchFuture = Scheduler.get(this.level).schedule(() -> this.launch(ctx), LAUNCH_TIME, TimeUnit.SECONDS);
+            LaunchContext ctx = new LaunchContext(structure, thrust);
+            this.launchFuture = Scheduler.get(this.level).schedule(() -> this.launch(ctx, min.immutable(), max.immutable()), LAUNCH_TIME, TimeUnit.SECONDS);
 
             this.level.setBlock(this.getBlockPos(), this.getBlockState().setValue(RocketControllerBlock.STATE, RocketControllerBlock.State.SUCCESS), Constants.BlockFlags.DEFAULT);
             this.level.sendBlockUpdated(this.worldPosition, this.getBlockState(), this.getBlockState(), Constants.BlockFlags.DEFAULT);

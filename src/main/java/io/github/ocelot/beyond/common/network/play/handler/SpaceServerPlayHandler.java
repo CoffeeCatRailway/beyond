@@ -2,7 +2,6 @@ package io.github.ocelot.beyond.common.network.play.handler;
 
 import io.github.ocelot.beyond.common.init.BeyondMessages;
 import io.github.ocelot.beyond.common.network.play.message.CPlanetTravelMessage;
-import io.github.ocelot.beyond.common.network.play.message.CTemporaryOpenSpaceTravelMessage;
 import io.github.ocelot.beyond.common.network.play.message.SPlanetTravelResponseMessage;
 import io.github.ocelot.beyond.common.network.play.message.SPlayerTravelMessage;
 import io.github.ocelot.beyond.common.space.SpaceManager;
@@ -94,15 +93,5 @@ public class SpaceServerPlayHandler implements ISpaceServerPlayHandler
             ResourceLocation body = spaceManager.getPlayer(player.getUUID()).map(PlayerRocket::getOrbitingBody).map(planet -> planet.orElse(Planet.EARTH)).orElse(Planet.EARTH);
             BeyondMessages.PLAY.reply(new SPlanetTravelResponseMessage(body), ctx);
         });
-    }
-
-    @Override
-    public void handleTemporaryOpenSpaceTravel(CTemporaryOpenSpaceTravelMessage msg, NetworkEvent.Context ctx)
-    {
-        ServerPlayer player = ctx.getSender();
-        if (player == null)
-            return;
-
-        ctx.enqueueWork(() -> BeyondMessages.PLAY.reply(SpaceManager.get().insertPlayer(player), ctx));
     }
 }
