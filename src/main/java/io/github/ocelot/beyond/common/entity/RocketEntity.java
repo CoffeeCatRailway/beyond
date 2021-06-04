@@ -3,9 +3,11 @@ package io.github.ocelot.beyond.common.entity;
 import io.github.ocelot.beyond.common.blockentity.RocketControllerBlockEntity;
 import io.github.ocelot.beyond.common.init.BeyondEntities;
 import io.github.ocelot.beyond.common.init.BeyondMessages;
+import io.github.ocelot.beyond.common.network.play.message.SPlanetTravelResponseMessage;
 import io.github.ocelot.beyond.common.rocket.LaunchContext;
 import io.github.ocelot.beyond.common.rocket.RocketComponent;
 import io.github.ocelot.beyond.common.space.SpaceManager;
+import io.github.ocelot.beyond.common.space.SpaceTeleporter;
 import io.github.ocelot.beyond.event.ReloadRenderersEvent;
 import io.github.ocelot.sonar.client.render.StructureTemplateRenderer;
 import net.minecraft.core.BlockPos;
@@ -15,11 +17,16 @@ import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.NbtOps;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.protocol.Packet;
+import net.minecraft.network.syncher.EntityDataAccessor;
+import net.minecraft.network.syncher.EntityDataSerializers;
+import net.minecraft.network.syncher.SynchedEntityData;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.*;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.levelgen.Heightmap;
 import net.minecraft.world.level.levelgen.structure.templatesystem.StructureTemplate;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.api.distmarker.Dist;
@@ -31,10 +38,7 @@ import net.minecraftforge.fml.common.registry.IEntityAdditionalSpawnData;
 import net.minecraftforge.fml.network.NetworkHooks;
 import net.minecraftforge.fml.network.PacketDistributor;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 import java.util.concurrent.CompletableFuture;
 
 /**
@@ -42,26 +46,34 @@ import java.util.concurrent.CompletableFuture;
  */
 public class RocketEntity extends Entity implements IEntityAdditionalSpawnData
 {
+    private static final EntityDataAccessor<Integer> PHASE = SynchedEntityData.defineId(RocketEntity.class, EntityDataSerializers.INT);
+
     private final Map<BlockPos, BlockState> components;
     private LaunchContext ctx;
     private EntityDimensions dimensions;
     private final Map<UUID, Vec3> players;
 
-    private boolean awaitingResponse;
     @OnlyIn(Dist.CLIENT)
     private StructureTemplateRenderer templateRenderer;
 
-    public RocketEntity(Level level, LaunchContext ctx, Map<UUID, Vec3> players)
+    public RocketEntity(EntityType<? extends RocketEntity> entityType, Level level)
     {
-        super(BeyondEntities.ROCKET.get(), level);
+        super(entityType, level);
         this.components = new HashMap<>();
-        this.ctx = ctx;
-        this.recalculateDimensions();
-        this.players = players;
+        this.ctx = LaunchContext.DUMMY;
+        this.players = new HashMap<>();
         this.noCulling = true;
         this.noPhysics = true;
-        this.locateComponents();
         MinecraftForge.EVENT_BUS.register(this);
+    }
+
+    public RocketEntity(Level level, LaunchContext ctx, Map<UUID, Vec3> players)
+    {
+        this(BeyondEntities.ROCKET.get(), level);
+        this.ctx = ctx;
+        this.recalculateDimensions();
+        this.locateComponents();
+        this.players.putAll(players);
     }
 
     private void recalculateDimensions()
@@ -84,6 +96,16 @@ public class RocketEntity extends Entity implements IEntityAdditionalSpawnData
         }
     }
 
+    private Phase getPhase()
+    {
+        return Phase.values()[this.entityData.get(PHASE) % Phase.values().length];
+    }
+
+    private void setPhase(Phase phase)
+    {
+        this.entityData.set(PHASE, phase.ordinal());
+    }
+
     @OnlyIn(Dist.CLIENT)
     private void freeRenderer()
     {
@@ -103,6 +125,7 @@ public class RocketEntity extends Entity implements IEntityAdditionalSpawnData
     @Override
     protected void defineSynchedData()
     {
+        this.entityData.define(PHASE, Phase.LAUNCHING.ordinal());
     }
 
     @Override
@@ -110,28 +133,93 @@ public class RocketEntity extends Entity implements IEntityAdditionalSpawnData
     {
         super.tick();
 
-        if (this.getY() < this.level.getHeight() * 2)
+        switch (this.getPhase())
         {
-            this.setDeltaMovement(0, Math.min(this.getDeltaMovement().y() + this.ctx.getLift() / 100.0F, 1.0F), 0);
-        }
-        else
-        {
-            this.setDeltaMovement(Vec3.ZERO);
-            if (!this.level.isClientSide() && !this.awaitingResponse)
+            case LAUNCHING:
             {
-                this.awaitingResponse = true;
-                for (Entity entity : this.getPassengers())
+                if (this.getY() < this.level.getHeight())
                 {
-                    if (entity instanceof Player)
+                    this.setDeltaMovement(0, Math.min(this.getDeltaMovement().y() + this.ctx.getLift() / 20.0F, 1.0F), 0);
+                }
+                else
+                {
+                    this.setDeltaMovement(Vec3.ZERO);
+                    if (!this.level.isClientSide())
                     {
-                        BeyondMessages.PLAY.send(PacketDistributor.PLAYER.with(() -> (ServerPlayer) entity), SpaceManager.get().insertPlayer((Player) entity, this.ctx));
+                        boolean success = SpaceManager.get().beginTransaction(this.getPassengers().stream().filter(entity -> entity instanceof Player).map(entity -> (Player) entity).toArray(Player[]::new), this.ctx, new SpaceManager.TransactionListener()
+                        {
+                            @Override
+                            public void cancel()
+                            {
+                                RocketEntity.this.setPhase(Phase.LANDING);
+                            }
+
+                            @Override
+                            public void travelTo(ServerLevel level)
+                            {
+                                List<Entity> passengers = new ArrayList<>(RocketEntity.this.getPassengers());
+                                RocketEntity newRocket = (RocketEntity) RocketEntity.this.changeDimension(level, new SpaceTeleporter());
+                                if (newRocket == null)
+                                {
+                                    for (Entity passenger : passengers)
+                                        if (passenger instanceof Player)
+                                            BeyondMessages.PLAY.send(PacketDistributor.PLAYER.with(() -> (ServerPlayer) passenger), new SPlanetTravelResponseMessage(SPlanetTravelResponseMessage.Status.ABORT));
+                                    this.cancel();
+                                    return;
+                                }
+
+                                passengers.forEach(entity ->
+                                {
+                                    Entity e = entity.changeDimension(level, new SpaceTeleporter());
+                                    if (e != null)
+                                    {
+                                        e.startRiding(newRocket, true);
+                                        if (e instanceof Player)
+                                            BeyondMessages.PLAY.send(PacketDistributor.PLAYER.with(() -> (ServerPlayer) e), new SPlanetTravelResponseMessage(SPlanetTravelResponseMessage.Status.SUCCESS));
+                                    }
+                                    else if (entity instanceof Player)
+                                    {
+                                        BeyondMessages.PLAY.send(PacketDistributor.PLAYER.with(() -> (ServerPlayer) entity), new SPlanetTravelResponseMessage(SPlanetTravelResponseMessage.Status.ABORT));
+                                    }
+                                });
+                                newRocket.setPhase(Phase.LANDING);
+                            }
+                        });
+
+                        if (!success)
+                        {
+                            RocketEntity.this.setPhase(Phase.LANDING);
+                            return;
+                        }
+
+                        RocketEntity.this.setPhase(Phase.WAITING);
                     }
                 }
+                break;
+            }
+            case WAITING:
+            {
+                break;
+            }
+            case LANDING:
+            {
+                int height = this.level.getHeight(Heightmap.Types.WORLD_SURFACE, (int) this.getX(), (int) this.getZ());
+                if (this.getY() + this.getDeltaMovement().y() > height)
+                {
+                    this.setDeltaMovement(0, -0.5F, 0);
+                }
+                else
+                {
+                    this.setDeltaMovement(Vec3.ZERO);
+                    this.setPos(this.getX(), height, this.getZ());
+                    RocketEntity.this.setPhase(Phase.WAITING); // TODO remove entity
+                }
+                break;
             }
         }
 
         this.move(MoverType.SELF, this.getDeltaMovement());
-        if (this.level.isClientSide() && this.getDeltaMovement().y() > 0)
+        if (this.level.isClientSide() && this.getPhase() != Phase.WAITING)
         {
             for (Map.Entry<BlockPos, BlockState> entry : this.components.entrySet())
             {
@@ -210,6 +298,8 @@ public class RocketEntity extends Entity implements IEntityAdditionalSpawnData
             CompoundTag playerNbt = playersNbt.getCompound(i);
             this.players.put(playerNbt.getUUID("UUID"), new Vec3(playerNbt.getDouble("X"), playerNbt.getDouble("Y"), playerNbt.getDouble("Z")));
         }
+
+        this.entityData.set(PHASE, (int) nbt.getByte("Phase"));
     }
 
     @Override
@@ -228,6 +318,8 @@ public class RocketEntity extends Entity implements IEntityAdditionalSpawnData
             playersNbt.add(playerNbt);
         });
         nbt.put("Players", playersNbt);
+
+        nbt.putByte("Phase", this.entityData.get(PHASE).byteValue());
     }
 
     @Override
@@ -280,5 +372,10 @@ public class RocketEntity extends Entity implements IEntityAdditionalSpawnData
             this.templateRenderer = new StructureTemplateRenderer(CompletableFuture.completedFuture(this.ctx.getTemplate()), (pos, colorResolver) -> colorResolver.getColor(this.level.getBiome(pos.offset(this.getX() - size.getX() / 2.0, this.getY(), this.getZ() - size.getZ() / 2.0)), this.getX() - size.getX() / 2.0 + pos.getX(), this.getZ() - size.getZ() / 2.0 + pos.getZ()));
         }
         return this.templateRenderer;
+    }
+
+    public enum Phase
+    {
+        LAUNCHING, WAITING, LANDING
     }
 }

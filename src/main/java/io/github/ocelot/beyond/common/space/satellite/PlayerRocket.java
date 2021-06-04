@@ -20,7 +20,10 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.util.Arrays;
 import java.util.UUID;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 /**
  * <p>A representation of a player inside a rocket.</p>
@@ -59,29 +62,45 @@ public class PlayerRocket extends AbstractSatellite
     public static final Codec<PlayerRocket> CODEC = RecordCodecBuilder.create(instance -> instance.group(
             Codec.STRING.fieldOf("displayName").<Component>xmap(Component.Serializer::fromJson, Component.Serializer::toJson).forGetter(AbstractSatellite::getDisplayName),
             ResourceLocation.CODEC.optionalFieldOf("orbitingBody").forGetter(AbstractSatellite::getOrbitingBody),
-            Codec.LONG.fieldOf("profileIdMost").forGetter(rocket -> rocket.getProfile().getId().getMostSignificantBits()),
-            Codec.LONG.fieldOf("profileIdLeast").forGetter(rocket -> rocket.getProfile().getId().getLeastSignificantBits()),
-            Codec.STRING.fieldOf("profileName").forGetter(rocket -> rocket.getProfile().getName()),
+            Codec.LONG.listOf().fieldOf("profileIdMost").forGetter(rocket -> Arrays.stream(rocket.getProfiles()).map(profile -> profile.getId().getMostSignificantBits()).collect(Collectors.toList())),
+            Codec.LONG.listOf().fieldOf("profileIdLeast").forGetter(rocket -> Arrays.stream(rocket.getProfiles()).map(profile -> profile.getId().getLeastSignificantBits()).collect(Collectors.toList())),
+            Codec.STRING.listOf().fieldOf("profileNames").forGetter(rocket -> Arrays.stream(rocket.getProfiles()).map(GameProfile::getName).collect(Collectors.toList())),
             TEMPLATE_CODEC.fieldOf("rocket").forGetter(PlayerRocket::getRocket)
-    ).apply(instance, (displayName, orbitingBody, profileIdMost, profileIdLeast, profileName, rocket) -> new PlayerRocket(displayName, orbitingBody.orElse(null), new UUID(profileIdMost, profileIdLeast), profileName, rocket)));
+    ).apply(instance, (displayName, orbitingBody, profileIdMost, profileIdLeast, profileNames, rocket) -> new PlayerRocket(displayName, orbitingBody.orElse(null), profileIdMost.stream().mapToLong(Long::longValue).toArray(), profileIdLeast.stream().mapToLong(Long::longValue).toArray(), profileNames.toArray(new String[0]), rocket)));
 
-    private final GameProfile profile;
+    private final GameProfile[] profiles;
     private final StructureTemplate rocket;
 
-    private PlayerRocket(Component displayName, @Nullable ResourceLocation orbitingBody, UUID profileId, String profileName, StructureTemplate rocket)
+    private PlayerRocket(Component displayName, @Nullable ResourceLocation orbitingBody, long[] profileIdMost, long[] profileIdLeast, String[] profileNames, StructureTemplate rocket)
     {
         super(displayName, orbitingBody);
-        if (profileName.length() > 16)
-            throw new DecoderException("The received encoded string buffer length is longer than maximum allowed (" + profileName.length() + " > 16)");
-        this.profile = new GameProfile(profileId, profileName);
+        if (profileIdMost.length != profileIdLeast.length)
+            throw new DecoderException("The received player profile ids were not complete.");
+        if (profileIdMost.length != profileNames.length)
+            throw new DecoderException("The received player profiles were incomplete. " + profileIdMost.length + " ids, but " + profileNames.length + " names");
+
+        UUID[] profileIds = IntStream.range(0, profileIdMost.length).mapToObj(i -> new UUID(profileIdMost[i], profileIdLeast[i])).toArray(UUID[]::new);
+        this.profiles = new GameProfile[profileIds.length];
+        for (int i = 0; i < this.profiles.length; i++)
+        {
+            String profileName = profileNames[i];
+            if (profileName.length() > 16)
+                throw new DecoderException("The received encoded string buffer length is longer than maximum allowed (" + profileName.length() + " > 16)");
+            this.profiles[i] = new GameProfile(profileIds[i], profileName);
+        }
         this.rocket = rocket;
     }
 
-    public PlayerRocket(Player player, @Nullable ResourceLocation orbitingBody, StructureTemplate rocket)
+    public PlayerRocket(Player[] players, @Nullable ResourceLocation orbitingBody, StructureTemplate rocket)
     {
-        super(player.getDisplayName(), orbitingBody);
-        this.profile = player.getGameProfile();
+        super(players[0].getDisplayName(), orbitingBody);
+        this.profiles = Arrays.stream(players).map(Player::getGameProfile).toArray(GameProfile[]::new);
         this.rocket = rocket;
+    }
+
+    public boolean contains(UUID id)
+    {
+        return Arrays.stream(this.profiles).anyMatch(profile -> profile.getId().equals(id));
     }
 
     @Override
@@ -104,11 +123,19 @@ public class PlayerRocket extends AbstractSatellite
     }
 
     /**
-     * @return The profile for the player
+     * @return The profile for the commanding player
      */
-    public GameProfile getProfile()
+    public GameProfile getCommandingProfile()
     {
-        return profile;
+        return this.profiles[0];
+    }
+
+    /**
+     * @return The profile for all players in the rocket
+     */
+    public GameProfile[] getProfiles()
+    {
+        return profiles;
     }
 
     /**

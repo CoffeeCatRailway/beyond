@@ -18,9 +18,9 @@ import net.minecraft.nbt.NbtOps;
 import net.minecraft.network.chat.TextComponent;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.MinecraftServer;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.level.levelgen.structure.templatesystem.StructureTemplate;
 import net.minecraft.world.level.saveddata.SavedData;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.common.util.Constants;
@@ -48,6 +48,7 @@ public class SpaceManager
     private final MinecraftServer server;
     // TODO store solar system id and update dimension cache
     private final Map<ResourceLocation, ResourceLocation> validDestinations;
+    private final Map<UUID, TransactionListener> transactions;
     private final Set<Satellite> satellites;
 
     // TODO remove player from simulation if they aren't in a rocket entity
@@ -58,6 +59,7 @@ public class SpaceManager
         // TODO Load simulation from datapack
 
         this.validDestinations = StaticSolarSystemDefinitions.SOLAR_SYSTEM.get().entrySet().stream().filter(entry -> entry.getValue().getDimension().isPresent()).collect(Collectors.toMap(Map.Entry::getKey, entry -> entry.getValue().getDimension().get()));
+        this.transactions = new HashMap<>();
         this.satellites = ConcurrentHashMap.newKeySet();
 
         List<Satellite> satellites = this.getSaveData().satellites;
@@ -81,7 +83,7 @@ public class SpaceManager
         this.satellites.add(satellite);
         this.getSaveData().update(this.satellites);
         if (satellite instanceof PlayerRocket)
-            this.notifyAllPlayers(((PlayerRocket) satellite).getProfile().getId(), new SUpdateSimulationBodiesMessage(new Satellite[]{satellite}, new int[0]));
+            this.notifyAllPlayers(((PlayerRocket) satellite).getCommandingProfile().getId(), new SUpdateSimulationBodiesMessage(new Satellite[]{satellite}, new int[0]));
     }
 
     private void remove(Satellite satellite)
@@ -89,7 +91,11 @@ public class SpaceManager
         this.satellites.remove(satellite);
         this.getSaveData().update(this.satellites);
         if (satellite instanceof PlayerRocket)
-            this.notifyAllPlayers(((PlayerRocket) satellite).getProfile().getId(), new SUpdateSimulationBodiesMessage(new Satellite[0], new int[]{satellite.getId()}));
+        {
+            UUID id = ((PlayerRocket) satellite).getCommandingProfile().getId();
+            this.getTransaction(id).ifPresent(TransactionListener::cancel);
+            this.notifyAllPlayers(id, new SUpdateSimulationBodiesMessage(new Satellite[0], new int[]{satellite.getId()}));
+        }
     }
 
     private Stream<PlayerRocket> getPlayers()
@@ -99,9 +105,9 @@ public class SpaceManager
 
     private <MSG> void notifyAllPlayers(@Nullable UUID id, MSG msg)
     {
-        this.getPlayers().forEach(b ->
+        this.getPlayers().flatMap(b -> Arrays.stream(b.getProfiles())).forEach(profile ->
         {
-            ServerPlayer player = this.server.getPlayerList().getPlayer(b.getProfile().getId());
+            ServerPlayer player = this.server.getPlayerList().getPlayer(profile.getId());
             if (player == null || (id != null && player.getUUID().equals(id)))
                 return;
             BeyondMessages.PLAY.send(PacketDistributor.PLAYER.with(() -> player), msg);
@@ -118,64 +124,126 @@ public class SpaceManager
         return this.server.overworld().getDataStorage().computeIfAbsent(SpaceData::new, SpaceData.DATA_NAME);
     }
 
-    /**
-     * Inserts the specified player into the simulation.
-     *
-     * @param player The player to insert
-     * @return A new packet to sync the player with the simulation
-     */
-    public SOpenSpaceTravelScreenMessage insertPlayer(Player player, LaunchContext ctx)
+    private Optional<TransactionListener> getTransaction(UUID id)
     {
-        if (!this.getPlayer(player.getUUID()).isPresent())
-        {
-            ResourceLocation playerDimension = player.level.dimension().location();
-            ResourceLocation playerPlanet = this.validDestinations.entrySet().stream().filter(entry -> entry.getValue().equals(playerDimension)).map(Map.Entry::getKey).findAny().orElse(Planet.EARTH);//this.simulation.getBodies().filter(b -> b.canTeleportTo() && b.getDimension().isPresent() && b.getDimension().get().equals(playerDimension)).map(SimulatedBody::getId).findAny().orElse(Planet.EARTH);
-            this.add(new PlayerRocket(player, playerPlanet, ctx.getTemplate())); // TODO set to custom made structure
-        }
-        return new SOpenSpaceTravelScreenMessage(this.satellites.toArray(new Satellite[0]));
+        return Optional.ofNullable(this.transactions.get(id));
     }
+
+    public boolean beginTransaction(Player[] players, LaunchContext ctx, TransactionListener listener)
+    {
+        if (players.length == 0) // If there are no players, immediately cancel the transaction and return to the ground
+            return false;
+
+        for (Player player : players)
+            this.getPlayer(player.getUUID()).ifPresent(this::remove); // If any players are already in space, cancel their old transaction
+
+        Player commander = players[0]; // The first player controls the ship
+
+        ResourceLocation playerDimension = commander.level.dimension().location();
+        ResourceLocation playerPlanet = this.validDestinations.entrySet().stream().filter(entry -> entry.getValue().equals(playerDimension)).map(Map.Entry::getKey).findAny().orElse(Planet.EARTH);//this.simulation.getBodies().filter(b -> b.canTeleportTo() && b.getDimension().isPresent() && b.getDimension().get().equals(playerDimension)).map(SimulatedBody::getId).findAny().orElse(Planet.EARTH);
+        this.add(new PlayerRocket(players, playerPlanet, ctx.getTemplate()));
+        for (Player player : players)
+            BeyondMessages.PLAY.send(PacketDistributor.PLAYER.with(() -> (ServerPlayer) player), new SOpenSpaceTravelScreenMessage(this.satellites.toArray(new Satellite[0])));
+        this.transactions.put(commander.getUUID(), listener);
+
+        return true;
+    }
+
+    /**
+     * Called when the specified player cancels the transaction and returns to the ground.
+     *
+     * @param player The player cancelling
+     */
+    public void cancelTransaction(Player player)
+    {
+        this.getTransaction(player.getUUID()).ifPresent(TransactionListener::cancel);
+        this.transactions.remove(player.getUUID());
+        this.getPlayer(player.getUUID()).ifPresent(this::remove);
+    }
+
+    /**
+     * Called when the specified player made a decision and started travelling to the specified body.
+     *
+     * @param player The player travelling
+     * @param bodyId The id of the body to travel to
+     */
+    public void depart(Player player, ResourceLocation bodyId)
+    {
+        this.notifyAllPlayers(player.getUUID(), new SPlayerTravelMessage(player.getUUID(), bodyId));
+    }
+
+    /**
+     * Called when the commanding player arrives at the body.
+     *
+     * @param player The player commanding the ship
+     * @param level  The level to travel to
+     */
+    public void arrive(Player player, ServerLevel level)
+    {
+        this.getTransaction(player.getUUID()).ifPresent(listener -> listener.travelTo(level));
+        this.transactions.remove(player.getUUID());
+        this.getPlayer(player.getUUID()).ifPresent(this::remove);
+    }
+
+//    /**
+//     * Inserts the specified player into the simulation.
+//     *
+//     * @param player The player to insert
+//     * @return A new packet to sync the player with the simulation
+//     */
+//    @Deprecated // TODO remove
+//    public SOpenSpaceTravelScreenMessage insertPlayer(Player player, LaunchContext ctx)
+//    {
+//        if (!this.getPlayer(player.getUUID()).isPresent())
+//        {
+//            ResourceLocation playerDimension = player.level.dimension().location();
+//            ResourceLocation playerPlanet = this.validDestinations.entrySet().stream().filter(entry -> entry.getValue().equals(playerDimension)).map(Map.Entry::getKey).findAny().orElse(Planet.EARTH);//this.simulation.getBodies().filter(b -> b.canTeleportTo() && b.getDimension().isPresent() && b.getDimension().get().equals(playerDimension)).map(SimulatedBody::getId).findAny().orElse(Planet.EARTH);
+//            this.add(new PlayerRocket(player, playerPlanet, ctx.getTemplate()));
+//        }
+//        return new SOpenSpaceTravelScreenMessage(this.satellites.toArray(new Satellite[0]));
+//    }
 
     /**
      * Removes all players from the simulation with the specified id.
      *
      * @param id The id of the player to remove
      */
+    @Deprecated // TODO remove
     public void removePlayer(UUID id)
     {
         PlayerRocket[] players = this.getPlayers().toArray(PlayerRocket[]::new);
         for (PlayerRocket rocket : players)
-        {
-            if (rocket.getProfile().getId().equals(id))
+            if (rocket.getCommandingProfile().getId().equals(id))
                 this.remove(rocket);
-        }
     }
 
-    /**
-     * Relays the specified message to all players in the simulation except for the sender if not null.
-     *
-     * @param sender The person sending the message or <code>null</code> to send the message to all players
-     * @param msg    The message to relay
-     */
-    public void relay(@Nullable ServerPlayer sender, SPlayerTravelMessage msg)
-    {
-        this.getPlayers().forEach(rocket ->
-        {
-            ServerPlayer player = this.server.getPlayerList().getPlayer(rocket.getProfile().getId());
-            if (player == null || (sender != null && player.getUUID().equals(sender.getUUID())))
-                return;
-            BeyondMessages.PLAY.send(PacketDistributor.PLAYER.with(() -> player), msg);
-        });
-    }
+//    /**
+//     * Relays the specified message to all players in the simulation except for the sender if not null.
+//     *
+//     * @param sender The person sending the message or <code>null</code> to send the message to all players
+//     * @param msg    The message to relay
+//     */
+//    @Deprecated // TODO remove
+//    public void relay(@Nullable ServerPlayer sender, SPlayerTravelMessage msg)
+//    {
+//        this.getPlayers().forEach(rocket ->
+//        {
+//            ServerPlayer player = this.server.getPlayerList().getPlayer(rocket.getProfile().getId());
+//            if (player == null || (sender != null && player.getUUID().equals(sender.getUUID())))
+//                return;
+//            BeyondMessages.PLAY.send(PacketDistributor.PLAYER.with(() -> player), msg);
+//        });
+//    }
 
     /**
-     * Fetches a player with the specified id from the simulation.
+     * Fetches a player with the specified id from the simulation if they are the commander.
      *
      * @param playerId The player to fetch
      * @return The player in space or nothing if there is no player in space with that id
      */
     public Optional<PlayerRocket> getPlayer(UUID playerId)
     {
-        return this.getPlayers().filter(rocket -> rocket.getProfile().getId().equals(playerId)).findFirst();
+        return this.getPlayers().filter(rocket -> rocket.getCommandingProfile().getId().equals(playerId)).findFirst();
     }
 
     /**
@@ -213,6 +281,26 @@ public class SpaceManager
     public static void unload()
     {
         spaceManager = null;
+    }
+
+    /**
+     * <p>Manages behavior for interactions between the simulation and the rocket entity.</p>
+     *
+     * @author Ocelot
+     */
+    public interface TransactionListener
+    {
+        /**
+         * Cancels the current transaction and sends the player back to the surface of the planet.
+         */
+        void cancel();
+
+        /**
+         * Teleports the rocket to the new level and ends the transaction.
+         *
+         * @param level The level to move the rocket to
+         */
+        void travelTo(ServerLevel level);
     }
 
     private static class SpaceData extends SavedData

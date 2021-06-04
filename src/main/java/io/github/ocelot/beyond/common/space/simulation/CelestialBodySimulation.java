@@ -135,7 +135,7 @@ public class CelestialBodySimulation
     @Nullable
     public PlayerRocketBody getPlayer(UUID id)
     {
-        return this.bodies.values().stream().filter(body -> body instanceof PlayerRocketBody && ((PlayerRocketBody) body).getSatellite().getProfile().getId().equals(id)).map(body -> (PlayerRocketBody) body).findFirst().orElse(null);
+        return this.bodies.values().stream().filter(body -> body instanceof PlayerRocketBody && ((PlayerRocketBody) body).getSatellite().getCommandingProfile().getId().equals(id)).map(body -> (PlayerRocketBody) body).findFirst().orElse(null);
     }
 
     /**

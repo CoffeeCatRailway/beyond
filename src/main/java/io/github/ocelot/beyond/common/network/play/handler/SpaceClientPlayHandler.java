@@ -33,7 +33,7 @@ public class SpaceClientPlayHandler implements ISpaceClientPlayHandler
             return;
 
         // Don't open the screen if the player isn't in it
-        if (Arrays.stream(msg.getSatellites()).noneMatch(rocket -> rocket instanceof PlayerRocket && ((PlayerRocket) rocket).getProfile().getId().equals(player.getUUID())))
+        if (Arrays.stream(msg.getSatellites()).noneMatch(rocket -> rocket instanceof PlayerRocket && ((PlayerRocket) rocket).contains(player.getUUID())))
         {
             LOGGER.warn("Player was not found in the simulation they attempted to join!");
             return;
@@ -49,13 +49,24 @@ public class SpaceClientPlayHandler implements ISpaceClientPlayHandler
         if (player == null)
             return;
 
-        if (msg.getStatus() == SPlanetTravelResponseMessage.Status.FAILURE)
+        switch (msg.getStatus())
         {
-            ctx.enqueueWork(() ->
-            {
-                if (Minecraft.getInstance().screen instanceof SpaceTravelScreen)
-                    ((SpaceTravelScreen) Minecraft.getInstance().screen).notifyFailure(Objects.requireNonNull(msg.getBody()));
-            });
+            case SUCCESS:
+                break;
+            case FAILURE:
+                ctx.enqueueWork(() ->
+                {
+                    if (Minecraft.getInstance().screen instanceof SpaceTravelScreen)
+                        ((SpaceTravelScreen) Minecraft.getInstance().screen).notifyFailure(Objects.requireNonNull(msg.getBody()));
+                });
+                break;
+            case ABORT:
+                ctx.enqueueWork(() ->
+                {
+                    if (Minecraft.getInstance().screen instanceof SpaceTravelScreen)
+                        Minecraft.getInstance().setScreen(null);
+                });
+                break;
         }
     }
 

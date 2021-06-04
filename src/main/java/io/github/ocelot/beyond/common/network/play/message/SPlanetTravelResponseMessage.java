@@ -87,6 +87,11 @@ public class SPlanetTravelResponseMessage implements SonarMessage<ISpaceClientPl
         }, (msg, buf) ->
         {
             msg.body = buf.readResourceLocation();
+        }),
+        ABORT((msg, buf) ->
+        {
+        }, (msg, buf) ->
+        {
         });
 
         private final BiConsumer<SPlanetTravelResponseMessage, FriendlyByteBuf> writer;

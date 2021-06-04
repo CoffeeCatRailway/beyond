@@ -41,12 +41,13 @@ public class SpaceServerPlayHandler implements ISpaceServerPlayHandler
         ctx.enqueueWork(() ->
         {
             SpaceManager spaceManager = SpaceManager.get();
-            if (msg.getBodyId() == null || msg.isArrive())
-                spaceManager.removePlayer(player.getUUID());
+//            if (msg.getBodyId() == null || msg.isArrive())
+//                spaceManager.removePlayer(player.getUUID());
 
             if (msg.getBodyId() == null)
             {
                 LOGGER.debug(player + " has exited GUI");
+                spaceManager.cancelTransaction(player);
                 return; // TODO expect player to be in level again
             }
 
@@ -58,34 +59,13 @@ public class SpaceServerPlayHandler implements ISpaceServerPlayHandler
                     ServerLevel level = player.server.getLevel(ResourceKey.create(Registry.DIMENSION_REGISTRY, destinationDimension.get()));
                     if (level != null)
                     {
-                        player.changeDimension(level, new ITeleporter()
-                        {
-                            @Override
-                            public boolean playTeleportSound(ServerPlayer player, ServerLevel sourceWorld, ServerLevel destWorld)
-                            {
-                                return false;
-                            }
-
-                            @Override
-                            public PortalInfo getPortalInfo(Entity entity, ServerLevel destWorld, Function<ServerLevel, PortalInfo> defaultPortalInfo)
-                            {
-                                // TODO drop at probe location
-                                return new PortalInfo(new Vec3(entity.position().x(), destWorld.getMaxBuildHeight(), entity.position().z()), Vec3.ZERO, entity.yRot, entity.xRot);
-                            }
-
-                            @Override
-                            public Entity placeEntity(Entity entity, ServerLevel currentWorld, ServerLevel destWorld, float yaw, Function<Boolean, Entity> repositionEntity)
-                            {
-                                return repositionEntity.apply(false);
-                            }
-                        });
-                        BeyondMessages.PLAY.reply(new SPlanetTravelResponseMessage(SPlanetTravelResponseMessage.Status.SUCCESS), ctx);
+                        spaceManager.arrive(player, level);
                         return;
                     }
                 }
                 else
                 {
-                    spaceManager.relay(player, new SPlayerTravelMessage(player.getUUID(), msg.getBodyId()));
+                    spaceManager.depart(player, msg.getBodyId());
                     return;
                 }
             }
