@@ -9,7 +9,7 @@ displayName = "Beyond"
 #updateJSONURL="https://change.me.example.invalid/updates.json"
 #displayURL="https://change.me.to.your.mods.homepage.example.invalid/"
 #logoFile = "examplemod.png"
-#credits = ""
+credits = "CoffeeCatRailway for making the satellite model and texture. BlueBarracuda for composing the music for the moon."
 authors = "Ocelot"
 description = "Pretty cool space exploration mod broh."
 [[dependencies.beyond]]
