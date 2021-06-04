@@ -14,7 +14,6 @@ import net.minecraft.nbt.NbtOps;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.protocol.Packet;
 import net.minecraft.world.entity.*;
-import net.minecraft.world.level.FoliageColor;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.levelgen.structure.templatesystem.StructureTemplate;
@@ -104,7 +103,8 @@ public class RocketEntity extends Entity implements IEntityAdditionalSpawnData
     {
         super.tick();
 
-        this.move(MoverType.SELF, new Vec3(0, this.ctx.getThrust() / 20.0F, 0));
+        this.setDeltaMovement(0, this.ctx.getThrust() / 20.0F, 0);
+        this.move(MoverType.SELF, this.getDeltaMovement());
         if (this.level.isClientSide())
         {
             for (Map.Entry<BlockPos, BlockState> entry : this.components.entrySet())
@@ -113,7 +113,7 @@ public class RocketEntity extends Entity implements IEntityAdditionalSpawnData
                 {
                     BlockPos pos = entry.getKey();
                     Vec3i size = this.ctx.getTemplate().getSize();
-                    ((RocketComponent) entry.getValue().getBlock()).addParticles(this.level, entry.getValue(), this.getX() - size.getX() / 2.0 + pos.getX(), this.getY() + pos.getY(), this.getZ() - size.getX() / 2.0 + pos.getZ());
+                    ((RocketComponent) entry.getValue().getBlock()).addParticles(this.level, entry.getValue(), this.getX() - size.getX() / 2.0 + pos.getX(), this.getY() + pos.getY(), this.getZ() - size.getZ() / 2.0 + pos.getZ());
                 }
             }
         }
@@ -249,7 +249,7 @@ public class RocketEntity extends Entity implements IEntityAdditionalSpawnData
     public StructureTemplateRenderer getRenderer()
     {
         if (this.templateRenderer == null)
-            this.templateRenderer = new StructureTemplateRenderer(CompletableFuture.completedFuture(this.ctx.getTemplate()), (pos, colorResolver) -> FoliageColor.getDefaultColor());
+            this.templateRenderer = new StructureTemplateRenderer(CompletableFuture.completedFuture(this.ctx.getTemplate()), (pos, colorResolver) -> colorResolver.getColor(this.level.getBiome(pos), pos.getX(), pos.getZ()));
         return this.templateRenderer;
     }
 }
