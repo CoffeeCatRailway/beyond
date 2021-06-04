@@ -80,7 +80,11 @@ dependencies {
     modCompileOnly "mezz.jei:jei-1.16.4:${jei_version}:api"
     modRuntime "mezz.jei:jei-1.16.4:${jei_version}"
 
+    // These mods make life easier during runtime. They aren't strictly necessary
+
     modRuntime "curse.maven:shutupexperimentalsettings-407174:3188120"
+    modRuntime "curse.maven:configured-457570:3335973"
+    modRuntime "curse.maven:catalogue-459701:3335979"
 
     modImplementation "com.github.Ocelot5836:Sonar:${project.sonar_version}"
     shade "com.github.Ocelot5836.Sonar:${project.sonar_version}"
