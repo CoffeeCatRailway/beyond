@@ -60,7 +60,7 @@ public class RocketEntity extends Entity implements IEntityAdditionalSpawnData
     private void recalculateDimensions()
     {
         Vec3i size = this.ctx.getTemplate().getSize();
-        this.dimensions = EntityDimensions.fixed(Math.min(size.getX(), size.getZ()), size.getY());
+        this.dimensions = EntityDimensions.fixed(Math.max(size.getX(), size.getZ()), size.getY());
         this.refreshDimensions();
     }
 
@@ -249,7 +249,10 @@ public class RocketEntity extends Entity implements IEntityAdditionalSpawnData
     public StructureTemplateRenderer getRenderer()
     {
         if (this.templateRenderer == null)
-            this.templateRenderer = new StructureTemplateRenderer(CompletableFuture.completedFuture(this.ctx.getTemplate()), (pos, colorResolver) -> colorResolver.getColor(this.level.getBiome(pos), pos.getX(), pos.getZ()));
+        {
+            Vec3i size = this.ctx.getTemplate().getSize();
+            this.templateRenderer = new StructureTemplateRenderer(CompletableFuture.completedFuture(this.ctx.getTemplate()), (pos, colorResolver) -> colorResolver.getColor(this.level.getBiome(pos.offset(this.getX() - size.getX() / 2.0, this.getY(), this.getZ() - size.getZ() / 2.0)), this.getX() - size.getX() / 2.0 + pos.getX(), this.getZ() - size.getZ() / 2.0 + pos.getZ()));
+        }
         return this.templateRenderer;
     }
 }
