@@ -24,7 +24,7 @@ import java.util.stream.Collectors;
 @Mod.EventBusSubscriber(modid = Beyond.MOD_ID)
 public class BlockScanner
 {
-    private static final long MAX_SCAN_TIME = 1000; // TODO make this a config option
+    private static final long MAX_SCAN_TIME = 10000; // TODO make this a config option
 
     /**
      * Runs a scan in the specified level starting at the specified position.
