@@ -220,7 +220,7 @@ public class RocketControllerBlockEntity extends BaseTileEntity implements Ticka
                 this.cancelLaunch();
             if (this.level.isClientSide())
             {
-                this.components.forEach((pos, component) -> component.addParticles(this.level, this.level.getBlockState(pos), pos.getX(), pos.getY(), pos.getZ()));
+                this.components.forEach((pos, component) -> component.addParticles(this.level, this.level.getBlockState(pos), pos.getX(), pos.getY(), pos.getZ(), 0, 0, 0));
             }
         }
     }

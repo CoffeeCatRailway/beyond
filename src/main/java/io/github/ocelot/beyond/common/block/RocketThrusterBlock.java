@@ -39,7 +39,7 @@ public class RocketThrusterBlock extends BaseBlock implements RocketThruster
     }
 
     @Override
-    public void addParticles(Level level, BlockState state, double x, double y, double z)
+    public void addParticles(Level level, BlockState state, double x, double y, double z, double motionX, double motionY, double motionZ)
     {
         Direction facing = state.getValue(RocketThrusterBlock.FACING);
         for (int i = 0; i < 2; i++)
@@ -51,7 +51,7 @@ public class RocketThrusterBlock extends BaseBlock implements RocketThruster
             double particleX = x + 0.5 + facing.getStepX() * 0.5 + randomX;
             double particleY = y + 0.5 + facing.getStepY() * 0.5 + randomY;
             double particleZ = z + 0.5 + facing.getStepZ() * 0.5 + randomZ;
-            level.addParticle(ParticleTypes.CLOUD, true, particleX, particleY, particleZ, facing.getStepX() * 0.5, facing.getStepY() * 0.5, facing.getStepZ() * 0.5);
+            level.addParticle(ParticleTypes.CLOUD, true, particleX, particleY, particleZ, facing.getStepX() * 0.5 + motionX, facing.getStepY() * 0.5 + motionY, facing.getStepZ() * 0.5 + motionZ);
         }
     }
 

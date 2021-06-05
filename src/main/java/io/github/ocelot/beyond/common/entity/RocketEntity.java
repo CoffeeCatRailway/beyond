@@ -215,7 +215,9 @@ public class RocketEntity extends Entity implements IEntityAdditionalSpawnData
                 {
                     this.setDeltaMovement(Vec3.ZERO);
                     this.setPos(this.getX(), height, this.getZ());
-                    RocketEntity.this.setPhase(Phase.WAITING); // TODO remove entity
+                    this.ejectPassengers();
+                    this.remove();
+                    // TODO place blocks
                 }
                 break;
             }
@@ -230,7 +232,7 @@ public class RocketEntity extends Entity implements IEntityAdditionalSpawnData
                 {
                     BlockPos pos = entry.getKey();
                     Vec3i size = this.ctx.getTemplate().getSize();
-                    ((RocketComponent) entry.getValue().getBlock()).addParticles(this.level, entry.getValue(), this.getX() - size.getX() / 2.0 + pos.getX(), this.getY() + pos.getY(), this.getZ() - size.getZ() / 2.0 + pos.getZ());
+                    ((RocketComponent) entry.getValue().getBlock()).addParticles(this.level, entry.getValue(), this.getX() - size.getX() / 2.0 + pos.getX(), this.getY() + pos.getY(), this.getZ() - size.getZ() / 2.0 + pos.getZ(), this.getDeltaMovement().x(), this.getDeltaMovement().y(), this.getDeltaMovement().z());
                 }
             }
         }
@@ -303,6 +305,8 @@ public class RocketEntity extends Entity implements IEntityAdditionalSpawnData
         }
 
         this.entityData.set(PHASE, (int) nbt.getByte("Phase"));
+        if (this.getPhase() == Phase.WAITING)
+            this.setPhase(Phase.LANDING); // This will only occur if the commander is mid transaction and something goes horribly wrong when the server shuts down, so tell the rocket to land instead of stay in the air
     }
 
     @Override

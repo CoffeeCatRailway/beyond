@@ -3,7 +3,6 @@ package io.github.ocelot.beyond.common.network.play.handler;
 import io.github.ocelot.beyond.common.init.BeyondMessages;
 import io.github.ocelot.beyond.common.network.play.message.CPlanetTravelMessage;
 import io.github.ocelot.beyond.common.network.play.message.SPlanetTravelResponseMessage;
-import io.github.ocelot.beyond.common.network.play.message.SPlayerTravelMessage;
 import io.github.ocelot.beyond.common.space.SpaceManager;
 import io.github.ocelot.beyond.common.space.planet.Planet;
 import io.github.ocelot.beyond.common.space.satellite.PlayerRocket;
@@ -12,16 +11,11 @@ import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.world.entity.Entity;
-import net.minecraft.world.level.portal.PortalInfo;
-import net.minecraft.world.phys.Vec3;
-import net.minecraftforge.common.util.ITeleporter;
 import net.minecraftforge.fml.network.NetworkEvent;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.util.Optional;
-import java.util.function.Function;
 
 /**
  * @author Ocelot
@@ -41,14 +35,19 @@ public class SpaceServerPlayHandler implements ISpaceServerPlayHandler
         ctx.enqueueWork(() ->
         {
             SpaceManager spaceManager = SpaceManager.get();
-//            if (msg.getBodyId() == null || msg.isArrive())
-//                spaceManager.removePlayer(player.getUUID());
+
+            if (!spaceManager.hasTransaction(player.getUUID()))
+            {
+                ResourceLocation body = spaceManager.getPlayer(player.getUUID()).map(PlayerRocket::getOrbitingBody).map(planet -> planet.orElse(Planet.EARTH)).orElse(Planet.EARTH);
+                BeyondMessages.PLAY.reply(new SPlanetTravelResponseMessage(body), ctx);
+                LOGGER.warn(player + " was not commander and attempted to select a destination!");
+                return;
+            }
 
             if (msg.getBodyId() == null)
             {
-                LOGGER.debug(player + " has exited GUI");
                 spaceManager.cancelTransaction(player);
-                return; // TODO expect player to be in level again
+                return;
             }
 
             Optional<ResourceLocation> destinationDimension = spaceManager.getDimension(msg.getBodyId());

@@ -129,6 +129,25 @@ public class SpaceManager
         return Optional.ofNullable(this.transactions.get(id));
     }
 
+    /**
+     * Checks to see if the player with the specified id is currently in a transaction with space.
+     *
+     * @param id The id of the player to check
+     * @return Whether or not that player is currently in a transaction with space
+     */
+    public boolean hasTransaction(UUID id)
+    {
+        return this.transactions.containsKey(id);
+    }
+
+    /**
+     * Initiates a space transaction with the specified players.
+     *
+     * @param players  The players to go into space. The first player is assumed to be the commander
+     * @param ctx      The launch context
+     * @param listener The listener for transaction events
+     * @return Whether or not a transaction could be made
+     */
     public boolean beginTransaction(Player[] players, LaunchContext ctx, TransactionListener listener)
     {
         if (players.length == 0) // If there are no players, immediately cancel the transaction and return to the ground

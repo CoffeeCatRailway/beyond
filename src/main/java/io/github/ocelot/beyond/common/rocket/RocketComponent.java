@@ -21,7 +21,7 @@ public interface RocketComponent
      * @param y The y position of the block
      * @param z The z position of the block
      */
-    default void addParticles(Level level, BlockState state, double x, double y, double z)
+    default void addParticles(Level level, BlockState state, double x, double y, double z, double motionX, double motionY, double motionZ)
     {
     }
 }

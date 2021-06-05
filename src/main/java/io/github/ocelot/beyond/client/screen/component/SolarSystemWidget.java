@@ -516,7 +516,7 @@ public class SolarSystemWidget extends AbstractWidget implements ContainerEventH
         for (GuiEventListener listener : this.children)
             if (listener instanceof NativeResource)
                 ((NativeResource) listener).free();
-        if (!this.travelling)
+        if (this.commander && !this.travelling)
             BeyondMessages.PLAY.sendToServer(new CPlanetTravelMessage(null, false));
         MinecraftForge.EVENT_BUS.unregister(this);
     }
@@ -580,6 +580,14 @@ public class SolarSystemWidget extends AbstractWidget implements ContainerEventH
     public boolean isTravelling()
     {
         return travelling;
+    }
+
+    /**
+     * @return Whether or not this player is the commander of the ship
+     */
+    public boolean isCommander()
+    {
+        return commander;
     }
 
     /**
