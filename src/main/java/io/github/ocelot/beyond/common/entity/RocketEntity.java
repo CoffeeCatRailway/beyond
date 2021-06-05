@@ -10,6 +10,7 @@ import io.github.ocelot.beyond.common.space.SpaceManager;
 import io.github.ocelot.beyond.common.space.SpaceTeleporter;
 import io.github.ocelot.beyond.event.ReloadRenderersEvent;
 import io.github.ocelot.sonar.client.render.StructureTemplateRenderer;
+import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Vec3i;
 import net.minecraft.nbt.CompoundTag;
@@ -28,6 +29,7 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.levelgen.Heightmap;
 import net.minecraft.world.level.levelgen.structure.templatesystem.StructureTemplate;
+import net.minecraft.world.level.lighting.LevelLightEngine;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
@@ -158,6 +160,7 @@ public class RocketEntity extends Entity implements IEntityAdditionalSpawnData
                             public void travelTo(ServerLevel level)
                             {
                                 List<Entity> passengers = new ArrayList<>(RocketEntity.this.getPassengers());
+                                RocketEntity.this.ejectPassengers();
                                 RocketEntity newRocket = (RocketEntity) RocketEntity.this.changeDimension(level, new SpaceTeleporter());
                                 if (newRocket == null)
                                 {
@@ -369,11 +372,16 @@ public class RocketEntity extends Entity implements IEntityAdditionalSpawnData
         if (this.templateRenderer == null)
         {
             Vec3i size = this.ctx.getTemplate().getSize();
-            this.templateRenderer = new StructureTemplateRenderer(CompletableFuture.completedFuture(this.ctx.getTemplate()), (pos, colorResolver) -> colorResolver.getColor(this.level.getBiome(pos.offset(this.getX() - size.getX() / 2.0, this.getY(), this.getZ() - size.getZ() / 2.0)), this.getX() - size.getX() / 2.0 + pos.getX(), this.getZ() - size.getZ() / 2.0 + pos.getZ()));
+            this.templateRenderer = new StructureTemplateRenderer(CompletableFuture.completedFuture(this.ctx.getTemplate()), ((ClientLevel) this.level).effects().constantAmbientLight(), level -> new LevelLightEngine(level, true, this.level.dimensionType().hasSkyLight()), (pos, colorResolver) -> colorResolver.getColor(this.level.getBiome(pos.offset(this.getX() - size.getX() / 2.0, this.getY(), this.getZ() - size.getZ() / 2.0)), this.getX() - size.getX() / 2.0 + pos.getX(), this.getZ() - size.getZ() / 2.0 + pos.getZ()));
         }
         return this.templateRenderer;
     }
 
+    /**
+     * <p>The phase of rocket entity movement.</p>
+     *
+     * @author Ocelot
+     */
     public enum Phase
     {
         LAUNCHING, WAITING, LANDING
