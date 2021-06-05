@@ -101,7 +101,7 @@ public class RocketControllerBlockEntity extends BaseTileEntity implements Ticka
             return;
 
         for (BlockPos pos : result.getBlockPositions())
-            this.level.setBlock(pos, Blocks.AIR.defaultBlockState(), Constants.BlockFlags.DEFAULT);
+            this.level.setBlock(pos, Blocks.AIR.defaultBlockState(), 18); // TODO update blocks next to rocket
 
         Map<UUID, Vec3> playerPositions = new HashMap<>();
         for (Player player : this.level.getEntitiesOfClass(Player.class, new AABB(min, max.offset(1, 1, 1)).inflate(4), EntitySelector.NO_SPECTATORS))
