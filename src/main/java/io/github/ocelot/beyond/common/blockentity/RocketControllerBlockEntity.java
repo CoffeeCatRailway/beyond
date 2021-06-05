@@ -25,6 +25,7 @@ import net.minecraft.world.entity.EntitySelector;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.entity.TickableBlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.levelgen.structure.templatesystem.StructureTemplate;
@@ -86,13 +87,21 @@ public class RocketControllerBlockEntity extends BaseTileEntity implements Ticka
         }
     }
 
-    private void launch(LaunchContext ctx, BlockPos min, BlockPos max)
+    private boolean isLaunching()
+    {
+        if (this.level == null)
+            return false;
+        return this.level.isClientSide() ? this.launching : this.launchFuture != null && !this.launchFuture.isDone();
+    }
+
+    private void launch(BlockScanner.Result result, LaunchContext ctx, BlockPos min, BlockPos max)
     {
         this.cancelLaunch();
         if (this.level == null)
             return;
 
-        System.out.println("Launched!");
+        for (BlockPos pos : result.getBlockPositions())
+            this.level.setBlock(pos, Blocks.AIR.defaultBlockState(), Constants.BlockFlags.DEFAULT);
 
         Map<UUID, Vec3> playerPositions = new HashMap<>();
         for (Player player : this.level.getEntitiesOfClass(Player.class, new AABB(min, max.offset(1, 1, 1)).inflate(4), EntitySelector.NO_SPECTATORS))
@@ -185,7 +194,7 @@ public class RocketControllerBlockEntity extends BaseTileEntity implements Ticka
                     thrust += ((RocketThruster) entry.getValue()).getThrust(this.level, entry.getKey());
 
             float mass = Math.round(positions.size() / 512.0);
-            if (thrust <= mass) // TODO calculate required thrust
+            if (thrust <= mass)
             {
                 this.sendError(source, new TranslatableComponent("block." + Beyond.MOD_ID + ".rocket_controller.not_enough_thrust", ItemStack.ATTRIBUTE_MODIFIER_FORMAT.format(mass + 1), ItemStack.ATTRIBUTE_MODIFIER_FORMAT.format(thrust)));
                 return;
@@ -202,7 +211,7 @@ public class RocketControllerBlockEntity extends BaseTileEntity implements Ticka
 
             this.cancelLaunch();
             LaunchContext ctx = new LaunchContext(structure, (thrust - mass) / 16.0F);
-            this.launchFuture = Scheduler.get(this.level).schedule(() -> this.launch(ctx, min.immutable(), max.immutable()), LAUNCH_TIME, TimeUnit.SECONDS);
+            this.launchFuture = Scheduler.get(this.level).schedule(() -> this.launch(result, ctx, min.immutable(), max.immutable()), LAUNCH_TIME, TimeUnit.SECONDS);
 
             this.level.sendBlockUpdated(this.worldPosition, this.getBlockState(), this.getBlockState(), Constants.BlockFlags.DEFAULT);
         }, this.level.getServer()).exceptionally(e ->
@@ -257,48 +266,6 @@ public class RocketControllerBlockEntity extends BaseTileEntity implements Ticka
         }
     }
 
-    public boolean isLaunching()
-    {
-        if (this.level == null)
-            return false;
-        return this.level.isClientSide() ? this.launching : this.launchFuture != null && !this.launchFuture.isDone();
-    }
-
-    //    @Override
-//    public CompoundTag save(CompoundTag nbt)
-//    {
-//        super.save(nbt);
-//        if (this.runningScan.isDone() && this.template != null)
-//            nbt.put("Template", this.template.save(new CompoundTag()));
-//        return nbt;
-//    }
-//
-//    @Override
-//    public void load(BlockState state, CompoundTag nbt)
-//    {
-//        super.load(state, nbt);
-//        if (this.runningScan.isDone())
-//        {
-//            this.components.clear();
-//            if (nbt.contains("Template", Constants.NBT.TAG_COMPOUND))
-//            {
-//                if (this.template == null)
-//                    this.template = new StructureTemplate();
-//                this.template.load(nbt.getCompound("Template"));
-//
-//                List<StructureTemplate.Palette> blockInfos = this.getPalettes();
-//                for (StructureTemplate.Palette palette : blockInfos)
-//                {
-//                    for (StructureTemplate.StructureBlockInfo info : palette.blocks())
-//                    {
-//                        if (info.state.getBlock() instanceof RocketComponent)
-//                            this.components.put(info.pos, (RocketComponent) info.state.getBlock());
-//                    }
-//                }
-//            }
-//        }
-//    }
-
     public static List<StructureTemplate.Palette> getPalettes(StructureTemplate structure)
     {
         List<StructureTemplate.Palette> blockInfos = ObfuscationReflectionHelper.getPrivateValue(StructureTemplate.class, structure, "field_204769_a");
@@ -307,11 +274,11 @@ public class RocketControllerBlockEntity extends BaseTileEntity implements Ticka
         return blockInfos;
     }
 
-    private List<StructureTemplate.StructureEntityInfo> getEntities(StructureTemplate structure)
-    {
-        List<StructureTemplate.StructureEntityInfo> entityInfos = ObfuscationReflectionHelper.getPrivateValue(StructureTemplate.class, structure, "field_186271_b");
-        if (entityInfos == null)
-            return Collections.emptyList();
-        return entityInfos;
-    }
+//    private List<StructureTemplate.StructureEntityInfo> getEntities(StructureTemplate structure)
+//    {
+//        List<StructureTemplate.StructureEntityInfo> entityInfos = ObfuscationReflectionHelper.getPrivateValue(StructureTemplate.class, structure, "field_186271_b");
+//        if (entityInfos == null)
+//            return Collections.emptyList();
+//        return entityInfos;
+//    }
 }
