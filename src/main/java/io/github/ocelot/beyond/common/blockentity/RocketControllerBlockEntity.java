@@ -191,6 +191,8 @@ public class RocketControllerBlockEntity extends BaseTileEntity implements Ticka
                 return;
             }
 
+            this.level.setBlock(this.getBlockPos(), this.getBlockState().setValue(RocketControllerBlock.STATE, RocketControllerBlock.State.SUCCESS), Constants.BlockFlags.DEFAULT);
+
             StructureTemplate structure = new StructureTemplate();
             structure.fillFromWorld(this.level, min, max.subtract(min).offset(1, 1, 1), true, null);
 
@@ -202,7 +204,6 @@ public class RocketControllerBlockEntity extends BaseTileEntity implements Ticka
             LaunchContext ctx = new LaunchContext(structure, (thrust - mass) / 16.0F);
             this.launchFuture = Scheduler.get(this.level).schedule(() -> this.launch(ctx, min.immutable(), max.immutable()), LAUNCH_TIME, TimeUnit.SECONDS);
 
-            this.level.setBlock(this.getBlockPos(), this.getBlockState().setValue(RocketControllerBlock.STATE, RocketControllerBlock.State.SUCCESS), Constants.BlockFlags.DEFAULT);
             this.level.sendBlockUpdated(this.worldPosition, this.getBlockState(), this.getBlockState(), Constants.BlockFlags.DEFAULT);
         }, this.level.getServer()).exceptionally(e ->
         {

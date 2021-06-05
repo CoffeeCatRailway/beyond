@@ -28,6 +28,7 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.levelgen.Heightmap;
+import net.minecraft.world.level.levelgen.structure.templatesystem.StructurePlaceSettings;
 import net.minecraft.world.level.levelgen.structure.templatesystem.StructureTemplate;
 import net.minecraft.world.level.lighting.LevelLightEngine;
 import net.minecraft.world.phys.Vec3;
@@ -217,7 +218,12 @@ public class RocketEntity extends Entity implements IEntityAdditionalSpawnData
                     this.setPos(this.getX(), height, this.getZ());
                     this.ejectPassengers();
                     this.remove();
-                    // TODO place blocks
+
+                    if (!this.level.isClientSide())
+                    {
+                        Vec3i size = this.ctx.getTemplate().getSize();
+                        this.ctx.getTemplate().placeInWorld((ServerLevel) this.level, new BlockPos(this.getX() - size.getX() / 2.0, this.getY(), this.getZ() - size.getZ() / 2.0), new StructurePlaceSettings(), this.level.getRandom());
+                    }
                 }
                 break;
             }
