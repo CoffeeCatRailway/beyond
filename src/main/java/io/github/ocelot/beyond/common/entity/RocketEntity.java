@@ -139,7 +139,7 @@ public class RocketEntity extends Entity implements IEntityAdditionalSpawnData
         {
             case LAUNCHING:
             {
-                if (this.getY() < this.level.getHeight())
+                if (this.getY() < this.level.getMaxBuildHeight())
                 {
                     this.setDeltaMovement(0, Math.min(this.getDeltaMovement().y() + this.ctx.getLift() / 20.0F, 1.0F), 0);
                 }
