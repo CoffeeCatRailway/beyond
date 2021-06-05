@@ -207,15 +207,14 @@ public class RocketEntity extends Entity implements IEntityAdditionalSpawnData
             }
             case LANDING:
             {
-                int height = this.level.getHeight(Heightmap.Types.WORLD_SURFACE, (int) this.getX(), (int) this.getZ());
-                if (this.getY() + this.getDeltaMovement().y() > height)
+                this.noPhysics = false;
+                if (!this.verticalCollision)
                 {
                     this.setDeltaMovement(0, -0.5F, 0);
                 }
                 else
                 {
                     this.setDeltaMovement(Vec3.ZERO);
-                    this.setPos(this.getX(), height, this.getZ());
                     this.ejectPassengers();
                     this.remove();
 
