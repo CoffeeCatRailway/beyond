@@ -278,12 +278,6 @@ public class RocketEntity extends Entity implements IEntityAdditionalSpawnData
     }
 
     @Override
-    public boolean shouldRender(double x, double y, double z)
-    {
-        return true;
-    }
-
-    @Override
     public EntityDimensions getDimensions(Pose pose)
     {
         return dimensions;

@@ -4,6 +4,7 @@ import com.mojang.serialization.Codec;
 import io.github.ocelot.beyond.Beyond;
 import io.github.ocelot.beyond.common.init.BeyondMessages;
 import io.github.ocelot.beyond.common.network.play.message.SOpenSpaceTravelScreenMessage;
+import io.github.ocelot.beyond.common.network.play.message.SPlanetTravelResponseMessage;
 import io.github.ocelot.beyond.common.network.play.message.SPlayerTravelMessage;
 import io.github.ocelot.beyond.common.network.play.message.SUpdateSimulationBodiesMessage;
 import io.github.ocelot.beyond.common.rocket.LaunchContext;
@@ -177,7 +178,16 @@ public class SpaceManager
     {
         this.getTransaction(player.getUUID()).ifPresent(TransactionListener::cancel);
         this.transactions.remove(player.getUUID());
-        this.getPlayer(player.getUUID()).ifPresent(this::remove);
+        this.getPlayer(player.getUUID()).ifPresent(rocket ->
+        {
+            for (int i = 1; i < rocket.getProfiles().length; i++)
+            {
+                Player passenger = player.level.getPlayerByUUID(rocket.getProfiles()[i].getId());
+                if (passenger != null)
+                    BeyondMessages.PLAY.send(PacketDistributor.PLAYER.with(() -> (ServerPlayer) passenger), new SPlanetTravelResponseMessage(SPlanetTravelResponseMessage.Status.ABORT));
+            }
+            this.remove(rocket);
+        });
     }
 
     /**
