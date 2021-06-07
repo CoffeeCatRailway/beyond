@@ -1,4 +1,4 @@
-package io.github.ocelot.beyond.client.render;
+package io.github.ocelot.beyond.client.render.entity.layer;
 
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.math.Vector3f;

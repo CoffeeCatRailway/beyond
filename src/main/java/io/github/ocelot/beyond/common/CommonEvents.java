@@ -1,6 +1,7 @@
 package io.github.ocelot.beyond.common;
 
 import io.github.ocelot.beyond.Beyond;
+import io.github.ocelot.beyond.common.entity.RocketEntity;
 import io.github.ocelot.beyond.common.world.space.DimensionSpaceSettings;
 import io.github.ocelot.beyond.common.world.space.DimensionSpaceSettingsManager;
 import net.minecraft.world.entity.LivingEntity;
@@ -8,6 +9,7 @@ import net.minecraft.world.entity.ai.attributes.AttributeInstance;
 import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 import net.minecraft.world.level.Level;
 import net.minecraftforge.common.ForgeMod;
+import net.minecraftforge.event.entity.EntityMountEvent;
 import net.minecraftforge.event.entity.living.LivingEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.LogicalSide;
@@ -47,5 +49,12 @@ public class CommonEvents
                 attribute.addTransientModifier(new AttributeModifier(GRAVITY_ID, "Gravity acceleration reduction", -(1.0 - settings.getGravityMultiplier()), AttributeModifier.Operation.MULTIPLY_BASE));
             }
         }
+    }
+
+    @SubscribeEvent
+    public static void onEvent(EntityMountEvent event)
+    {
+//        if (event.isDismounting() && event.getEntityBeingMounted() instanceof RocketEntity)
+//            event.setCanceled(true);
     }
 }

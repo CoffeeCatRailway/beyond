@@ -7,11 +7,14 @@ modId = "beyond"
 version = "${version}"
 displayName = "Beyond"
 #updateJSONURL="https://change.me.example.invalid/updates.json"
-#displayURL="https://change.me.to.your.mods.homepage.example.invalid/"
+displayURL="https://github.com/Ocelot5836/beyond"
 #logoFile = "examplemod.png"
 credits = "CoffeeCatRailway for making the satellite model and texture. BlueBarracuda for composing the music for the moon."
 authors = "Ocelot"
 description = "Pretty cool space exploration mod broh."
+[modproperties.beyond]
+catalogueItemIcon="beyond:rocket_thruster"
+
 [[dependencies.beyond]]
 modId = "forge"
 mandatory = true

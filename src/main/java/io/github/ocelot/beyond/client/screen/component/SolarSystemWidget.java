@@ -1,5 +1,6 @@
 package io.github.ocelot.beyond.client.screen.component;
 
+import com.mojang.authlib.GameProfile;
 import com.mojang.blaze3d.pipeline.RenderTarget;
 import com.mojang.blaze3d.platform.GlStateManager;
 import com.mojang.blaze3d.platform.Lighting;
@@ -15,7 +16,6 @@ import io.github.ocelot.beyond.client.MousePicker;
 import io.github.ocelot.beyond.client.SpacePlanetSpriteManager;
 import io.github.ocelot.beyond.client.render.SpaceStarsRenderer;
 import io.github.ocelot.beyond.client.render.bubble.BubbleRenderer;
-import io.github.ocelot.beyond.client.screen.SpaceTravelCamera;
 import io.github.ocelot.beyond.common.init.BeyondMessages;
 import io.github.ocelot.beyond.common.network.play.message.CPlanetTravelMessage;
 import io.github.ocelot.beyond.common.network.play.message.SOpenSpaceTravelScreenMessage;
@@ -24,8 +24,10 @@ import io.github.ocelot.beyond.common.space.satellite.PlayerRocket;
 import io.github.ocelot.beyond.common.space.satellite.Satellite;
 import io.github.ocelot.beyond.common.space.simulation.*;
 import io.github.ocelot.beyond.common.util.CelestialBodyRayTraceResult;
+import io.github.ocelot.beyond.event.ReloadRenderersEvent;
 import io.github.ocelot.sonar.client.render.BakedModelRenderer;
 import io.github.ocelot.sonar.client.render.ShapeRenderer;
+import io.github.ocelot.sonar.client.render.StructureTemplateRenderer;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
@@ -40,6 +42,7 @@ import net.minecraft.client.model.geom.ModelPart;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.texture.OverlayTexture;
+import net.minecraft.core.Vec3i;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.network.chat.TextComponent;
@@ -47,12 +50,17 @@ import net.minecraft.network.chat.TranslatableComponent;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.FormattedCharSequence;
 import net.minecraft.world.inventory.InventoryMenu;
+import net.minecraft.world.level.biome.Biomes;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.client.model.data.EmptyModelData;
+import net.minecraftforge.common.MinecraftForge;
+import net.minecraftforge.eventbus.api.SubscribeEvent;
+import net.minecraftforge.registries.ForgeRegistries;
 import org.lwjgl.system.NativeResource;
 
 import javax.annotation.Nullable;
 import java.util.*;
+import java.util.concurrent.CompletableFuture;
 
 import static org.lwjgl.opengl.GL11.*;
 
@@ -74,7 +82,9 @@ public class SolarSystemWidget extends AbstractWidget implements ContainerEventH
     private final CelestialBodySimulation simulation;
     private final SpaceStarsRenderer starsRenderer;
     private final SpaceTravelCamera camera;
+    private final Map<GameProfile, StructureTemplateRenderer> playerRockets;
     private final PlayerRocketBody localRocket;
+    private final boolean commander;
     private boolean travelling;
 
     private CelestialBodyRayTraceResult hoveredBody;
@@ -96,16 +106,20 @@ public class SolarSystemWidget extends AbstractWidget implements ContainerEventH
         this.camera = new SpaceTravelCamera();
         this.camera.setZoom(200);
         this.camera.setPitch((float) (24F * Math.PI / 180F));
+        this.playerRockets = new HashMap<>();
 
         PlayerRocketBody p = null;
+        boolean c = false;
         for (Satellite satellite : msg.getSatellites())
         {
             SimulatedBody body = satellite.createBody(this.simulation);
-            if (satellite instanceof PlayerRocket && ((PlayerRocket) satellite).getProfile().getId().equals(Objects.requireNonNull(Minecraft.getInstance().player).getUUID()))
+            UUID localPlayerId = Objects.requireNonNull(Minecraft.getInstance().player).getUUID();
+            if (satellite instanceof PlayerRocket && ((PlayerRocket) satellite).contains(localPlayerId))
             {
                 if (p != null)
                     throw new IllegalStateException("Duplicate local player was located in simulation.");
                 p = (PlayerRocketBody) body;
+                c = ((PlayerRocket) satellite).getCommandingProfile().getId().equals(localPlayerId);
             }
             this.simulation.add(body);
         }
@@ -113,28 +127,32 @@ public class SolarSystemWidget extends AbstractWidget implements ContainerEventH
             throw new IllegalStateException("Local player was not located in simulation.");
 
         this.localRocket = p;
-        this.localRocket.addListener(new PlayerRocketBody.PlayerTravelListener()
+        this.commander = c;
+        if (this.commander)
         {
-            private void sendTravelPacket(ResourceLocation body, boolean arrive)
+            this.localRocket.addListener(new PlayerRocketBody.PlayerTravelListener()
             {
-                SimulatedBody simulatedBody = SolarSystemWidget.this.simulation.getBody(body);
-                if (simulatedBody == null || !simulatedBody.canTeleportTo())
-                    return;
-                simulatedBody.getDimension().ifPresent(dimension -> BeyondMessages.PLAY.sendToServer(new CPlanetTravelMessage(body, arrive)));
-            }
+                private void sendTravelPacket(ResourceLocation body, boolean arrive)
+                {
+                    SimulatedBody simulatedBody = SolarSystemWidget.this.simulation.getBody(body);
+                    if (simulatedBody == null || !simulatedBody.canTeleportTo())
+                        return;
+                    simulatedBody.getDimension().ifPresent(dimension -> BeyondMessages.PLAY.sendToServer(new CPlanetTravelMessage(body, arrive)));
+                }
 
-            @Override
-            public void onDepart(PlayerRocketBody rocket, ResourceLocation body)
-            {
-                this.sendTravelPacket(body, false);
-            }
+                @Override
+                public void onDepart(PlayerRocketBody rocket, ResourceLocation body)
+                {
+                    this.sendTravelPacket(body, false);
+                }
 
-            @Override
-            public void onArrive(PlayerRocketBody rocket, ResourceLocation body)
-            {
-                this.sendTravelPacket(body, true);
-            }
-        });
+                @Override
+                public void onArrive(PlayerRocketBody rocket, ResourceLocation body)
+                {
+                    this.sendTravelPacket(body, true);
+                }
+            });
+        }
         this.camera.setFocused(this.localRocket);
 
         this.children = new ArrayList<>();
@@ -145,13 +163,9 @@ public class SolarSystemWidget extends AbstractWidget implements ContainerEventH
                 return;
             this.selectedBody.getDimension().ifPresent(dimension ->
             {
-                PlayerRocketBody rocket = this.simulation.getPlayer(Objects.requireNonNull(Minecraft.getInstance().player).getUUID());
-                if (rocket != null)
-                {
-                    this.travelling = true;
-                    rocket.travelTo(this.selectedBody.getId());
-                    this.selectedBody = null;
-                }
+                this.travelling = true;
+                this.localRocket.travelTo(this.selectedBody.getId());
+                this.selectedBody = null;
             });
         }, (button, matrixStack, mouseX, mouseY) ->
         {
@@ -172,6 +186,14 @@ public class SolarSystemWidget extends AbstractWidget implements ContainerEventH
         });
         this.launchButton.visible = false;
         this.children.add(this.launchButton);
+        MinecraftForge.EVENT_BUS.register(this);
+    }
+
+    @SubscribeEvent
+    public void onEvent(ReloadRenderersEvent event)
+    {
+        this.playerRockets.values().forEach(NativeResource::free);
+        this.playerRockets.clear();
     }
 
     private void renderBody(PoseStack poseStack, MultiBufferSource.BufferSource buffer, SimulatedBody body, float partialTicks)
@@ -225,8 +247,11 @@ public class SolarSystemWidget extends AbstractWidget implements ContainerEventH
                 if (body instanceof PlayerRocketBody)
                 {
                     poseStack.translate(-0.5F, -0.5F, -0.5F);
-                    PlayerRocketBody b = (PlayerRocketBody) body;
-                    BakedModelRenderer.renderModel(Minecraft.getInstance().getModelManager().getMissingModel(), buffer.getBuffer(RenderType.entityCutout(InventoryMenu.BLOCK_ATLAS)), poseStack, 1.0F, 1.0F, 1.0F, 15728880, OverlayTexture.NO_OVERLAY, EmptyModelData.INSTANCE);
+                    PlayerRocket rocket = ((PlayerRocketBody) body).getSatellite();
+                    Vec3i size = rocket.getRocket().getSize();
+                    StructureTemplateRenderer renderer = this.playerRockets.computeIfAbsent(rocket.getCommandingProfile(), __ -> new StructureTemplateRenderer(CompletableFuture.completedFuture(rocket.getRocket()), (pos, resolver) -> resolver.getColor(ForgeRegistries.BIOMES.getValue(Biomes.PLAINS.location()), pos.getX(), pos.getZ())));
+                    poseStack.translate(-(float) size.getX() / 2.0F, -(float) size.getY() / 2.0F, -(float) size.getZ() / 2.0F);
+                    renderer.render(poseStack, 0, 0, 0);
                 }
                 break;
         }
@@ -241,7 +266,7 @@ public class SolarSystemWidget extends AbstractWidget implements ContainerEventH
 
         int descriptionHeight = descriptionLines.size() * fontRenderer.lineHeight;
 
-        BubbleRenderer.render(poseStack, x, y, Math.max(fontRenderer.width(title) * 2, 300), descriptionHeight + 2 * fontRenderer.lineHeight + (this.selectedBody.canTeleportTo() ? this.launchButton.getHeight() + BubbleRenderer.PADDING : 0), (boxX, boxY, boxWidth, boxHeight) ->
+        BubbleRenderer.render(poseStack, x, y, Math.max(fontRenderer.width(title) * 2, 300), descriptionHeight + 2 * fontRenderer.lineHeight + (this.commander && this.selectedBody.canTeleportTo() ? this.launchButton.getHeight() + BubbleRenderer.PADDING : 0), (boxX, boxY, boxWidth, boxHeight) ->
         {
             poseStack.pushPose();
             poseStack.translate(BubbleRenderer.PADDING, BubbleRenderer.PADDING, 0);
@@ -251,7 +276,7 @@ public class SolarSystemWidget extends AbstractWidget implements ContainerEventH
             for (int i = 0; i < descriptionLines.size(); i++)
                 fontRenderer.drawShadow(poseStack, descriptionLines.get(i), BubbleRenderer.PADDING, BubbleRenderer.PADDING + (i + 2) * fontRenderer.lineHeight, -1);
 
-            if (this.selectedBody.canTeleportTo())
+            if (this.commander && this.selectedBody.canTeleportTo())
             {
                 this.launchButton.x = boxX + BubbleRenderer.PADDING;
                 this.launchButton.y = boxY + descriptionHeight + 2 * fontRenderer.lineHeight + BubbleRenderer.PADDING * 2;
@@ -485,12 +510,15 @@ public class SolarSystemWidget extends AbstractWidget implements ContainerEventH
     {
         this.starsRenderer.free();
         this.invalidateFramebuffer();
+        this.playerRockets.values().forEach(NativeResource::free);
+        this.playerRockets.clear();
 
         for (GuiEventListener listener : this.children)
             if (listener instanceof NativeResource)
                 ((NativeResource) listener).free();
-        if (!this.travelling)
+        if (this.commander && !this.travelling)
             BeyondMessages.PLAY.sendToServer(new CPlanetTravelMessage(null, false));
+        MinecraftForge.EVENT_BUS.unregister(this);
     }
 
     /**
@@ -552,6 +580,14 @@ public class SolarSystemWidget extends AbstractWidget implements ContainerEventH
     public boolean isTravelling()
     {
         return travelling;
+    }
+
+    /**
+     * @return Whether or not this player is the commander of the ship
+     */
+    public boolean isCommander()
+    {
+        return commander;
     }
 
     /**

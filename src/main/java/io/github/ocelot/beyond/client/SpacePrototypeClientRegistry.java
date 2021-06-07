@@ -1,8 +1,10 @@
 package io.github.ocelot.beyond.client;
 
 import io.github.ocelot.beyond.Beyond;
-import io.github.ocelot.beyond.client.render.SpaceHelmetLayer;
+import io.github.ocelot.beyond.client.render.entity.layer.SpaceHelmetLayer;
+import io.github.ocelot.beyond.client.render.entity.RocketEntityRenderer;
 import io.github.ocelot.beyond.client.world.MoonRenderInfo;
+import io.github.ocelot.beyond.common.init.BeyondEntities;
 import it.unimi.dsi.fastutil.objects.Object2ObjectMap;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.model.EntityModel;
@@ -22,6 +24,7 @@ import net.minecraftforge.eventbus.api.IEventBus;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.ModContainer;
 import net.minecraftforge.fml.ModList;
+import net.minecraftforge.fml.client.registry.RenderingRegistry;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.common.ObfuscationReflectionHelper;
 import net.minecraftforge.fml.event.lifecycle.FMLClientSetupEvent;
@@ -77,7 +80,7 @@ public class SpacePrototypeClientRegistry
         {
             EFFECTS.put(new ResourceLocation(Beyond.MOD_ID, "moon"), new MoonRenderInfo());
         });
-//        RenderingRegistry.registerEntityRenderingHandler(BattlefieldsEntities.THROWABLE_BRICK.get(), manager -> new ThrowableBrickEntityRenderer(manager, Minecraft.getInstance().getItemRenderer()));
+        RenderingRegistry.registerEntityRenderingHandler(BeyondEntities.ROCKET.get(), RocketEntityRenderer::new);
 
         event.enqueueWork(() ->
         {

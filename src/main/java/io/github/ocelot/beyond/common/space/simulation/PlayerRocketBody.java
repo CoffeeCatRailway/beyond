@@ -4,8 +4,8 @@ import com.mojang.math.Vector3f;
 import io.github.ocelot.beyond.Beyond;
 import io.github.ocelot.beyond.common.MagicMath;
 import io.github.ocelot.beyond.common.space.satellite.PlayerRocket;
-import io.github.ocelot.beyond.common.space.satellite.Satellite;
 import io.github.ocelot.beyond.common.util.Listenable;
+import net.minecraft.core.Vec3i;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
@@ -27,8 +27,8 @@ public class PlayerRocketBody extends AbstractSimulatedBody implements Satellite
     private final Set<PlayerTravelListener> listeners;
     private final PlayerRocket rocket;
     private final Component displayName;
-    private ResourceLocation newParent;
     private final Vector3f transitionStart;
+    private ResourceLocation newParent;
     private float newDistanceFromParent;
     private float lastTransition;
     private float transition;
@@ -130,7 +130,7 @@ public class PlayerRocketBody extends AbstractSimulatedBody implements Satellite
     @Override
     public float getSize()
     {
-        return 1.0F;
+        return 0.025F;
     }
 
     @Override

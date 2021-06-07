@@ -1,0 +1,7 @@
+{
+  "parent": "beyond:block/template_rocket_thruster",
+  "textures": {
+    "texture": "beyond:block/creative_thruster",
+    "particle": "minecraft:block/iron_block"
+  }
+}

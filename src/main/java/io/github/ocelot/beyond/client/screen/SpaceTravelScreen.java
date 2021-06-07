@@ -130,7 +130,7 @@ public class SpaceTravelScreen extends Screen
     @Override
     public boolean shouldCloseOnEsc()
     {
-        return !this.solarSystemWidget.isTravelling();
+        return this.solarSystemWidget.isCommander() && !this.solarSystemWidget.isTravelling();
     }
 
     @Override
