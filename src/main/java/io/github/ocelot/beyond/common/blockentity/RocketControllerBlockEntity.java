@@ -143,7 +143,7 @@ public class RocketControllerBlockEntity extends BaseTileEntity implements Ticka
         this.components.clear();
 
         Stopwatch startTime = Stopwatch.createStarted();
-        this.runningScan = BlockScanner.runScan(this.level, this.getBlockPos(), state -> !state.getBlock().is(BeyondBlocks.ROCKET_CONSTRUCTION_PLATFORM.get()) && !state.isAir(), 64);
+        this.runningScan = BlockScanner.runScan(this.level, this.getBlockPos(), state -> !state.getBlock().is(BeyondBlocks.LANDING_PAD.get()) && !state.isAir(), 64);
         this.runningScan.thenAcceptAsync(result -> // TODO config for distance
         {
             LOGGER.info("Completed scan in " + startTime);

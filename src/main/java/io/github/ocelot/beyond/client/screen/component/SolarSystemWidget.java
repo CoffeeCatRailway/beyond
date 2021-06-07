@@ -186,14 +186,6 @@ public class SolarSystemWidget extends AbstractWidget implements ContainerEventH
         });
         this.launchButton.visible = false;
         this.children.add(this.launchButton);
-        MinecraftForge.EVENT_BUS.register(this);
-    }
-
-    @SubscribeEvent
-    public void onEvent(ReloadRenderersEvent event)
-    {
-        this.playerRockets.values().forEach(NativeResource::free);
-        this.playerRockets.clear();
     }
 
     private void renderBody(PoseStack poseStack, MultiBufferSource.BufferSource buffer, SimulatedBody body, float partialTicks)

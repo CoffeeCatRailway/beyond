@@ -26,7 +26,7 @@ public class BeyondBlocks
     public static final DeferredRegister<BlockEntityType<?>> BLOCK_ENTITIES = DeferredRegister.create(ForgeRegistries.TILE_ENTITIES, Beyond.MOD_ID);
 
     public static final RegistryObject<Block> MOON_ROCK = register("moon_rock", () -> new Block(BlockBehaviour.Properties.copy(Blocks.END_STONE)));
-    public static final RegistryObject<Block> ROCKET_CONSTRUCTION_PLATFORM = register("rocket_construction_platform", () -> new Block(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK)));
+    public static final RegistryObject<Block> LANDING_PAD = register("landing_pad", () -> new Block(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK)));
     public static final RegistryObject<Block> ROCKET_CONTROLLER = register("rocket_controller", () -> new RocketControllerBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).isRedstoneConductor((state, level, pos) -> true).strength(6.0F, 9.0F)));
     public static final RegistryObject<Block> ROCKET_THRUSTER = register("rocket_thruster", () -> new RocketThrusterBlock(1.0F, BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).strength(6.0F, 9.0F)));
     public static final RegistryObject<Block> CREATIVE_ROCKET_THRUSTER = register("creative_rocket_thruster", () -> new RocketThrusterBlock(Float.MAX_VALUE, BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).strength(-1.0F, 3600000.0F).noDrops()));

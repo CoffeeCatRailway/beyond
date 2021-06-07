@@ -1,8 +1,8 @@
 {
   "biome.beyond.moon": "Moon",
   "block.beyond.creative_rocket_thruster": "Creative Rocket Thruster",
+  "block.beyond.landing_pad": "Landing Pad",
   "block.beyond.moon_rock": "Moon Rock",
-  "block.beyond.rocket_construction_platform": "Rocket Construction Platform",
   "block.beyond.rocket_controller": "Rocket Controller",
   "block.beyond.rocket_controller.large": "Rocket is too large",
   "block.beyond.rocket_controller.not_enough_thrust": "Not enough Thrust. At least %s is required, has %s",

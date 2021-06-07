@@ -6,7 +6,7 @@
       "entries": [
         {
           "type": "minecraft:item",
-          "name": "beyond:rocket_construction_platform"
+          "name": "beyond:landing_pad"
         }
       ],
       "conditions": [
