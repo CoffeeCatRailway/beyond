@@ -39,10 +39,11 @@ import java.util.Optional;
  * @author Ocelot
  */
 @Mod.EventBusSubscriber(value = Dist.CLIENT, modid = Beyond.MOD_ID, bus = Mod.EventBusSubscriber.Bus.MOD)
-public class SpacePrototypeClientRegistry
+public class BeyondClientRegistry
 {
+    public static final String MOD_VERSION;
+
     private static final Object2ObjectMap<ResourceLocation, DimensionSpecialEffects> EFFECTS = Objects.requireNonNull(ObfuscationReflectionHelper.getPrivateValue(DimensionSpecialEffects.class, null, "field_239208_a_"));
-    private static final String MOD_VERSION;
 
     static
     {

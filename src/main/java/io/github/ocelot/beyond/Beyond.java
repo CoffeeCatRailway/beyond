@@ -1,6 +1,6 @@
 package io.github.ocelot.beyond;
 
-import io.github.ocelot.beyond.client.SpacePrototypeClientRegistry;
+import io.github.ocelot.beyond.client.BeyondClientRegistry;
 import io.github.ocelot.beyond.common.init.*;
 import io.github.ocelot.beyond.common.space.SpaceManager;
 import io.github.ocelot.beyond.common.world.space.DimensionSpaceSettingsLoader;
@@ -48,8 +48,8 @@ public class Beyond
         modBus.addListener(this::attributeSetup);
         DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> () ->
         {
-            SpacePrototypeClientRegistry.init(modBus);
-            modBus.addListener(SpacePrototypeClientRegistry::setup);
+            BeyondClientRegistry.init(modBus);
+            modBus.addListener(BeyondClientRegistry::setup);
         });
         BeyondBlocks.BLOCKS.register(modBus);
         BeyondBlocks.BLOCK_ENTITIES.register(modBus);
