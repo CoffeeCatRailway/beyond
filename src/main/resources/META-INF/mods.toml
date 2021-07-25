@@ -12,6 +12,7 @@ displayURL="https://github.com/Ocelot5836/beyond"
 credits = "CoffeeCatRailway for making the satellite model and texture. BlueBarracuda for composing the music for the moon."
 authors = "Ocelot"
 description = "Pretty cool space exploration mod broh."
+
 [modproperties.beyond]
 catalogueItemIcon="beyond:rocket_thruster"
 
