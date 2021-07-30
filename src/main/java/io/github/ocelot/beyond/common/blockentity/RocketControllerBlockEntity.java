@@ -108,7 +108,7 @@ public class RocketControllerBlockEntity extends BaseTileEntity implements Ticka
             this.level.setBlock(pos, Blocks.AIR.defaultBlockState(), 18); // TODO update blocks next to rocket
 
         Map<UUID, Vec3> entityPositions = new HashMap<>();
-        for (Entity entity : this.level.getEntitiesOfClass(Entity.class, new AABB(min, max.offset(1, 1, 1)).inflate(4), EntitySelector.NO_SPECTATORS))
+        for (Entity entity : this.level.getEntitiesOfClass(Entity.class, new AABB(min, max.offset(1, 3, 1)).inflate(0.5), EntitySelector.NO_SPECTATORS))
         {
             // TODO check if player is above a block before launching
             entityPositions.put(entity.getUUID(), entity.position().subtract(min.getX() + (max.getX() - min.getX()) / 2.0 + 0.5, min.getY(), min.getZ() + (max.getZ() - min.getZ()) / 2.0 + 0.5));
