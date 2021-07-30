@@ -80,6 +80,7 @@ public class Beyond
     {
         BeyondDimensions.init();
         BeyondMessages.init();
+        BeyondTriggers.init();
     }
 
     private void dataSetup(GatherDataEvent event)
@@ -96,6 +97,7 @@ public class Beyond
         dataGenerator.addProvider(new ItemModelGen(dataGenerator));
         dataGenerator.addProvider(new LanguageGen(dataGenerator));
         dataGenerator.addProvider(new ConfiguredFeatureGen(dataGenerator));
+        dataGenerator.addProvider(new AdvancementGen(dataGenerator));
     }
 
     @SubscribeEvent

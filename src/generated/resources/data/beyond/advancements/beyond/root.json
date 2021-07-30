@@ -1,0 +1,35 @@
+{
+  "display": {
+    "icon": {
+      "item": "beyond:rocket_thruster"
+    },
+    "title": {
+      "translate": "advancements.beyond.root.title"
+    },
+    "description": {
+      "translate": "advancements.beyond.root.description"
+    },
+    "frame": "task",
+    "show_toast": false,
+    "announce_to_chat": false,
+    "hidden": false,
+    "background": "beyond:textures/gui/advancements/backgrounds/beyond.png"
+  },
+  "criteria": {
+    "has_rocket_thruster": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {
+            "item": "beyond:rocket_thruster"
+          }
+        ]
+      }
+    }
+  },
+  "requirements": [
+    [
+      "has_rocket_thruster"
+    ]
+  ]
+}

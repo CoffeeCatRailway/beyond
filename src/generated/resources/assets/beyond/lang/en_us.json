@@ -1,4 +1,12 @@
 {
+  "advancements.beyond.atlas.description": "Tried to move the earth",
+  "advancements.beyond.atlas.title": "Atlas",
+  "advancements.beyond.launch_rocket.description": "Launch a rocket into space",
+  "advancements.beyond.launch_rocket.title": "We Have Liftoff!",
+  "advancements.beyond.moon_travel.description": "One giant leap for Steve-kind",
+  "advancements.beyond.moon_travel.title": "One Small Step for a Steve...",
+  "advancements.beyond.root.description": "To Infinity, and Beyond!",
+  "advancements.beyond.root.title": "Beyond",
   "biome.beyond.moon": "Moon",
   "block.beyond.creative_rocket_thruster": "Creative Rocket Thruster",
   "block.beyond.landing_pad": "Landing Pad",

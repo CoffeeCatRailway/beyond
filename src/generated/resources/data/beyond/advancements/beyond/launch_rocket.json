@@ -1,0 +1,31 @@
+{
+  "parent": "beyond:beyond/root",
+  "display": {
+    "icon": {
+      "item": "beyond:rocket_controller"
+    },
+    "title": {
+      "translate": "advancements.beyond.launch_rocket.title"
+    },
+    "description": {
+      "translate": "advancements.beyond.launch_rocket.description"
+    },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "launch_rocket": {
+      "trigger": "beyond:rocket_launch",
+      "conditions": {
+        "tooLarge": false
+      }
+    }
+  },
+  "requirements": [
+    [
+      "launch_rocket"
+    ]
+  ]
+}

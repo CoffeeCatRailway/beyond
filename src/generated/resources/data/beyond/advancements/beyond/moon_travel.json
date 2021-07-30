@@ -1,0 +1,31 @@
+{
+  "parent": "beyond:beyond/launch_rocket",
+  "display": {
+    "icon": {
+      "item": "beyond:moon_rock"
+    },
+    "title": {
+      "translate": "advancements.beyond.moon_travel.title"
+    },
+    "description": {
+      "translate": "advancements.beyond.moon_travel.description"
+    },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "moon_travel": {
+      "trigger": "beyond:rocket_land",
+      "conditions": {
+        "dimension": "beyond:moon"
+      }
+    }
+  },
+  "requirements": [
+    [
+      "moon_travel"
+    ]
+  ]
+}

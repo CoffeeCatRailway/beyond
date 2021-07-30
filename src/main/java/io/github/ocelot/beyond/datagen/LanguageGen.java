@@ -35,6 +35,10 @@ public class LanguageGen extends LanguageProvider
         this.add("block." + Beyond.MOD_ID + ".rocket_controller.large", "Rocket is too large");
         this.add("block." + Beyond.MOD_ID + ".rocket_controller.too_many_controllers", "Too many Rocket Controllers. Found %s, expected 1");
         this.add("block." + Beyond.MOD_ID + ".rocket_controller.not_enough_thrust", "Not enough Thrust. At least %s is required, has %s");
+        this.addAdvancement("root", "Beyond", "To Infinity, and Beyond!");
+        this.addAdvancement("launch_rocket", "We Have Liftoff!", "Launch a rocket into space");
+        this.addAdvancement("atlas", "Atlas", "Tried to move the earth");
+        this.addAdvancement("moon_travel", "One Small Step for a Steve...", "One giant leap for Steve-kind");
     }
 
     private void addBiome(ResourceLocation id, String value)
@@ -45,5 +49,11 @@ public class LanguageGen extends LanguageProvider
     private void addError(ResourceLocation id, String error, String value)
     {
         this.add("error." + id.getNamespace() + "." + id.getPath() + ".error", value);
+    }
+
+    private void addAdvancement(String name, String title, String description)
+    {
+        this.add("advancements." + Beyond.MOD_ID + "." + name + ".title", title);
+        this.add("advancements." + Beyond.MOD_ID + "." + name + ".description", description);
     }
 }

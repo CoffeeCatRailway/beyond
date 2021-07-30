@@ -3,6 +3,7 @@ package io.github.ocelot.beyond.common.entity;
 import io.github.ocelot.beyond.common.blockentity.RocketControllerBlockEntity;
 import io.github.ocelot.beyond.common.init.BeyondEntities;
 import io.github.ocelot.beyond.common.init.BeyondMessages;
+import io.github.ocelot.beyond.common.init.BeyondTriggers;
 import io.github.ocelot.beyond.common.network.play.message.SPlanetTravelResponseMessage;
 import io.github.ocelot.beyond.common.rocket.LaunchContext;
 import io.github.ocelot.beyond.common.rocket.RocketComponent;
@@ -27,7 +28,6 @@ import net.minecraft.world.entity.*;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.world.level.levelgen.Heightmap;
 import net.minecraft.world.level.levelgen.structure.templatesystem.StructurePlaceSettings;
 import net.minecraft.world.level.levelgen.structure.templatesystem.StructureTemplate;
 import net.minecraft.world.level.lighting.LevelLightEngine;
@@ -40,6 +40,7 @@ import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.registry.IEntityAdditionalSpawnData;
 import net.minecraftforge.fml.network.NetworkHooks;
 import net.minecraftforge.fml.network.PacketDistributor;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
@@ -215,6 +216,13 @@ public class RocketEntity extends Entity implements IEntityAdditionalSpawnData
                 else
                 {
                     this.setDeltaMovement(Vec3.ZERO);
+
+                    this.getPassengers().forEach(entity ->
+                    {
+                        if (entity instanceof ServerPlayer)
+                            BeyondTriggers.LAND_ROCKET.trigger((ServerPlayer) entity);
+                    });
+
                     this.ejectPassengers();
                     this.remove();
 
@@ -243,6 +251,13 @@ public class RocketEntity extends Entity implements IEntityAdditionalSpawnData
         }
 
 //        this.setDeltaMovement(this.getDeltaMovement().add(0, 1.0F / 20.0F, 0));
+    }
+
+    @Nullable
+    @Override
+    public Entity getControllingPassenger()
+    {
+        return this.getPassengers().isEmpty() ? null : this.getPassengers().get(0);
     }
 
     @Override
