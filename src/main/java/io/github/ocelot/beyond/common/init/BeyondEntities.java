@@ -3,6 +3,7 @@ package io.github.ocelot.beyond.common.init;
 import io.github.ocelot.beyond.Beyond;
 import io.github.ocelot.beyond.common.entity.RocketEntity;
 import io.github.ocelot.beyond.common.rocket.LaunchContext;
+import it.unimi.dsi.fastutil.ints.Int2ObjectArrayMap;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.MobCategory;
@@ -34,10 +35,10 @@ public class BeyondEntities
         {
             throw new RuntimeException(e);
         }
-        Map<UUID, Vec3> players = new HashMap<>();
+        Map<Integer, Vec3> players = new Int2ObjectArrayMap<>();
         int playersCount = buf.readVarInt();
         for (int i = 0; i < playersCount; i++)
-            players.put(buf.readUUID(), new Vec3(buf.readDouble(), buf.readDouble(), buf.readDouble()));
+            players.put(buf.readVarInt(), new Vec3(buf.readDouble(), buf.readDouble(), buf.readDouble()));
         return new RocketEntity(level, ctx, players);
     }).build(Beyond.MOD_ID + ":rocket"));
 }

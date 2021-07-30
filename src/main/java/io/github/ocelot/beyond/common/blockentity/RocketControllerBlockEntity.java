@@ -12,6 +12,7 @@ import io.github.ocelot.beyond.common.rocket.RocketThruster;
 import io.github.ocelot.beyond.common.util.BlockScanner;
 import io.github.ocelot.sonar.common.tileentity.BaseTileEntity;
 import io.github.ocelot.sonar.common.util.Scheduler;
+import it.unimi.dsi.fastutil.ints.Int2ObjectArrayMap;
 import net.minecraft.ChatFormatting;
 import net.minecraft.Util;
 import net.minecraft.commands.CommandSource;
@@ -23,6 +24,7 @@ import net.minecraft.nbt.Tag;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.network.chat.TranslatableComponent;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntitySelector;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
@@ -96,7 +98,7 @@ public class RocketControllerBlockEntity extends BaseTileEntity implements Ticka
         return this.level.isClientSide() ? this.launching : this.launchFuture != null && !this.launchFuture.isDone();
     }
 
-    private void launch(BlockScanner.Result result, LaunchContext ctx, @Nullable UUID commanderId, BlockPos min, BlockPos max)
+    private void launch(BlockScanner.Result result, LaunchContext ctx, int commanderId, BlockPos min, BlockPos max)
     {
         this.cancelLaunch();
         if (this.level == null)
@@ -105,34 +107,34 @@ public class RocketControllerBlockEntity extends BaseTileEntity implements Ticka
         for (BlockPos pos : result.getBlockPositions())
             this.level.setBlock(pos, Blocks.AIR.defaultBlockState(), 18); // TODO update blocks next to rocket
 
-        Map<UUID, Vec3> playerPositions = new HashMap<>();
-        for (Player player : this.level.getEntitiesOfClass(Player.class, new AABB(min, max.offset(1, 1, 1)).inflate(4), EntitySelector.NO_SPECTATORS))
+        Map<Integer, Vec3> entityPositions = new Int2ObjectArrayMap<>();
+        for (Entity entity : this.level.getEntitiesOfClass(Entity.class, new AABB(min, max.offset(1, 1, 1)).inflate(4), EntitySelector.NO_SPECTATORS))
         {
             // TODO check if player is above a block before launching
-            playerPositions.put(player.getUUID(), player.position().subtract(min.getX() + (max.getX() - min.getX()) / 2.0 + 0.5, min.getY(), min.getZ() + (max.getZ() - min.getZ()) / 2.0 + 0.5));
-            if (player instanceof ServerPlayer)
-                BeyondTriggers.LAUNCH_ROCKET.trigger((ServerPlayer) player, false);
+            entityPositions.put(entity.getId(), entity.position().subtract(min.getX() + (max.getX() - min.getX()) / 2.0 + 0.5, min.getY(), min.getZ() + (max.getZ() - min.getZ()) / 2.0 + 0.5));
+            if (entity instanceof ServerPlayer)
+                BeyondTriggers.LAUNCH_ROCKET.trigger((ServerPlayer) entity, false);
         }
 
         // DEBUG
-        RocketEntity rocket = new RocketEntity(this.level, ctx, playerPositions);
+        RocketEntity rocket = new RocketEntity(this.level, ctx, entityPositions);
         rocket.setPos(min.getX() + (max.getX() - min.getX()) / 2.0 + 0.5, min.getY(), min.getZ() + (max.getZ() - min.getZ()) / 2.0 + 0.5);
 
-        if (commanderId != null && playerPositions.containsKey(commanderId))
+        if (commanderId != 0 && entityPositions.containsKey(commanderId))
         {
-            Player player = this.level.getPlayerByUUID(commanderId);
-            if (player != null)
-                player.startRiding(rocket, true);
+            Entity entity = this.level.getEntity(commanderId);
+            if (entity != null)
+                entity.startRiding(rocket, true);
         }
 
-        for (Map.Entry<UUID, Vec3> entry : playerPositions.entrySet())
+        for (Map.Entry<Integer, Vec3> entry : entityPositions.entrySet())
         {
             if (entry.getKey() == commanderId)
                 continue;
 
-            Player player = this.level.getPlayerByUUID(entry.getKey());
-            if (player != null)
-                player.startRiding(rocket, true);
+            Entity entity = this.level.getEntity(entry.getKey());
+            if (entity != null)
+                entity.startRiding(rocket, true);
         }
         this.level.addFreshEntity(rocket);
     }
@@ -220,7 +222,7 @@ public class RocketControllerBlockEntity extends BaseTileEntity implements Ticka
             this.level.setBlock(this.getBlockPos(), this.getBlockState().setValue(RocketControllerBlock.STATE, RocketControllerBlock.State.SUCCESS), Constants.BlockFlags.DEFAULT);
 
             StructureTemplate structure = new StructureTemplate();
-            structure.fillFromWorld(this.level, min, max.subtract(min).offset(1, 1, 1), true, null);
+            structure.fillFromWorld(this.level, min, max.subtract(min).offset(1, 1, 1), false, null);
 
             List<StructureTemplate.Palette> blockInfos = getPalettes(structure);
             for (StructureTemplate.Palette palette : blockInfos)
@@ -228,7 +230,7 @@ public class RocketControllerBlockEntity extends BaseTileEntity implements Ticka
 
             this.cancelLaunch();
             LaunchContext ctx = new LaunchContext(structure, (thrust - mass) / 16.0F);
-            this.launchFuture = Scheduler.get(this.level).schedule(() -> this.launch(result, ctx, player != null ? player.getUUID() : null, min.immutable(), max.immutable()), LAUNCH_TIME, TimeUnit.SECONDS);
+            this.launchFuture = Scheduler.get(this.level).schedule(() -> this.launch(result, ctx, player != null ? player.getId() : 0, min.immutable(), max.immutable()), LAUNCH_TIME, TimeUnit.SECONDS);
 
             this.level.sendBlockUpdated(this.worldPosition, this.getBlockState(), this.getBlockState(), Constants.BlockFlags.DEFAULT);
         }, this.level.getServer()).exceptionally(e ->

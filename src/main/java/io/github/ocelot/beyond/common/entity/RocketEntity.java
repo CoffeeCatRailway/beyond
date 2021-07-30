@@ -11,6 +11,7 @@ import io.github.ocelot.beyond.common.space.SpaceManager;
 import io.github.ocelot.beyond.common.space.SpaceTeleporter;
 import io.github.ocelot.beyond.event.ReloadRenderersEvent;
 import io.github.ocelot.sonar.client.render.StructureTemplateRenderer;
+import it.unimi.dsi.fastutil.ints.Int2ObjectArrayMap;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Vec3i;
@@ -31,6 +32,7 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.levelgen.structure.templatesystem.StructurePlaceSettings;
 import net.minecraft.world.level.levelgen.structure.templatesystem.StructureTemplate;
 import net.minecraft.world.level.lighting.LevelLightEngine;
+import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
@@ -42,7 +44,10 @@ import net.minecraftforge.fml.network.NetworkHooks;
 import net.minecraftforge.fml.network.PacketDistributor;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 
 /**
@@ -55,7 +60,7 @@ public class RocketEntity extends Entity implements IEntityAdditionalSpawnData
     private final Map<BlockPos, BlockState> components;
     private LaunchContext ctx;
     private EntityDimensions dimensions;
-    private final Map<UUID, Vec3> players;
+    private final Map<Integer, Vec3> entities;
 
     @OnlyIn(Dist.CLIENT)
     private StructureTemplateRenderer templateRenderer;
@@ -65,19 +70,19 @@ public class RocketEntity extends Entity implements IEntityAdditionalSpawnData
         super(entityType, level);
         this.components = new HashMap<>();
         this.ctx = LaunchContext.DUMMY;
-        this.players = new HashMap<>();
+        this.entities = new Int2ObjectArrayMap<>();
         this.noCulling = true;
         this.noPhysics = true;
         MinecraftForge.EVENT_BUS.register(this);
     }
 
-    public RocketEntity(Level level, LaunchContext ctx, Map<UUID, Vec3> players)
+    public RocketEntity(Level level, LaunchContext ctx, Map<Integer, Vec3> entities)
     {
         this(BeyondEntities.ROCKET.get(), level);
         this.ctx = ctx;
         this.recalculateDimensions();
         this.locateComponents();
-        this.players.putAll(players);
+        this.entities.putAll(entities);
     }
 
     private void recalculateDimensions()
@@ -263,15 +268,15 @@ public class RocketEntity extends Entity implements IEntityAdditionalSpawnData
     @Override
     protected boolean canAddPassenger(Entity entity)
     {
-        return this.players.containsKey(entity.getUUID());
+        return this.entities.containsKey(entity.getId());
     }
 
     @Override
     public Vec3 getDismountLocationForPassenger(LivingEntity entity)
     {
-        if (this.players.containsKey(entity.getUUID()))
-            return this.players.get(entity.getUUID()).add(this.position());
-        return this.players.getOrDefault(entity.getUUID(), super.getDismountLocationForPassenger(entity));
+        if (this.entities.containsKey(entity.getId()))
+            return this.entities.get(entity.getId()).add(this.position());
+        return this.entities.getOrDefault(entity.getId(), super.getDismountLocationForPassenger(entity));
     }
 
     @Override
@@ -279,9 +284,9 @@ public class RocketEntity extends Entity implements IEntityAdditionalSpawnData
     {
         if (this.hasPassenger(passenger))
         {
-            if (this.players.containsKey(passenger.getUUID()))
+            if (this.entities.containsKey(passenger.getId()))
             {
-                Vec3 pos = this.players.get(passenger.getUUID());
+                Vec3 pos = this.entities.get(passenger.getId());
                 passenger.setPos(this.getX() + pos.x(), this.getY() + pos.y(), this.getZ() + pos.z());
             }
             else
@@ -298,6 +303,22 @@ public class RocketEntity extends Entity implements IEntityAdditionalSpawnData
     }
 
     @Override
+    public void setPos(double x, double y, double z)
+    {
+        super.setPos(x, y, z);
+        if (this.ctx == null)
+            return;
+        this.refreshDimensions();
+    }
+
+    @Override
+    public void refreshDimensions()
+    {
+        Vec3i size = this.ctx.getTemplate().getSize();
+        this.setBoundingBox(new AABB(this.getX() - size.getX() / 2.0, this.getY(), this.getZ() - size.getZ() / 2.0, this.getX() + size.getX() / 2.0, this.getY() + size.getY(), this.getZ() + size.getZ() / 2.0));
+    }
+
+    @Override
     public EntityDimensions getDimensions(Pose pose)
     {
         return dimensions;
@@ -310,12 +331,12 @@ public class RocketEntity extends Entity implements IEntityAdditionalSpawnData
         this.recalculateDimensions();
         this.locateComponents();
 
-        this.players.clear();
+        this.entities.clear();
         ListTag playersNbt = nbt.getList("Players", Constants.NBT.TAG_COMPOUND);
         for (int i = 0; i < playersNbt.size(); i++)
         {
             CompoundTag playerNbt = playersNbt.getCompound(i);
-            this.players.put(playerNbt.getUUID("UUID"), new Vec3(playerNbt.getDouble("X"), playerNbt.getDouble("Y"), playerNbt.getDouble("Z")));
+            this.entities.put(playerNbt.getInt("Id"), new Vec3(playerNbt.getDouble("X"), playerNbt.getDouble("Y"), playerNbt.getDouble("Z")));
         }
 
         this.entityData.set(PHASE, (int) nbt.getByte("Phase"));
@@ -329,10 +350,10 @@ public class RocketEntity extends Entity implements IEntityAdditionalSpawnData
         nbt.put("LaunchData", LaunchContext.CODEC.encodeStart(NbtOps.INSTANCE, this.ctx).getOrThrow(false, LOGGER::error));
 
         ListTag playersNbt = new ListTag();
-        this.players.forEach((id, pos) ->
+        this.entities.forEach((id, pos) ->
         {
             CompoundTag playerNbt = new CompoundTag();
-            playerNbt.putUUID("UUID", id);
+            playerNbt.putInt("Id", id);
             playerNbt.putDouble("X", pos.x());
             playerNbt.putDouble("Y", pos.y());
             playerNbt.putDouble("Z", pos.z());
@@ -360,10 +381,10 @@ public class RocketEntity extends Entity implements IEntityAdditionalSpawnData
         {
             throw new RuntimeException(e);
         }
-        buf.writeVarInt(this.players.size());
-        for (Map.Entry<UUID, Vec3> entry : this.players.entrySet())
+        buf.writeVarInt(this.entities.size());
+        for (Map.Entry<Integer, Vec3> entry : this.entities.entrySet())
         {
-            buf.writeUUID(entry.getKey());
+            buf.writeVarInt(entry.getKey());
             buf.writeDouble(entry.getValue().x());
             buf.writeDouble(entry.getValue().y());
             buf.writeDouble(entry.getValue().z());
