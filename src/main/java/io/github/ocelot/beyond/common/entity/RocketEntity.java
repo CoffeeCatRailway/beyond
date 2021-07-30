@@ -264,6 +264,12 @@ public class RocketEntity extends Entity implements IEntityAdditionalSpawnData
 //        this.setDeltaMovement(this.getDeltaMovement().add(0, 1.0F / 20.0F, 0));
     }
 
+    @Override
+    public boolean causeFallDamage(float distance, float damageMultiplier)
+    {
+        return false;
+    }
+
     @Nullable
     @Override
     public Entity getControllingPassenger()
