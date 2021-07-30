@@ -44,10 +44,7 @@ import net.minecraftforge.fml.network.NetworkHooks;
 import net.minecraftforge.fml.network.PacketDistributor;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.CompletableFuture;
 
 /**
@@ -60,7 +57,8 @@ public class RocketEntity extends Entity implements IEntityAdditionalSpawnData
     private final Map<BlockPos, BlockState> components;
     private LaunchContext ctx;
     private EntityDimensions dimensions;
-    private final Map<Integer, Vec3> entities;
+    private final Map<UUID, Vec3> entities;
+    private final Map<Integer, Vec3> clientEntities;
 
     @OnlyIn(Dist.CLIENT)
     private StructureTemplateRenderer templateRenderer;
@@ -70,19 +68,21 @@ public class RocketEntity extends Entity implements IEntityAdditionalSpawnData
         super(entityType, level);
         this.components = new HashMap<>();
         this.ctx = LaunchContext.DUMMY;
-        this.entities = new Int2ObjectArrayMap<>();
+        this.entities = new HashMap<>();
+        this.clientEntities = new Int2ObjectArrayMap<>();
         this.noCulling = true;
         this.noPhysics = true;
         MinecraftForge.EVENT_BUS.register(this);
     }
 
-    public RocketEntity(Level level, LaunchContext ctx, Map<Integer, Vec3> entities)
+    public RocketEntity(Level level, LaunchContext ctx, Map<UUID, Vec3> entities, Map<Integer, Vec3> clientEntities)
     {
         this(BeyondEntities.ROCKET.get(), level);
         this.ctx = ctx;
         this.recalculateDimensions();
         this.locateComponents();
         this.entities.putAll(entities);
+        this.clientEntities.putAll(clientEntities);
     }
 
     private void recalculateDimensions()
@@ -268,15 +268,20 @@ public class RocketEntity extends Entity implements IEntityAdditionalSpawnData
     @Override
     protected boolean canAddPassenger(Entity entity)
     {
-        return this.entities.containsKey(entity.getId());
+        return !this.level.isClientSide() ? this.entities.containsKey(entity.getUUID()) : this.clientEntities.containsKey(entity.getId());
     }
 
     @Override
     public Vec3 getDismountLocationForPassenger(LivingEntity entity)
     {
-        if (this.entities.containsKey(entity.getId()))
-            return this.entities.get(entity.getId()).add(this.position());
-        return this.entities.getOrDefault(entity.getId(), super.getDismountLocationForPassenger(entity));
+        if (!this.level.isClientSide())
+        {
+            return this.entities.containsKey(entity.getUUID()) ? this.entities.get(entity.getUUID()).add(this.position()) : super.getDismountLocationForPassenger(entity);
+        }
+        else
+        {
+            return this.clientEntities.getOrDefault(entity.getId(), super.getDismountLocationForPassenger(entity));
+        }
     }
 
     @Override
@@ -284,15 +289,23 @@ public class RocketEntity extends Entity implements IEntityAdditionalSpawnData
     {
         if (this.hasPassenger(passenger))
         {
-            if (this.entities.containsKey(passenger.getId()))
+            if (!this.level.isClientSide())
             {
-                Vec3 pos = this.entities.get(passenger.getId());
-                passenger.setPos(this.getX() + pos.x(), this.getY() + pos.y(), this.getZ() + pos.z());
+                if (this.entities.containsKey(passenger.getUUID()))
+                {
+                    Vec3 pos = this.entities.get(passenger.getUUID());
+                    passenger.setPos(this.getX() + pos.x(), this.getY() + pos.y(), this.getZ() + pos.z());
+                }
             }
             else
             {
-                super.positionRider(passenger);
+                if (this.clientEntities.containsKey(passenger.getId()))
+                {
+                    Vec3 pos = this.clientEntities.get(passenger.getId());
+                    passenger.setPos(this.getX() + pos.x(), this.getY() + pos.y(), this.getZ() + pos.z());
+                }
             }
+            super.positionRider(passenger);
         }
     }
 
@@ -332,11 +345,11 @@ public class RocketEntity extends Entity implements IEntityAdditionalSpawnData
         this.locateComponents();
 
         this.entities.clear();
-        ListTag playersNbt = nbt.getList("Players", Constants.NBT.TAG_COMPOUND);
+        ListTag playersNbt = nbt.getList("Entities", Constants.NBT.TAG_COMPOUND);
         for (int i = 0; i < playersNbt.size(); i++)
         {
             CompoundTag playerNbt = playersNbt.getCompound(i);
-            this.entities.put(playerNbt.getInt("Id"), new Vec3(playerNbt.getDouble("X"), playerNbt.getDouble("Y"), playerNbt.getDouble("Z")));
+            this.entities.put(playerNbt.getUUID("UUID"), new Vec3(playerNbt.getDouble("X"), playerNbt.getDouble("Y"), playerNbt.getDouble("Z")));
         }
 
         this.entityData.set(PHASE, (int) nbt.getByte("Phase"));
@@ -353,13 +366,13 @@ public class RocketEntity extends Entity implements IEntityAdditionalSpawnData
         this.entities.forEach((id, pos) ->
         {
             CompoundTag playerNbt = new CompoundTag();
-            playerNbt.putInt("Id", id);
+            playerNbt.putUUID("UUID", id);
             playerNbt.putDouble("X", pos.x());
             playerNbt.putDouble("Y", pos.y());
             playerNbt.putDouble("Z", pos.z());
             playersNbt.add(playerNbt);
         });
-        nbt.put("Players", playersNbt);
+        nbt.put("Entities", playersNbt);
 
         nbt.putByte("Phase", this.entityData.get(PHASE).byteValue());
     }
@@ -379,12 +392,13 @@ public class RocketEntity extends Entity implements IEntityAdditionalSpawnData
         }
         catch (Exception e)
         {
-            throw new RuntimeException(e);
+            throw new IllegalStateException("Failed to write Launch Data to Network", e);
         }
         buf.writeVarInt(this.entities.size());
-        for (Map.Entry<Integer, Vec3> entry : this.entities.entrySet())
+        for (Map.Entry<UUID, Vec3> entry : this.entities.entrySet())
         {
-            buf.writeVarInt(entry.getKey());
+            Entity entity = ((ServerLevel) this.level).getEntity(entry.getKey());
+            buf.writeVarInt(entity != null ? entity.getId() : 0);
             buf.writeDouble(entry.getValue().x());
             buf.writeDouble(entry.getValue().y());
             buf.writeDouble(entry.getValue().z());

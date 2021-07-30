@@ -12,9 +12,8 @@ import net.minecraftforge.fml.RegistryObject;
 import net.minecraftforge.registries.DeferredRegister;
 import net.minecraftforge.registries.ForgeRegistries;
 
-import java.util.HashMap;
+import java.util.Collections;
 import java.util.Map;
-import java.util.UUID;
 
 /**
  * @author Ocelot
@@ -33,12 +32,16 @@ public class BeyondEntities
         }
         catch (Exception e)
         {
-            throw new RuntimeException(e);
+            throw new IllegalStateException("Failed to read Launch Data from Network", e);
         }
         Map<Integer, Vec3> players = new Int2ObjectArrayMap<>();
         int playersCount = buf.readVarInt();
         for (int i = 0; i < playersCount; i++)
-            players.put(buf.readVarInt(), new Vec3(buf.readDouble(), buf.readDouble(), buf.readDouble()));
-        return new RocketEntity(level, ctx, players);
+        {
+            int networkId = buf.readVarInt();
+            if (networkId != 0)
+                players.put(networkId, new Vec3(buf.readDouble(), buf.readDouble(), buf.readDouble()));
+        }
+        return new RocketEntity(level, ctx, Collections.emptyMap(), players);
     }).build(Beyond.MOD_ID + ":rocket"));
 }
