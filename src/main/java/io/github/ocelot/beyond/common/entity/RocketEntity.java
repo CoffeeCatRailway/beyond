@@ -178,14 +178,18 @@ public class RocketEntity extends Entity implements IEntityAdditionalSpawnData
                                     return;
                                 }
 
+                                Set<ServerPlayer> players = new HashSet<>();
                                 passengers.forEach(entity ->
                                 {
                                     Entity e = entity.changeDimension(level, new SpaceTeleporter());
                                     if (e != null)
                                     {
                                         e.startRiding(newRocket, true);
-                                        if (e instanceof Player)
+                                        if (e instanceof ServerPlayer)
+                                        {
+                                            players.add((ServerPlayer) e);
                                             BeyondMessages.PLAY.send(PacketDistributor.PLAYER.with(() -> (ServerPlayer) e), new SPlanetTravelResponseMessage(SPlanetTravelResponseMessage.Status.SUCCESS));
+                                        }
                                     }
                                     else if (entity instanceof Player)
                                     {
@@ -193,6 +197,8 @@ public class RocketEntity extends Entity implements IEntityAdditionalSpawnData
                                     }
                                 });
                                 newRocket.setPhase(Phase.LANDING);
+
+                                players.forEach(player -> level.getChunkSource().move(player));
                             }
                         });
 
@@ -296,6 +302,10 @@ public class RocketEntity extends Entity implements IEntityAdditionalSpawnData
                     Vec3 pos = this.entities.get(passenger.getUUID());
                     passenger.setPos(this.getX() + pos.x(), this.getY() + pos.y(), this.getZ() + pos.z());
                 }
+                else
+                {
+                    super.positionRider(passenger);
+                }
             }
             else
             {
@@ -304,8 +314,11 @@ public class RocketEntity extends Entity implements IEntityAdditionalSpawnData
                     Vec3 pos = this.clientEntities.get(passenger.getId());
                     passenger.setPos(this.getX() + pos.x(), this.getY() + pos.y(), this.getZ() + pos.z());
                 }
+                else
+                {
+                    super.positionRider(passenger);
+                }
             }
-            super.positionRider(passenger);
         }
     }
 
