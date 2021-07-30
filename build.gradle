@@ -1,6 +1,6 @@
 plugins {
     id 'dev.architectury.loom' version '0.7.2-SNAPSHOT'
-    id "com.github.fudge.forgedflowerloom" version '2.0.0'
+    id 'io.github.juuxel.loom-quiltflower' version '1.1.1'
     id 'com.github.johnrengelman.shadow' version '7.0.0'
     id 'maven-publish'
 }
@@ -103,6 +103,7 @@ processResources {
 
 shadowJar {
     configurations = [project.configurations.shade]
+    relocate 'io.github.ocelot.sonar', "io.github.ocelot.${project.mod_id}.lib.sonar"
 }
 
 tasks.withType(JavaCompile).configureEach {
@@ -140,7 +141,7 @@ jar {
                 "Specification-Vendor"    : project.mod_author,
                 "Specification-Version"   : "1",
                 "Implementation-Title"    : project.name,
-                "Implementation-Version"  : version,
+                "Implementation-Version"  : archiveVersion,
                 "Implementation-Vendor"   : project.mod_author,
                 "Implementation-Timestamp": new Date().format("yyyy-MM-dd'T'HH:mm:ssZ")
         ])
