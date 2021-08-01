@@ -18,7 +18,7 @@ public class LanguageGen extends LanguageProvider
     @Override
     protected void addTranslations()
     {
-        this.addBiome(BeyondBiomes.MOON_LOCATION.location(), "Moon");
+        this.addBiome(BeyondBiomes.MOON.location(), "Moon");
         this.addBlock(BeyondBlocks.MOON_ROCK, "Moon Rock");
         this.addBlock(BeyondBlocks.LANDING_PAD, "Landing Pad");
         this.addBlock(BeyondBlocks.ROCKET_CONTROLLER, "Rocket Controller");

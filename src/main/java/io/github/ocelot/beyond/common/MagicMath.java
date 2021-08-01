@@ -4,6 +4,8 @@ import com.mojang.math.Matrix4f;
 import io.github.ocelot.beyond.mixin.client.Matrix4fAccessor;
 import net.minecraft.util.Mth;
 import net.minecraft.world.phys.Vec3;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
 
 /**
  * <p>Contains math I barely understand but it just works so cool bro.</p>
@@ -48,6 +50,7 @@ public class MagicMath
      * @param input The input matrix
      * @return A transformed matrix
      */
+    @OnlyIn(Dist.CLIENT)
     public static Vec3 transform(Vec3 pos, Matrix4f input)
     {
         Matrix4fAccessor inputAccessor = (Matrix4fAccessor) (Object) input;
@@ -63,6 +66,7 @@ public class MagicMath
     /**
      * <p>The code was changed to use a mixin accessor instead of directly modifying variables to fit with Minecraft. Taken from <a href="https://github.com/JOML-CI/JOML/blob/main/src/org/joml/Matrix4f.java">JOML</a></p>
      */
+    @OnlyIn(Dist.CLIENT)
     public static Matrix4f invertProjection(Matrix4f matrix4f)
     {
         Matrix4f result = matrix4f.copy();
@@ -92,6 +96,7 @@ public class MagicMath
     /**
      * <p>The code was changed to use a mixin accessor instead of directly modifying variables to fit with Minecraft. Taken from <a href="https://github.com/JOML-CI/JOML/blob/main/src/org/joml/Matrix4f.java">JOML</a></p>
      */
+    @OnlyIn(Dist.CLIENT)
     public static Matrix4f invertGeneric(Matrix4f matrix4f)
     {
         Matrix4f result = matrix4f.copy();

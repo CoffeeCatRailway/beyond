@@ -11,5 +11,5 @@ import net.minecraft.world.level.biome.Biome;
  */
 public class BeyondBiomes
 {
-    public static final ResourceKey<Biome> MOON_LOCATION = ResourceKey.create(Registry.BIOME_REGISTRY, new ResourceLocation(Beyond.MOD_ID, "moon"));
+    public static final ResourceKey<Biome> MOON = ResourceKey.create(Registry.BIOME_REGISTRY, new ResourceLocation(Beyond.MOD_ID, "moon"));
 }

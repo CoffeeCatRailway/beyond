@@ -171,7 +171,7 @@ public class SpaceSkyRenderer implements ISkyRenderHandler
         RenderSystem.enableFog();
         poseStack.popPose();
         RenderSystem.disableTexture();
-        double d0 = Objects.requireNonNull(minecraft.player).getEyePosition(partialTicks).y - level.getLevelData().getHorizonHeight();
+        double d0 = Objects.requireNonNull(minecraft.player).getEyePosition(partialTicks).y - 93; // hardcoded horizon to 93 in space
         if (d0 < 0.0D)
         {
             if (this.darkBuffer == null)

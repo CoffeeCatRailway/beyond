@@ -78,7 +78,7 @@ public class Beyond
 
     private void init(FMLCommonSetupEvent event)
     {
-        BeyondDimensions.init();
+        event.enqueueWork(BeyondDimensions::init);
         BeyondMessages.init();
         BeyondTriggers.init();
     }
