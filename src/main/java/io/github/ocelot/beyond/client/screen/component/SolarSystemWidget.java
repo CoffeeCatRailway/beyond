@@ -24,7 +24,6 @@ import io.github.ocelot.beyond.common.space.satellite.PlayerRocket;
 import io.github.ocelot.beyond.common.space.satellite.Satellite;
 import io.github.ocelot.beyond.common.space.simulation.*;
 import io.github.ocelot.beyond.common.util.CelestialBodyRayTraceResult;
-import io.github.ocelot.beyond.event.ReloadRenderersEvent;
 import io.github.ocelot.sonar.client.render.BakedModelRenderer;
 import io.github.ocelot.sonar.client.render.ShapeRenderer;
 import io.github.ocelot.sonar.client.render.StructureTemplateRenderer;
@@ -54,7 +53,6 @@ import net.minecraft.world.level.biome.Biomes;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.client.model.data.EmptyModelData;
 import net.minecraftforge.common.MinecraftForge;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.registries.ForgeRegistries;
 import org.lwjgl.system.NativeResource;
 
@@ -71,6 +69,7 @@ import static org.lwjgl.opengl.GL11.*;
  */
 public class SolarSystemWidget extends AbstractWidget implements ContainerEventHandler, TickableWidget, NativeResource
 {
+    private static final Map<GameProfile, StructureTemplateRenderer> PLAYER_ROCKETS = new HashMap<>();
     private static final ModelPart CUBE = new ModelPart(32, 16, 0, 0);
 
     static
@@ -82,7 +81,6 @@ public class SolarSystemWidget extends AbstractWidget implements ContainerEventH
     private final CelestialBodySimulation simulation;
     private final SpaceStarsRenderer starsRenderer;
     private final SpaceTravelCamera camera;
-    private final Map<GameProfile, StructureTemplateRenderer> playerRockets;
     private final PlayerRocketBody localRocket;
     private final boolean commander;
     private boolean travelling;
@@ -106,7 +104,6 @@ public class SolarSystemWidget extends AbstractWidget implements ContainerEventH
         this.camera = new SpaceTravelCamera();
         this.camera.setZoom(200);
         this.camera.setPitch((float) (24F * Math.PI / 180F));
-        this.playerRockets = new HashMap<>();
 
         PlayerRocketBody p = null;
         boolean c = false;
@@ -188,10 +185,9 @@ public class SolarSystemWidget extends AbstractWidget implements ContainerEventH
         this.children.add(this.launchButton);
     }
 
-    private void renderBody(PoseStack poseStack, MultiBufferSource.BufferSource buffer, SimulatedBody body, float partialTicks)
+    public static void renderBody(PoseStack poseStack, MultiBufferSource.BufferSource buffer, SimulatedBody body, float partialTicks, boolean hovered)
     {
         float scale = body.getSize();
-        boolean hovered = this.hoveredBody != null && this.hoveredBody.getBody().equals(body) && !this.bubbleHovered;
         poseStack.pushPose();
         poseStack.translate(body.getX(partialTicks), body.getY(partialTicks), body.getZ(partialTicks));
         poseStack.mulPose(Vector3f.ZP.rotation(body.getRotationZ(partialTicks)));
@@ -241,7 +237,7 @@ public class SolarSystemWidget extends AbstractWidget implements ContainerEventH
                     poseStack.translate(-0.5F, -0.5F, -0.5F);
                     PlayerRocket rocket = ((PlayerRocketBody) body).getSatellite();
                     Vec3i size = rocket.getRocket().getSize();
-                    StructureTemplateRenderer renderer = this.playerRockets.computeIfAbsent(rocket.getCommandingProfile(), __ -> new StructureTemplateRenderer(CompletableFuture.completedFuture(rocket.getRocket()), (pos, resolver) -> resolver.getColor(ForgeRegistries.BIOMES.getValue(Biomes.PLAINS.location()), pos.getX(), pos.getZ())));
+                    StructureTemplateRenderer renderer = PLAYER_ROCKETS.computeIfAbsent(rocket.getCommandingProfile(), __ -> new StructureTemplateRenderer(CompletableFuture.completedFuture(rocket.getRocket()), (pos, resolver) -> resolver.getColor(ForgeRegistries.BIOMES.getValue(Biomes.PLAINS.location()), pos.getX(), pos.getZ())));
                     poseStack.translate(-(float) size.getX() / 2.0F, -(float) size.getY() / 2.0F, -(float) size.getZ() / 2.0F);
                     renderer.render(poseStack, 0, 0, 0);
                 }
@@ -360,7 +356,7 @@ public class SolarSystemWidget extends AbstractWidget implements ContainerEventH
 
         MultiBufferSource.BufferSource buffer = BeyondRenderTypes.planetBuffer();
         matrixStack.pushPose();
-        this.simulation.getBodies().forEach(body -> this.renderBody(matrixStack, buffer, body, partialTicks));
+        this.simulation.getBodies().forEach(body -> renderBody(matrixStack, buffer, body, partialTicks, this.hoveredBody != null && this.hoveredBody.getBody().equals(body) && !this.bubbleHovered));
         matrixStack.popPose();
         buffer.endBatch();
 
@@ -502,8 +498,8 @@ public class SolarSystemWidget extends AbstractWidget implements ContainerEventH
     {
         this.starsRenderer.free();
         this.invalidateFramebuffer();
-        this.playerRockets.values().forEach(NativeResource::free);
-        this.playerRockets.clear();
+        PLAYER_ROCKETS.values().forEach(NativeResource::free);
+        PLAYER_ROCKETS.clear();
 
         for (GuiEventListener listener : this.children)
             if (listener instanceof NativeResource)
