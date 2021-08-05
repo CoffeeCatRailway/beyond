@@ -41,8 +41,9 @@ import java.nio.file.Paths;
 import java.util.Map;
 import java.util.Objects;
 
-import static org.lwjgl.opengl.GL11.GL_TEXTURE_COMPONENTS;
+import static org.lwjgl.opengl.GL11.*;
 import static org.lwjgl.opengl.GL11C.*;
+import static org.lwjgl.opengl.GL11C.GL_QUADS;
 import static org.lwjgl.opengl.GL12C.GL_TEXTURE_BASE_LEVEL;
 import static org.lwjgl.opengl.GL12C.GL_TEXTURE_MAX_LEVEL;
 import static org.lwjgl.stb.STBImageWrite.stbi_write_png;
@@ -166,11 +167,11 @@ public class SpaceSkyRenderer implements ISkyRenderHandler
 
         RenderSystem.enableBlend();
         RenderSystem.defaultBlendFunc();
-        GlStateManager._matrixMode(5889);
+        GlStateManager._matrixMode(GL_PROJECTION);
         GlStateManager._pushMatrix();
         GlStateManager._loadIdentity();
         GlStateManager._ortho(0.0, window.getWidth(), window.getHeight(), 0.0, 1000.0, 3000.0);
-        GlStateManager._matrixMode(5888);
+        GlStateManager._matrixMode(GL_MODELVIEW);
         GlStateManager._pushMatrix();
         GlStateManager._loadIdentity();
         GlStateManager._translatef(0.0F, 0.0F, -2000.0F);
@@ -191,9 +192,9 @@ public class SpaceSkyRenderer implements ISkyRenderHandler
         bufferbuilder.vertex(0.0, 0.0, 0.0).uv(0.0F, 1.0F).endVertex();
         tesselator.end();
 
-        GlStateManager._matrixMode(5889);
+        GlStateManager._matrixMode(GL_PROJECTION);
         GlStateManager._popMatrix();
-        GlStateManager._matrixMode(5888);
+        GlStateManager._matrixMode(GL_MODELVIEW);
         GlStateManager._popMatrix();
         RenderSystem.disableBlend();
     }

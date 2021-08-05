@@ -1,7 +1,6 @@
 package io.github.ocelot.beyond.client.screen.component;
 
 import com.mojang.authlib.GameProfile;
-import com.mojang.blaze3d.pipeline.RenderTarget;
 import com.mojang.blaze3d.platform.GlStateManager;
 import com.mojang.blaze3d.platform.Lighting;
 import com.mojang.blaze3d.platform.Window;
@@ -24,6 +23,8 @@ import io.github.ocelot.beyond.common.space.satellite.PlayerRocket;
 import io.github.ocelot.beyond.common.space.satellite.Satellite;
 import io.github.ocelot.beyond.common.space.simulation.*;
 import io.github.ocelot.beyond.common.util.CelestialBodyRayTraceResult;
+import io.github.ocelot.sonar.client.framebuffer.AdvancedFbo;
+import io.github.ocelot.sonar.client.framebuffer.AdvancedFboRenderAttachment;
 import io.github.ocelot.sonar.client.render.BakedModelRenderer;
 import io.github.ocelot.sonar.client.render.ShapeRenderer;
 import io.github.ocelot.sonar.client.render.StructureTemplateRenderer;
@@ -87,7 +88,8 @@ public class SolarSystemWidget extends AbstractWidget implements ContainerEventH
 
     private CelestialBodyRayTraceResult hoveredBody;
     private SimulatedBody selectedBody;
-    private RenderTarget framebuffer;
+    private AdvancedFbo simulationTarget;
+    private AdvancedFbo simulationBlitTarget;
 
     private final List<GuiEventListener> children;
     private final Button launchButton;
@@ -278,10 +280,15 @@ public class SolarSystemWidget extends AbstractWidget implements ContainerEventH
 
     private void invalidateFramebuffer()
     {
-        if (this.framebuffer != null)
+        if (this.simulationTarget != null)
         {
-            this.framebuffer.destroyBuffers();
-            this.framebuffer = null;
+            this.simulationTarget.free();
+            this.simulationTarget = null;
+        }
+        if (this.simulationBlitTarget != null)
+        {
+            this.simulationBlitTarget.free();
+            this.simulationBlitTarget = null;
         }
     }
 
@@ -309,12 +316,27 @@ public class SolarSystemWidget extends AbstractWidget implements ContainerEventH
         Minecraft minecraft = Minecraft.getInstance();
         this.renderBg(poseStack, minecraft, mouseX, mouseY);
 
-        if (this.framebuffer == null)
+        if (this.simulationTarget == null)
         {
             Window window = Minecraft.getInstance().getWindow();
-            this.framebuffer = new RenderTarget((int) (this.width * window.getGuiScale()), (int) (this.height * window.getGuiScale()), true, Minecraft.ON_OSX);
+            this.simulationTarget = AdvancedFbo.withSize((int) (this.width * window.getGuiScale()), (int) (this.height * window.getGuiScale())).addColorRenderBuffer(AdvancedFboRenderAttachment.MAX_SAMPLES).setDepthRenderBuffer(AdvancedFboRenderAttachment.MAX_SAMPLES).build(true); // TODO make samples a config
         }
-        this.framebuffer.bindWrite(true);
+        Window window = Minecraft.getInstance().getWindow();
+        if (this.simulationTarget == null || this.simulationTarget.getWidth() != (int) (this.width * window.getGuiScale()) || this.simulationTarget.getHeight() != (int) (this.height * window.getGuiScale()))
+        {
+            if (this.simulationTarget != null)
+                this.simulationTarget.free();
+            this.simulationTarget = AdvancedFbo.withSize((int) (this.width * window.getGuiScale()), (int) (this.height * window.getGuiScale())).addColorRenderBuffer(AdvancedFboRenderAttachment.MAX_SAMPLES).setDepthRenderBuffer(AdvancedFboRenderAttachment.MAX_SAMPLES).build(true); // TODO make samples a config
+        }
+        if (this.simulationBlitTarget == null || this.simulationBlitTarget.getWidth() != this.simulationTarget.getWidth() || this.simulationBlitTarget.getHeight() != this.simulationTarget.getHeight())
+        {
+            if (this.simulationBlitTarget != null)
+                this.simulationBlitTarget.free();
+            this.simulationBlitTarget = AdvancedFbo.withSize(this.simulationTarget.getWidth(), this.simulationTarget.getHeight()).addColorTextureBuffer().build(true); // The blit buffer doesn't need depth
+        }
+        this.simulationTarget.bind(true);
+        RenderSystem.clearColor(0.0F, 0.0F, 0.0F, 1.0F);
+        this.simulationTarget.clear();
 
         RenderSystem.matrixMode(GL_PROJECTION);
         RenderSystem.pushMatrix();
@@ -326,9 +348,6 @@ public class SolarSystemWidget extends AbstractWidget implements ContainerEventH
         RenderSystem.loadIdentity();
 
         PoseStack matrixStack = new PoseStack();
-
-        GlStateManager._clearColor(0.0F, 0.0F, 0.0F, 1.0F);
-        GlStateManager._clear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT, Minecraft.ON_OSX);
 
         float cameraRotationX = this.camera.getRotationX(partialTicks);
         float cameraRotationY = this.camera.getRotationY(partialTicks);
@@ -365,16 +384,16 @@ public class SolarSystemWidget extends AbstractWidget implements ContainerEventH
         RenderSystem.matrixMode(GL_MODELVIEW);
         RenderSystem.popMatrix();
 
-        Minecraft.getInstance().getMainRenderTarget().bindWrite(true);
+        AdvancedFbo.unbind();
         poseStack.pushPose();
         poseStack.translate(0, 0, 10);
-        this.framebuffer.bindRead();
+        this.simulationTarget.resolveToAdvancedFbo(this.simulationBlitTarget);
+        this.simulationBlitTarget.getColorAttachment(0).bindAttachment();
         RenderSystem.enableTexture();
         RenderSystem.enableBlend();
         RenderSystem.defaultBlendFunc();
         ShapeRenderer.setColor(1.0F, 1.0F, 1.0F, this.alpha);
         ShapeRenderer.drawRectWithTexture(poseStack, this.x, this.y, 0, 1, this.width, this.height, 1, -1, 1, 1);
-        this.framebuffer.unbindRead();
         poseStack.popPose();
 
         this.bubbleHovered = false;
