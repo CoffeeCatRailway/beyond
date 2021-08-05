@@ -44,6 +44,7 @@ configurations {
 }
 
 repositories {
+    mavenLocal()
     maven {
         url "https://www.cursemaven.com"
         content {
@@ -87,7 +88,9 @@ dependencies {
     modRuntime "curse.maven:catalogue-459701:3399554"
 
     modImplementation "com.github.Ocelot5836:Sonar:${project.sonar_version}"
-    shade "com.github.Ocelot5836.Sonar:${project.sonar_version}"
+    shade "com.github.Ocelot5836:Sonar:${project.sonar_version}"
+//    modImplementation("io.github.ocelot:Sonar:1.16.5-6.2.0") { changing = true }
+//    shade("io.github.ocelot:Sonar:1.16.5-6.2.0") { changing = true }
 }
 
 processResources {

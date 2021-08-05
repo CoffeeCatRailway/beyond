@@ -15,6 +15,8 @@ import io.github.ocelot.beyond.common.space.planet.Planet;
 import io.github.ocelot.beyond.common.space.planet.StaticSolarSystemDefinitions;
 import io.github.ocelot.beyond.common.space.simulation.CelestialBodySimulation;
 import io.github.ocelot.beyond.common.space.simulation.SimulatedBody;
+import io.github.ocelot.sonar.client.framebuffer.AdvancedFbo;
+import net.minecraft.Util;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.renderer.FogRenderer;
@@ -27,13 +29,22 @@ import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.client.ISkyRenderHandler;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.TickEvent;
+import org.lwjgl.BufferUtils;
 import org.lwjgl.system.NativeResource;
 
 import javax.annotation.Nullable;
+import java.nio.ByteBuffer;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Map;
 import java.util.Objects;
 
-import static org.lwjgl.opengl.GL11C.GL_QUADS;
+import static org.lwjgl.opengl.GL11.GL_TEXTURE_COMPONENTS;
+import static org.lwjgl.opengl.GL11C.*;
+import static org.lwjgl.opengl.GL12C.GL_TEXTURE_BASE_LEVEL;
+import static org.lwjgl.opengl.GL12C.GL_TEXTURE_MAX_LEVEL;
+import static org.lwjgl.stb.STBImageWrite.stbi_write_png;
 
 /**
  * @author Ocelot
@@ -134,10 +145,11 @@ public class SpaceSkyRenderer implements ISkyRenderHandler
         MultiBufferSource.BufferSource buffer = BeyondRenderTypes.planetBuffer();
 
         RenderSystem.depthMask(true);
-        RenderTarget simulationTarget = this.simulationInfo.getSimulationTarget();
-        simulationTarget.setClearColor(0,0,0,0);
-        simulationTarget.clear(Minecraft.ON_OSX);
-        simulationTarget.bindWrite(false);
+        AdvancedFbo simulationTarget = this.simulationInfo.getSimulationRenderTarget();
+        AdvancedFbo simulationBlitTarget = this.simulationInfo.getSimulationBlitRenderTarget();
+        simulationTarget.bind(true);
+        RenderSystem.clearColor(0.0F, 0.0F, 0.0F, 0.0F);
+        simulationTarget.clear();
         Lighting.setupFor3DItems();
 
         matrixStack.pushPose();
@@ -149,7 +161,7 @@ public class SpaceSkyRenderer implements ISkyRenderHandler
         buffer.endBatch();
 
         RenderSystem.depthMask(false);
-        Minecraft.getInstance().getMainRenderTarget().bindWrite(true);
+        AdvancedFbo.unbind();
 
         RenderSystem.enableBlend();
         RenderSystem.defaultBlendFunc();
@@ -166,7 +178,9 @@ public class SpaceSkyRenderer implements ISkyRenderHandler
         GlStateManager._disableAlphaTest();
 
         GlStateManager._color4f(1.0F, 1.0F, 1.0F, 1.0F);
-        simulationTarget.bindRead();
+        simulationTarget.resolveToAdvancedFbo(simulationBlitTarget);
+//        simulationBlitTarget.getColorTextureAttachment(0).bindAttachment();
+
         Tesselator tesselator = RenderSystem.renderThreadTesselator();
         BufferBuilder bufferbuilder = tesselator.getBuilder();
         bufferbuilder.begin(7, DefaultVertexFormat.POSITION_TEX);
@@ -175,7 +189,6 @@ public class SpaceSkyRenderer implements ISkyRenderHandler
         bufferbuilder.vertex(window.getWidth(), 0.0, 0.0).uv(1.0F, 1.0F).endVertex();
         bufferbuilder.vertex(0.0, 0.0, 0.0).uv(0.0F, 1.0F).endVertex();
         tesselator.end();
-        simulationTarget.unbindRead();
 
         GlStateManager._matrixMode(5889);
         GlStateManager._popMatrix();
@@ -301,7 +314,8 @@ public class SpaceSkyRenderer implements ISkyRenderHandler
     {
         private final ClientLevel level;
         private final CelestialBodySimulation simulation;
-        private RenderTarget simulationTarget;
+        private AdvancedFbo simulationTarget;
+        private AdvancedFbo simulationBlitTarget;
 
         private SimulationInfo(ClientLevel level)
         {
@@ -334,19 +348,27 @@ public class SpaceSkyRenderer implements ISkyRenderHandler
             return this.simulation != null ? this.simulation.getBodies().filter(body -> body.getDimension().isPresent() && body.getDimension().get().equals(level.dimension().location())).findFirst().orElse(null) : null;
         }
 
-        public RenderTarget getSimulationTarget()
+        public AdvancedFbo getSimulationRenderTarget()
         {
             RenderTarget mainTarget = Minecraft.getInstance().getMainRenderTarget();
-            if (this.simulationTarget == null)
+            if (this.simulationTarget == null || this.simulationTarget.getWidth() != mainTarget.width || this.simulationTarget.getHeight() != mainTarget.height)
             {
-                this.simulationTarget = new RenderTarget(mainTarget.width, mainTarget.height, true, Minecraft.ON_OSX);
-                this.simulationTarget.setClearColor(0.0F, 0.0F, 0.0F, 0.0F);
-            }
-            else if (this.simulationTarget.width != mainTarget.width || this.simulationTarget.height != mainTarget.height)
-            {
-                this.simulationTarget.resize(mainTarget.width, mainTarget.height, Minecraft.ON_OSX);
+                if (this.simulationTarget != null)
+                    this.simulationTarget.free();
+                this.simulationTarget = AdvancedFbo.withSize(mainTarget.width, mainTarget.height).addColorRenderBuffer(8).setDepthRenderBuffer(8).build(true); // TODO make samples a config
             }
             return this.simulationTarget;
+        }
+
+        public AdvancedFbo getSimulationBlitRenderTarget()
+        {
+            if (this.simulationBlitTarget == null || this.simulationBlitTarget.getWidth() != this.simulationTarget.getWidth() || this.simulationBlitTarget.getHeight() != this.simulationTarget.getHeight())
+            {
+                if (this.simulationBlitTarget != null)
+                    this.simulationBlitTarget.free();
+                this.simulationBlitTarget = AdvancedFbo.withSize(this.simulationTarget.getWidth(), this.simulationTarget.getHeight()).addColorTextureBuffer().build(true); // The blit buffer doesn't need depth
+            }
+            return this.simulationBlitTarget;
         }
 
         @Override
@@ -354,8 +376,12 @@ public class SpaceSkyRenderer implements ISkyRenderHandler
         {
             if (this.simulationTarget != null)
             {
-                this.simulationTarget.destroyBuffers();
+                this.simulationTarget.free();
                 this.simulationTarget = null;
+            }
+            if(this.simulationBlitTarget != null){
+                this.simulationBlitTarget.free();
+                this.simulationBlitTarget = null;
             }
         }
     }
