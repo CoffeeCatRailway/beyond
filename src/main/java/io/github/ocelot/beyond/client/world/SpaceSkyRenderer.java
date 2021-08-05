@@ -17,7 +17,6 @@ import io.github.ocelot.beyond.common.space.simulation.CelestialBodySimulation;
 import io.github.ocelot.beyond.common.space.simulation.SimulatedBody;
 import io.github.ocelot.sonar.client.framebuffer.AdvancedFbo;
 import io.github.ocelot.sonar.client.framebuffer.AdvancedFboRenderAttachment;
-import net.minecraft.Util;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.renderer.FogRenderer;
@@ -30,23 +29,15 @@ import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.client.ISkyRenderHandler;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.TickEvent;
-import org.lwjgl.BufferUtils;
 import org.lwjgl.system.NativeResource;
 
 import javax.annotation.Nullable;
-import java.nio.ByteBuffer;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.Map;
 import java.util.Objects;
 
-import static org.lwjgl.opengl.GL11.*;
-import static org.lwjgl.opengl.GL11C.*;
+import static org.lwjgl.opengl.GL11.GL_MODELVIEW;
+import static org.lwjgl.opengl.GL11.GL_PROJECTION;
 import static org.lwjgl.opengl.GL11C.GL_QUADS;
-import static org.lwjgl.opengl.GL12C.GL_TEXTURE_BASE_LEVEL;
-import static org.lwjgl.opengl.GL12C.GL_TEXTURE_MAX_LEVEL;
-import static org.lwjgl.stb.STBImageWrite.stbi_write_png;
 
 /**
  * @author Ocelot
@@ -138,10 +129,6 @@ public class SpaceSkyRenderer implements ISkyRenderHandler
             this.simulationInfo = new SimulationInfo(level);
         }
 
-        SimulatedBody currentBody = this.simulationInfo.getBody();
-        if (currentBody == null)
-            return;
-
         Window window = Minecraft.getInstance().getWindow();
         CelestialBodySimulation simulation = this.simulationInfo.simulation;
         MultiBufferSource.BufferSource buffer = BeyondRenderTypes.planetBuffer();
@@ -152,13 +139,19 @@ public class SpaceSkyRenderer implements ISkyRenderHandler
         simulationTarget.bind(true);
         RenderSystem.clearColor(0.0F, 0.0F, 0.0F, 0.0F);
         simulationTarget.clear();
-        Lighting.setupFor3DItems();
 
-        matrixStack.pushPose();
-        matrixStack.translate(-currentBody.getX(partialTicks), 0, -currentBody.getZ(partialTicks));
+        STARS.render(matrixStack);
 
-        simulation.getBodies().forEach(body -> SolarSystemWidget.renderBody(matrixStack, buffer, body, partialTicks, false));
-        matrixStack.popPose();
+        SimulatedBody currentBody = this.simulationInfo.getBody();
+        if (currentBody != null)
+        {
+            Lighting.setupFor3DItems();
+            matrixStack.pushPose();
+            matrixStack.mulPose(Vector3f.XP.rotationDegrees(90));
+            matrixStack.translate(-currentBody.getX(partialTicks), 0, -currentBody.getZ(partialTicks));
+            simulation.getBodies().forEach(body -> SolarSystemWidget.renderBody(matrixStack, buffer, body, partialTicks, false));
+            matrixStack.popPose();
+        }
 
         buffer.endBatch();
 
@@ -274,9 +267,6 @@ public class SpaceSkyRenderer implements ISkyRenderHandler
 //        builder.vertex(matrix4f1, -f12, 100.0F, f12).uv(0.0F, 1.0F).endVertex();
 //        Tesselator.getInstance().end();
 
-        STARS.render(matrixStack);
-
-        matrixStack.mulPose(Vector3f.XP.rotationDegrees(90));
         this.renderSolarSystem(partialTicks, matrixStack, level);
         matrixStack.popPose();
 
@@ -381,7 +371,8 @@ public class SpaceSkyRenderer implements ISkyRenderHandler
                 this.simulationTarget.free();
                 this.simulationTarget = null;
             }
-            if(this.simulationBlitTarget != null){
+            if (this.simulationBlitTarget != null)
+            {
                 this.simulationBlitTarget.free();
                 this.simulationBlitTarget = null;
             }
