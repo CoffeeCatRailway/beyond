@@ -316,11 +316,6 @@ public class SolarSystemWidget extends AbstractWidget implements ContainerEventH
         Minecraft minecraft = Minecraft.getInstance();
         this.renderBg(poseStack, minecraft, mouseX, mouseY);
 
-        if (this.simulationTarget == null)
-        {
-            Window window = Minecraft.getInstance().getWindow();
-            this.simulationTarget = AdvancedFbo.withSize((int) (this.width * window.getGuiScale()), (int) (this.height * window.getGuiScale())).addColorRenderBuffer(AdvancedFboRenderAttachment.MAX_SAMPLES).setDepthRenderBuffer(AdvancedFboRenderAttachment.MAX_SAMPLES).build(true); // TODO make samples a config
-        }
         Window window = Minecraft.getInstance().getWindow();
         if (this.simulationTarget == null || this.simulationTarget.getWidth() != (int) (this.width * window.getGuiScale()) || this.simulationTarget.getHeight() != (int) (this.height * window.getGuiScale()))
         {
