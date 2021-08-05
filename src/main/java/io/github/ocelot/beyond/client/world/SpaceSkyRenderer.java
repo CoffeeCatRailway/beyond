@@ -16,6 +16,7 @@ import io.github.ocelot.beyond.common.space.planet.StaticSolarSystemDefinitions;
 import io.github.ocelot.beyond.common.space.simulation.CelestialBodySimulation;
 import io.github.ocelot.beyond.common.space.simulation.SimulatedBody;
 import io.github.ocelot.sonar.client.framebuffer.AdvancedFbo;
+import io.github.ocelot.sonar.client.framebuffer.AdvancedFboRenderAttachment;
 import net.minecraft.Util;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientLevel;
@@ -179,7 +180,7 @@ public class SpaceSkyRenderer implements ISkyRenderHandler
 
         GlStateManager._color4f(1.0F, 1.0F, 1.0F, 1.0F);
         simulationTarget.resolveToAdvancedFbo(simulationBlitTarget);
-//        simulationBlitTarget.getColorTextureAttachment(0).bindAttachment();
+        simulationBlitTarget.getColorTextureAttachment(0).bindAttachment();
 
         Tesselator tesselator = RenderSystem.renderThreadTesselator();
         BufferBuilder bufferbuilder = tesselator.getBuilder();
@@ -355,7 +356,7 @@ public class SpaceSkyRenderer implements ISkyRenderHandler
             {
                 if (this.simulationTarget != null)
                     this.simulationTarget.free();
-                this.simulationTarget = AdvancedFbo.withSize(mainTarget.width, mainTarget.height).addColorRenderBuffer(8).setDepthRenderBuffer(8).build(true); // TODO make samples a config
+                this.simulationTarget = AdvancedFbo.withSize(mainTarget.width, mainTarget.height).addColorRenderBuffer(AdvancedFboRenderAttachment.MAX_SAMPLES).setDepthRenderBuffer(AdvancedFboRenderAttachment.MAX_SAMPLES).build(true); // TODO make samples a config
             }
             return this.simulationTarget;
         }
